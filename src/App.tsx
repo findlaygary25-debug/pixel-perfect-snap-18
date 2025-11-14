@@ -8,6 +8,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { NotificationBell } from "@/components/NotificationBell";
 import Index from "./pages/Index";
 import Feed from "./pages/Feed";
+import Activity from "./pages/Activity";
 import Upload from "./pages/Upload";
 import Store from "./pages/Store";
 import Wallet from "./pages/Wallet";
@@ -42,6 +43,7 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/feed" element={<Feed />} />
+                  <Route path="/activity" element={<Activity />} />
                   <Route path="/upload" element={<Upload />} />
                   <Route path="/store" element={<Store />} />
                   <Route path="/wallet" element={<Wallet />} />
