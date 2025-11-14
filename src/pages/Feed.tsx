@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { Heart, Eye } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -126,7 +126,21 @@ export default function Feed() {
                 <p className="font-bold text-white drop-shadow-lg">@{v.username}</p>
                 <p className="text-sm text-gray-200 drop-shadow-lg">{v.caption}</p>
               </div>
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-4 items-center">
+                {/* Follow Button with Avatar */}
+                <div className="relative">
+                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                    <span className="text-white font-bold text-lg">{v.username[0].toUpperCase()}</span>
+                  </div>
+                  <Button
+                    size="icon"
+                    className="absolute -bottom-2 left-1/2 -translate-x-1/2 h-6 w-6 rounded-full bg-primary hover:bg-primary/90"
+                  >
+                    <UserPlus className="h-3 w-3" />
+                  </Button>
+                </div>
+
+                {/* Like Button */}
                 <motion.div
                   whileTap={{ scale: 0.8 }}
                   animate={likedVideos.has(v.id) ? { scale: [1, 1.3, 1] } : {}}
@@ -138,23 +152,46 @@ export default function Feed() {
                     className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 text-white"
                     onClick={() => handleLike(v.id)}
                   >
-                    <div className="flex flex-col items-center">
+                    <div className="flex flex-col items-center gap-1">
                       <Heart 
-                        className={`h-5 w-5 transition-all ${likedVideos.has(v.id) ? 'fill-red-500 text-red-500' : ''}`}
+                        className={`h-6 w-6 transition-all ${likedVideos.has(v.id) ? 'fill-red-500 text-red-500' : ''}`}
                       />
-                      <span className="text-xs">{v.likes}</span>
+                      <span className="text-xs font-semibold">{v.likes}</span>
                     </div>
                   </Button>
                 </motion.div>
+
+                {/* Comments Button */}
                 <Button
                   size="icon"
                   variant="ghost"
                   className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 text-white"
-                  onClick={() => handleView(v.id)}
                 >
-                  <div className="flex flex-col items-center">
-                    <Eye className="h-5 w-5" />
-                    <span className="text-xs">{v.views}</span>
+                  <div className="flex flex-col items-center gap-1">
+                    <MessageCircle className="h-6 w-6" />
+                    <span className="text-xs font-semibold">0</span>
+                  </div>
+                </Button>
+
+                {/* Bookmark Button */}
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 text-white"
+                >
+                  <div className="flex flex-col items-center gap-1">
+                    <Bookmark className="h-6 w-6" />
+                  </div>
+                </Button>
+
+                {/* Share Button */}
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 text-white"
+                >
+                  <div className="flex flex-col items-center gap-1">
+                    <Share2 className="h-6 w-6" />
                   </div>
                 </Button>
               </div>
