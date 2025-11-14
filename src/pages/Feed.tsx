@@ -18,10 +18,35 @@ export default function Feed() {
   const [videos, setVideos] = useState<VideoPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [likedVideos, setLikedVideos] = useState<Set<string>>(new Set());
+  const [bookmarkedVideos, setBookmarkedVideos] = useState<Set<string>>(new Set());
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
 
   useEffect(() => {
     fetchVideos();
+    checkUser();
   }, []);
+
+  const checkUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setCurrentUser(user.id);
+      fetchBookmarks(user.id);
+    }
+  };
+
+  const fetchBookmarks = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("bookmarks")
+        .select("video_id")
+        .eq("user_id", userId);
+
+      if (error) throw error;
+      setBookmarkedVideos(new Set(data?.map(b => b.video_id) || []));
+    } catch (error) {
+      console.error("Error fetching bookmarks:", error);
+    }
+  };
 
   const fetchVideos = async () => {
     try {
@@ -63,23 +88,43 @@ export default function Feed() {
     }
   };
 
-  const handleView = async (videoId: string) => {
+  const handleBookmark = async (videoId: string) => {
+    if (!currentUser) {
+      toast.error("Please login to bookmark videos");
+      return;
+    }
+
     try {
-      const video = videos.find((v) => v.id === videoId);
-      if (!video) return;
+      const isBookmarked = bookmarkedVideos.has(videoId);
 
-      const { error } = await supabase
-        .from("videos")
-        .update({ views: video.views + 1 })
-        .eq("id", videoId);
+      if (isBookmarked) {
+        const { error } = await supabase
+          .from("bookmarks")
+          .delete()
+          .eq("user_id", currentUser)
+          .eq("video_id", videoId);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      setVideos((prev) =>
-        prev.map((v) => (v.id === videoId ? { ...v, views: v.views + 1 } : v))
-      );
+        setBookmarkedVideos((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(videoId);
+          return newSet;
+        });
+        toast.success("Bookmark removed");
+      } else {
+        const { error } = await supabase
+          .from("bookmarks")
+          .insert({ user_id: currentUser, video_id: videoId });
+
+        if (error) throw error;
+
+        setBookmarkedVideos((prev) => new Set(prev).add(videoId));
+        toast.success("Video bookmarked!");
+      }
     } catch (error) {
-      console.error("Error incrementing views:", error);
+      console.error("Error toggling bookmark:", error);
+      toast.error("Failed to bookmark video");
     }
   };
 
@@ -174,15 +219,24 @@ export default function Feed() {
                 </Button>
 
                 {/* Bookmark Button */}
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 text-white"
+                <motion.div
+                  whileTap={{ scale: 0.8 }}
+                  animate={bookmarkedVideos.has(v.id) ? { scale: [1, 1.2, 1] } : {}}
+                  transition={{ duration: 0.3 }}
                 >
-                  <div className="flex flex-col items-center gap-1">
-                    <Bookmark className="h-6 w-6" />
-                  </div>
-                </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 text-white"
+                    onClick={() => handleBookmark(v.id)}
+                  >
+                    <div className="flex flex-col items-center gap-1">
+                      <Bookmark 
+                        className={`h-6 w-6 transition-all ${bookmarkedVideos.has(v.id) ? 'fill-yellow-500 text-yellow-500' : ''}`}
+                      />
+                    </div>
+                  </Button>
+                </motion.div>
 
                 {/* Share Button */}
                 <Button
