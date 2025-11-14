@@ -1,0 +1,170 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Send } from "lucide-react";
+
+type Comment = {
+  id: string;
+  username: string;
+  comment_text: string;
+  created_at: string;
+};
+
+type CommentsDrawerProps = {
+  videoId: string;
+  isOpen: boolean;
+  onClose: () => void;
+  commentCount: number;
+  onCommentAdded: () => void;
+};
+
+export default function CommentsDrawer({
+  videoId,
+  isOpen,
+  onClose,
+  commentCount,
+  onCommentAdded,
+}: CommentsDrawerProps) {
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{
+    id: string;
+    username: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchComments();
+      checkUser();
+    }
+  }, [isOpen, videoId]);
+
+  const checkUser = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      setCurrentUser({
+        id: user.id,
+        username: user.email?.split("@")[0] || "user",
+      });
+    }
+  };
+
+  const fetchComments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("comments")
+        .select("*")
+        .eq("video_id", videoId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setComments(data || []);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+    }
+  };
+
+  const handleAddComment = async () => {
+    if (!newComment.trim()) {
+      toast.error("Please enter a comment");
+      return;
+    }
+
+    if (!currentUser) {
+      toast.error("Please login to comment");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.from("comments").insert({
+        video_id: videoId,
+        user_id: currentUser.id,
+        username: currentUser.username,
+        comment_text: newComment.trim(),
+      });
+
+      if (error) throw error;
+
+      setNewComment("");
+      fetchComments();
+      onCommentAdded();
+      toast.success("Comment added!");
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      toast.error("Failed to add comment");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Drawer open={isOpen} onOpenChange={onClose}>
+      <DrawerContent className="h-[80vh]">
+        <DrawerHeader>
+          <DrawerTitle>Comments</DrawerTitle>
+          <DrawerDescription>
+            {commentCount} {commentCount === 1 ? "comment" : "comments"}
+          </DrawerDescription>
+        </DrawerHeader>
+
+        <div className="flex-1 flex flex-col px-4 pb-4">
+          <ScrollArea className="flex-1 pr-4 mb-4">
+            {comments.length === 0 ? (
+              <div className="flex items-center justify-center h-32 text-muted-foreground">
+                No comments yet. Be the first to comment!
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {comments.map((comment) => (
+                  <div key={comment.id} className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm">
+                        @{comment.username}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(comment.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="text-sm">{comment.comment_text}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+
+          <div className="flex gap-2">
+            <Textarea
+              placeholder="Add a comment..."
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              className="resize-none"
+              rows={2}
+            />
+            <Button
+              onClick={handleAddComment}
+              disabled={loading || !newComment.trim()}
+              size="icon"
+              className="shrink-0"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
+}
