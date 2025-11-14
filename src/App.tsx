@@ -7,6 +7,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import Index from "./pages/Index";
 import Feed from "./pages/Feed";
+import Upload from "./pages/Upload";
 import Store from "./pages/Store";
 import Wallet from "./pages/Wallet";
 import Affiliate from "./pages/Affiliate";
@@ -36,6 +37,7 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/feed" element={<Feed />} />
+                  <Route path="/upload" element={<Upload />} />
                   <Route path="/store" element={<Store />} />
                   <Route path="/wallet" element={<Wallet />} />
                   <Route path="/affiliate" element={<Affiliate />} />

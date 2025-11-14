@@ -7,22 +7,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type Store = {
   id: string;
+  user_id: string;
   name: string;
   logo_url: string | null;
-  contact_email: string | null;
-  contact_phone: string | null;
+  email: string | null;
+  phone: string | null;
   description: string | null;
-  is_pro: boolean;
+  created_at: string;
+  updated_at: string;
 };
 
 type Product = {
   id: string;
+  store_id: string;
   title: string;
   description: string | null;
-  price_cents: number;
-  media_url: string | null;
-  is_digital: boolean;
+  price: number;
+  image_url: string | null;
   is_active: boolean;
+  created_at: string;
+  updated_at: string;
 };
 
 export default function StorePage() {
@@ -42,7 +46,7 @@ export default function StorePage() {
       const { data: stores, error } = await supabase
         .from("stores")
         .select("*")
-        .eq("owner_id", user.id)
+        .eq("user_id", user.id)
         .limit(1);
 
       if (error) console.error(error);
@@ -51,7 +55,7 @@ export default function StorePage() {
       if (!s) {
         const { data, error: e2 } = await supabase
           .from("stores")
-          .insert({ owner_id: user.id, name: "My Voice2Fire Store" })
+          .insert({ user_id: user.id, name: "My Voice2Fire Store" })
           .select()
           .single();
         if (e2) console.error(e2);
@@ -79,8 +83,8 @@ export default function StorePage() {
       .update({
         name: store.name,
         logo_url: store.logo_url,
-        contact_email: store.contact_email,
-        contact_phone: store.contact_phone,
+        email: store.email,
+        phone: store.phone,
         description: store.description,
       })
       .eq("id", store.id);
@@ -117,15 +121,15 @@ export default function StorePage() {
                 <label className="text-sm font-medium mb-2 block">Contact Email</label>
                 <Input
                   type="email"
-                  value={store.contact_email ?? ""}
-                  onChange={(e) => setStore({ ...store, contact_email: e.target.value })}
+                  value={store.email ?? ""}
+                  onChange={(e) => setStore({ ...store, email: e.target.value })}
                 />
               </div>
               <div>
                 <label className="text-sm font-medium mb-2 block">Contact Phone</label>
                 <Input
-                  value={store.contact_phone ?? ""}
-                  onChange={(e) => setStore({ ...store, contact_phone: e.target.value })}
+                  value={store.phone ?? ""}
+                  onChange={(e) => setStore({ ...store, phone: e.target.value })}
                 />
               </div>
               <div className="md:col-span-2">
@@ -146,12 +150,12 @@ export default function StorePage() {
             {products.map((p) => (
               <Card key={p.id}>
                 <CardContent className="p-4">
-                  {p.media_url && (
-                    <img src={p.media_url} alt={p.title} className="w-full h-40 object-cover rounded mb-2" />
+                  {p.image_url && (
+                    <img src={p.image_url} alt={p.title} className="w-full h-40 object-cover rounded mb-2" />
                   )}
                   <h3 className="font-semibold">{p.title}</h3>
                   <p className="text-sm text-muted-foreground mb-2">{p.description}</p>
-                  <p className="font-bold">${(p.price_cents / 100).toFixed(2)}</p>
+                  <p className="font-bold">${p.price.toFixed(2)}</p>
                 </CardContent>
               </Card>
             ))}
