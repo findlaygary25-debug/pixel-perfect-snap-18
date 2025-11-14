@@ -5,8 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, ShoppingCart } from "lucide-react";
+import { PlaceOrderDialog } from "@/components/PlaceOrderDialog";
 
 type Store = {
   id: string;
@@ -39,12 +43,41 @@ type ProductFormData = {
   image: File | null;
 };
 
+type Order = {
+  id: string;
+  customer_id: string;
+  store_id: string;
+  status: "pending" | "processing" | "completed" | "cancelled";
+  total_amount: number;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string | null;
+  shipping_address: string;
+  created_at: string;
+};
+
+type OrderItem = {
+  id: string;
+  order_id: string;
+  product_id: string;
+  quantity: number;
+  price_at_purchase: number;
+  products: {
+    title: string;
+    image_url: string | null;
+  };
+};
+
 export default function StorePage() {
   const [store, setStore] = useState<Store | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [orderItems, setOrderItems] = useState<Record<string, OrderItem[]>>({});
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [orderDialogOpen, setOrderDialogOpen] = useState(false);
   const [productForm, setProductForm] = useState<ProductFormData>({
     title: "",
     description: "",
@@ -56,6 +89,7 @@ export default function StorePage() {
 
   useEffect(() => {
     loadStoreAndProducts();
+    loadOrders();
   }, []);
 
   const loadStoreAndProducts = async () => {
@@ -95,6 +129,83 @@ export default function StorePage() {
     if (e3) console.error(e3);
     setProducts(prods ?? []);
     setLoading(false);
+  };
+
+  const loadOrders = async () => {
+    const user = (await supabase.auth.getUser()).data.user;
+    if (!user) return;
+
+    const { data: stores } = await supabase
+      .from("stores")
+      .select("id")
+      .eq("user_id", user.id);
+
+    if (!stores || stores.length === 0) return;
+
+    const storeId = stores[0].id;
+
+    const { data: ordersData, error } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("store_id", storeId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setOrders(ordersData || []);
+
+    // Load order items for each order
+    const itemsMap: Record<string, OrderItem[]> = {};
+    for (const order of ordersData || []) {
+      const { data: items } = await supabase
+        .from("order_items")
+        .select("*, products(title, image_url)")
+        .eq("order_id", order.id);
+
+      if (items) {
+        itemsMap[order.id] = items as any;
+      }
+    }
+    setOrderItems(itemsMap);
+  };
+
+  const updateOrderStatus = async (orderId: string, status: "pending" | "processing" | "completed" | "cancelled") => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ status })
+      .eq("id", orderId);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Order status updated",
+      });
+      loadOrders();
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "completed":
+        return "bg-green-500";
+      case "processing":
+        return "bg-blue-500";
+      case "pending":
+        return "bg-yellow-500";
+      case "cancelled":
+        return "bg-red-500";
+      default:
+        return "bg-muted";
+    }
   };
 
   const saveStore = async () => {
@@ -223,6 +334,11 @@ export default function StorePage() {
     }
   };
 
+  const handleProductSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSaveProduct();
+  };
+
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
     setProductForm({
@@ -264,12 +380,260 @@ export default function StorePage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">My Store</h1>
-      {loading && <p>Loading...</p>}
-      {!loading && store && (
-        <>
-          <Card className="mb-8">
+    <div className="container mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6">Store Management</h1>
+      
+      <Tabs defaultValue="products" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="products">Products</TabsTrigger>
+          <TabsTrigger value="orders">Orders</TabsTrigger>
+          <TabsTrigger value="settings">Store Settings</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="products" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Products</CardTitle>
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button onClick={handleAddNewProduct}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Product
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>
+                        {editingProduct ? "Edit Product" : "Add New Product"}
+                      </DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleProductSubmit} className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium">Title</label>
+                        <Input
+                          value={productForm.title}
+                          onChange={(e) =>
+                            setProductForm({ ...productForm, title: e.target.value })
+                          }
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Description</label>
+                        <Textarea
+                          value={productForm.description}
+                          onChange={(e) =>
+                            setProductForm({ ...productForm, description: e.target.value })
+                          }
+                          rows={3}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Price</label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={productForm.price}
+                          onChange={(e) =>
+                            setProductForm({ ...productForm, price: e.target.value })
+                          }
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Product Image</label>
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) =>
+                            setProductForm({
+                              ...productForm,
+                              image: e.target.files?.[0] || null,
+                            })
+                          }
+                        />
+                      </div>
+                      <Button type="submit" className="w-full" disabled={uploading}>
+                        {uploading
+                          ? "Saving..."
+                          : editingProduct
+                          ? "Update Product"
+                          : "Add Product"}
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {products.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">
+                  No products yet. Add your first product!
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {products.map((product) => (
+                    <Card key={product.id}>
+                      {product.image_url && (
+                        <img
+                          src={product.image_url}
+                          alt={product.title}
+                          className="w-full h-48 object-cover rounded-t-lg"
+                        />
+                      )}
+                      <CardContent className="p-4">
+                        <h3 className="font-semibold mb-2">{product.title}</h3>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {product.description}
+                        </p>
+                        <p className="text-lg font-bold mb-3">${product.price}</p>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditProduct(product)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteProduct(product.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="ml-auto"
+                            onClick={() => {
+                              setSelectedProduct(product);
+                              setOrderDialogOpen(true);
+                            }}
+                          >
+                            <ShoppingCart className="h-4 w-4 mr-2" />
+                            Order
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="orders" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Orders
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {orders.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">
+                  No orders yet
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {orders.map((order) => (
+                    <Card key={order.id}>
+                      <CardHeader>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <CardTitle className="text-lg">
+                              Order #{order.id.slice(0, 8)}
+                            </CardTitle>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(order.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <Select
+                            value={order.status}
+                            onValueChange={(value) => updateOrderStatus(order.id, value as any)}
+                          >
+                            <SelectTrigger className="w-36">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="processing">Processing</SelectItem>
+                              <SelectItem value="completed">Completed</SelectItem>
+                              <SelectItem value="cancelled">Cancelled</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div>
+                            <h4 className="font-medium mb-2">Items:</h4>
+                            <div className="space-y-2">
+                              {orderItems[order.id]?.map((item) => (
+                                <div
+                                  key={item.id}
+                                  className="flex items-center gap-3 p-2 bg-muted rounded"
+                                >
+                                  {item.products.image_url && (
+                                    <img
+                                      src={item.products.image_url}
+                                      alt={item.products.title}
+                                      className="w-12 h-12 object-cover rounded"
+                                    />
+                                  )}
+                                  <div className="flex-1">
+                                    <p className="font-medium">{item.products.title}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      Qty: {item.quantity} × ${item.price_at_purchase}
+                                    </p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                            <div>
+                              <h4 className="font-medium mb-1">Customer:</h4>
+                              <p className="text-sm">{order.customer_name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {order.customer_email}
+                              </p>
+                              {order.customer_phone && (
+                                <p className="text-sm text-muted-foreground">
+                                  {order.customer_phone}
+                                </p>
+                              )}
+                            </div>
+                            <div>
+                              <h4 className="font-medium mb-1">Shipping Address:</h4>
+                              <p className="text-sm text-muted-foreground whitespace-pre-line">
+                                {order.shipping_address}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex justify-between items-center pt-4 border-t">
+                            <span className="font-medium">Total Amount:</span>
+                            <span className="text-xl font-bold">${order.total_amount}</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="settings">
+          <Card>
             <CardHeader>
               <CardTitle>Store Settings</CardTitle>
             </CardHeader>
@@ -277,37 +641,37 @@ export default function StorePage() {
               <div>
                 <label className="text-sm font-medium mb-2 block">Store Name</label>
                 <Input
-                  value={store.name}
-                  onChange={(e) => setStore({ ...store, name: e.target.value })}
+                  value={store?.name || ""}
+                  onChange={(e) => store && setStore({ ...store, name: e.target.value })}
                 />
               </div>
               <div>
                 <label className="text-sm font-medium mb-2 block">Logo URL</label>
                 <Input
-                  value={store.logo_url ?? ""}
-                  onChange={(e) => setStore({ ...store, logo_url: e.target.value })}
+                  value={store?.logo_url ?? ""}
+                  onChange={(e) => store && setStore({ ...store, logo_url: e.target.value })}
                 />
               </div>
               <div>
                 <label className="text-sm font-medium mb-2 block">Contact Email</label>
                 <Input
                   type="email"
-                  value={store.email ?? ""}
-                  onChange={(e) => setStore({ ...store, email: e.target.value })}
+                  value={store?.email ?? ""}
+                  onChange={(e) => store && setStore({ ...store, email: e.target.value })}
                 />
               </div>
               <div>
                 <label className="text-sm font-medium mb-2 block">Phone</label>
                 <Input
-                  value={store.phone ?? ""}
-                  onChange={(e) => setStore({ ...store, phone: e.target.value })}
+                  value={store?.phone ?? ""}
+                  onChange={(e) => store && setStore({ ...store, phone: e.target.value })}
                 />
               </div>
               <div className="md:col-span-2">
                 <label className="text-sm font-medium mb-2 block">Description</label>
                 <Textarea
-                  value={store.description ?? ""}
-                  onChange={(e) => setStore({ ...store, description: e.target.value })}
+                  value={store?.description ?? ""}
+                  onChange={(e) => store && setStore({ ...store, description: e.target.value })}
                 />
               </div>
               <div className="md:col-span-2">
@@ -315,136 +679,15 @@ export default function StorePage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+      </Tabs>
 
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Products ({products.length})</h2>
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button onClick={handleAddNewProduct}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Product
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>
-                    {editingProduct ? "Edit Product" : "Add New Product"}
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Title *</label>
-                    <Input
-                      value={productForm.title}
-                      onChange={(e) =>
-                        setProductForm({ ...productForm, title: e.target.value })
-                      }
-                      placeholder="Product title"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Description</label>
-                    <Textarea
-                      value={productForm.description}
-                      onChange={(e) =>
-                        setProductForm({ ...productForm, description: e.target.value })
-                      }
-                      placeholder="Product description"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Price *</label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={productForm.price}
-                      onChange={(e) =>
-                        setProductForm({ ...productForm, price: e.target.value })
-                      }
-                      placeholder="0.00"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Product Image</label>
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) =>
-                        setProductForm({
-                          ...productForm,
-                          image: e.target.files?.[0] || null,
-                        })
-                      }
-                    />
-                    {editingProduct?.image_url && !productForm.image && (
-                      <img
-                        src={editingProduct.image_url}
-                        alt="Current product"
-                        className="mt-2 w-32 h-32 object-cover rounded"
-                      />
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleSaveProduct}
-                      disabled={uploading}
-                      className="flex-1"
-                    >
-                      {uploading ? "Saving..." : "Save Product"}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => setDialogOpen(false)}
-                      disabled={uploading}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {products.map((p) => (
-              <Card key={p.id}>
-                <CardContent className="p-4">
-                  {p.image_url && (
-                    <img
-                      src={p.image_url}
-                      alt={p.title}
-                      className="w-full h-40 object-cover rounded mb-2"
-                    />
-                  )}
-                  <h3 className="font-semibold">{p.title}</h3>
-                  <p className="text-sm text-muted-foreground mb-2">{p.description}</p>
-                  <p className="font-bold mb-3">${p.price.toFixed(2)}</p>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleEditProduct(p)}
-                      className="flex-1"
-                    >
-                      <Pencil className="w-4 h-4 mr-1" />
-                      Edit
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleDeleteProduct(p.id)}
-                      className="flex-1"
-                    >
-                      <Trash2 className="w-4 h-4 mr-1" />
-                      Delete
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </>
+      {selectedProduct && (
+        <PlaceOrderDialog
+          product={selectedProduct}
+          open={orderDialogOpen}
+          onOpenChange={setOrderDialogOpen}
+        />
       )}
     </div>
   );
