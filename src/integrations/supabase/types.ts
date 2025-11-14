@@ -211,11 +211,14 @@ export type Database = {
           customer_id: string
           customer_name: string
           customer_phone: string | null
+          delivered_at: string | null
           id: string
+          shipped_at: string | null
           shipping_address: string
           status: Database["public"]["Enums"]["order_status"]
           store_id: string
           total_amount: number
+          tracking_number: string | null
           updated_at: string
         }
         Insert: {
@@ -224,11 +227,14 @@ export type Database = {
           customer_id: string
           customer_name: string
           customer_phone?: string | null
+          delivered_at?: string | null
           id?: string
+          shipped_at?: string | null
           shipping_address: string
           status?: Database["public"]["Enums"]["order_status"]
           store_id: string
           total_amount: number
+          tracking_number?: string | null
           updated_at?: string
         }
         Update: {
@@ -237,11 +243,14 @@ export type Database = {
           customer_id?: string
           customer_name?: string
           customer_phone?: string | null
+          delivered_at?: string | null
           id?: string
+          shipped_at?: string | null
           shipping_address?: string
           status?: Database["public"]["Enums"]["order_status"]
           store_id?: string
           total_amount?: number
+          tracking_number?: string | null
           updated_at?: string
         }
         Relationships: [
