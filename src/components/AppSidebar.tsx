@@ -1,4 +1,4 @@
-import { Home, Video, Store, Wallet, Users, Mail, Info, Palette, LogIn } from "lucide-react";
+import { Home, Video, Upload as UploadIcon, Store, Wallet, Users, Mail, Info, Palette, LogIn } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -16,6 +16,7 @@ import {
 const items = [
   { title: "Home", url: "/", icon: Home },
   { title: "Feed", url: "/feed", icon: Video },
+  { title: "Upload", url: "/upload", icon: UploadIcon },
   { title: "Store", url: "/store", icon: Store },
   { title: "Wallet", url: "/wallet", icon: Wallet },
   { title: "Affiliate", url: "/affiliate", icon: Users },
