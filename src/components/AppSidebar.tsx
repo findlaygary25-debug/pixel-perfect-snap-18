@@ -1,6 +1,8 @@
-import { Home, Video, Upload as UploadIcon, Store, Wallet, Users, Mail, Info, Palette, LogIn } from "lucide-react";
+import { Home, Video, Upload as UploadIcon, Store, Wallet, Users, Mail, Info, Palette, LogIn, User } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -13,7 +15,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const items = [
+const baseItems = [
   { title: "Home", url: "/", icon: Home },
   { title: "Feed", url: "/feed", icon: Video },
   { title: "Upload", url: "/upload", icon: UploadIcon },
@@ -23,13 +25,32 @@ const items = [
   { title: "Makeup", url: "/makeup", icon: Palette },
   { title: "About", url: "/about", icon: Info },
   { title: "Contact", url: "/contact", icon: Mail },
-  { title: "Login", url: "/login", icon: LogIn },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsAuthenticated(!!session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const items = [
+    ...baseItems,
+    isAuthenticated 
+      ? { title: "Profile", url: "/profile", icon: User }
+      : { title: "Login", url: "/login", icon: LogIn }
+  ];
 
   return (
     <Sidebar className={state === "collapsed" ? "w-14" : "w-60"} collapsible="icon">
