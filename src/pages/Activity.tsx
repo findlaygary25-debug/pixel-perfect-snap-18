@@ -29,6 +29,110 @@ export default function Activity() {
     checkAuthAndFetchActivities();
   }, []);
 
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    // Subscribe to realtime updates for videos and comments
+    const videosChannel = supabase
+      .channel('activity-videos')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'videos'
+        },
+        async (payload) => {
+          const newVideo = payload.new as any;
+          
+          // Check if this video is from a followed user
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) return;
+
+          const { data: follows } = await supabase
+            .from("follows")
+            .select("followed_id")
+            .eq("follower_id", session.user.id)
+            .eq("followed_id", newVideo.user_id)
+            .single();
+
+          if (follows) {
+            // Get avatar for the user
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("avatar_url")
+              .eq("user_id", newVideo.user_id)
+              .single();
+
+            const newActivity: ActivityItem = {
+              id: newVideo.id,
+              type: "video",
+              username: newVideo.username,
+              avatar_url: profile?.avatar_url,
+              content: newVideo.caption || "Posted a new video",
+              video_url: newVideo.video_url,
+              created_at: newVideo.created_at,
+            };
+
+            setActivities(prev => [newActivity, ...prev]);
+          }
+        }
+      )
+      .subscribe();
+
+    const commentsChannel = supabase
+      .channel('activity-comments')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'comments'
+        },
+        async (payload) => {
+          const newComment = payload.new as any;
+          
+          // Check if this comment is from a followed user
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) return;
+
+          const { data: follows } = await supabase
+            .from("follows")
+            .select("followed_id")
+            .eq("follower_id", session.user.id)
+            .eq("followed_id", newComment.user_id)
+            .single();
+
+          if (follows) {
+            // Get avatar for the user
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("avatar_url")
+              .eq("user_id", newComment.user_id)
+              .single();
+
+            const newActivity: ActivityItem = {
+              id: newComment.id,
+              type: "comment",
+              username: newComment.username,
+              avatar_url: profile?.avatar_url,
+              content: newComment.comment_text,
+              created_at: newComment.created_at,
+            };
+
+            setActivities(prev => [newActivity, ...prev]);
+          }
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscriptions
+    return () => {
+      supabase.removeChannel(videosChannel);
+      supabase.removeChannel(commentsChannel);
+    };
+  }, [isAuthenticated]);
+
   const checkAuthAndFetchActivities = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     
