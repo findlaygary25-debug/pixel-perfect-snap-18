@@ -34,6 +34,7 @@ const Profile = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [videos, setVideos] = useState<Video[]>([]);
   const [bookmarks, setBookmarks] = useState<BookmarkedVideo[]>([]);
+  const [followingFollowerCounts, setFollowingFollowerCounts] = useState<Record<string, { followers: number; following: number }>>({});
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -49,8 +50,31 @@ const Profile = () => {
       return;
     }
     setUser(session.user);
-    await Promise.all([fetchProfile(session.user.id), fetchVideos(session.user.id), fetchBookmarks(session.user.id)]);
+    await Promise.all([
+      fetchProfile(session.user.id),
+      fetchVideos(session.user.id),
+      fetchBookmarks(session.user.id),
+      fetchFollowerCounts(session.user.id)
+    ]);
     setLoading(false);
+  };
+
+  const fetchFollowerCounts = async (userId: string) => {
+    try {
+      const [followersData, followingData] = await Promise.all([
+        supabase.from("follows").select("id", { count: "exact" }).eq("followed_id", userId),
+        supabase.from("follows").select("id", { count: "exact" }).eq("follower_id", userId)
+      ]);
+
+      setFollowingFollowerCounts({
+        [userId]: {
+          followers: followersData.count || 0,
+          following: followingData.count || 0
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching follower counts:", error);
+    }
   };
 
   const fetchProfile = async (userId: string) => {
@@ -150,10 +174,14 @@ const Profile = () => {
             {profile?.username.charAt(0).toUpperCase()}
           </AvatarFallback>
         </Avatar>
-        <div>
+        <div className="flex-1">
           <h1 className="text-3xl font-bold">{profile?.username}</h1>
           <p className="text-muted-foreground">{user?.email}</p>
           {profile?.bio && <p className="mt-2">{profile.bio}</p>}
+          <div className="flex gap-4 mt-2 text-sm">
+            <span><strong>{followingFollowerCounts[user?.id]?.followers || 0}</strong> followers</span>
+            <span><strong>{followingFollowerCounts[user?.id]?.following || 0}</strong> following</span>
+          </div>
         </div>
       </div>
 

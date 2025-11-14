@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { Heart, MessageCircle, Bookmark, Share2, UserPlus } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import CommentsDrawer from "@/components/CommentsDrawer";
 
@@ -11,6 +12,7 @@ type VideoPost = {
   video_url: string;
   caption: string;
   username: string;
+  user_id: string;
   likes: number;
   views: number;
   comments?: number;
@@ -18,23 +20,47 @@ type VideoPost = {
 
 export default function Feed() {
   const [videos, setVideos] = useState<VideoPost[]>([]);
+  const [followingVideos, setFollowingVideos] = useState<VideoPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [likedVideos, setLikedVideos] = useState<Set<string>>(new Set());
   const [bookmarkedVideos, setBookmarkedVideos] = useState<Set<string>>(new Set());
+  const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set());
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
+  const [activeTab, setActiveTab] = useState("forYou");
 
   useEffect(() => {
     fetchVideos();
     checkUser();
   }, []);
 
+  useEffect(() => {
+    if (currentUser && activeTab === "following") {
+      fetchFollowingVideos();
+    }
+  }, [currentUser, activeTab]);
+
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       setCurrentUser(user.id);
       fetchBookmarks(user.id);
+      fetchFollows(user.id);
+    }
+  };
+
+  const fetchFollows = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("follows")
+        .select("followed_id")
+        .eq("follower_id", userId);
+
+      if (error) throw error;
+      setFollowedUsers(new Set(data?.map(f => f.followed_id) || []));
+    } catch (error) {
+      console.error("Error fetching follows:", error);
     }
   };
 
@@ -63,7 +89,6 @@ export default function Feed() {
       if (error) throw error;
       setVideos(data || []);
       
-      // Fetch comment counts for each video
       if (data) {
         fetchCommentCounts(data.map(v => v.id));
       }
@@ -71,6 +96,42 @@ export default function Feed() {
       console.error("Error fetching videos:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFollowingVideos = async () => {
+    if (!currentUser) return;
+    
+    try {
+      const { data: followsData, error: followsError } = await supabase
+        .from("follows")
+        .select("followed_id")
+        .eq("follower_id", currentUser);
+
+      if (followsError) throw followsError;
+      
+      const followedIds = followsData?.map(f => f.followed_id) || [];
+      
+      if (followedIds.length === 0) {
+        setFollowingVideos([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("videos")
+        .select("*")
+        .eq("is_active", true)
+        .in("user_id", followedIds)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setFollowingVideos(data || []);
+      
+      if (data) {
+        fetchCommentCounts(data.map(v => v.id));
+      }
+    } catch (error) {
+      console.error("Error fetching following videos:", error);
     }
   };
 
@@ -97,7 +158,7 @@ export default function Feed() {
 
   const handleLike = async (videoId: string) => {
     try {
-      const video = videos.find((v) => v.id === videoId);
+      const video = videos.find((v) => v.id === videoId) || followingVideos.find((v) => v.id === videoId);
       if (!video) return;
 
       const { error } = await supabase
@@ -109,6 +170,9 @@ export default function Feed() {
 
       setLikedVideos((prev) => new Set(prev).add(videoId));
       setVideos((prev) =>
+        prev.map((v) => (v.id === videoId ? { ...v, likes: v.likes + 1 } : v))
+      );
+      setFollowingVideos((prev) =>
         prev.map((v) => (v.id === videoId ? { ...v, likes: v.likes + 1 } : v))
       );
       toast.success("Liked!");
@@ -158,144 +222,193 @@ export default function Feed() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-black text-white">
-        <div className="animate-pulse">Loading videos...</div>
-      </div>
-    );
-  }
+  const handleShare = async (videoId: string) => {
+    try {
+      await navigator.clipboard.writeText(
+        `${window.location.origin}/video/${videoId}`
+      );
+      toast.success("Link copied to clipboard!");
+    } catch (error) {
+      console.error("Error sharing video:", error);
+      toast.error("Failed to copy link");
+    }
+  };
 
-  if (videos.length === 0) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-black text-white text-center p-4">
-        <div>
-          <p className="text-xl mb-2">No videos yet</p>
-          <p className="text-sm text-gray-400">Be the first to share content!</p>
+  const handleFollow = async (userId: string) => {
+    if (!currentUser) {
+      toast.error("Please login to follow users");
+      return;
+    }
+
+    try {
+      const isFollowing = followedUsers.has(userId);
+
+      if (isFollowing) {
+        const { error } = await supabase
+          .from("follows")
+          .delete()
+          .eq("follower_id", currentUser)
+          .eq("followed_id", userId);
+
+        if (error) throw error;
+        setFollowedUsers(prev => {
+          const next = new Set(prev);
+          next.delete(userId);
+          return next;
+        });
+        toast.success("Unfollowed");
+      } else {
+        const { error} = await supabase
+          .from("follows")
+          .insert({ follower_id: currentUser, followed_id: userId });
+
+        if (error) throw error;
+        setFollowedUsers(prev => new Set(prev).add(userId));
+        toast.success("Following!");
+      }
+    } catch (error) {
+      console.error("Error following/unfollowing:", error);
+      toast.error("Failed to update follow status");
+    }
+  };
+
+  const renderVideoCard = (video: VideoPost) => (
+    <motion.div
+      key={video.id}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-card rounded-lg shadow-lg overflow-hidden mb-6"
+    >
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <span className="text-sm font-semibold">{video.username[0].toUpperCase()}</span>
+            </div>
+            <span className="font-semibold">{video.username}</span>
+          </div>
+          {currentUser && video.user_id !== currentUser && (
+            <Button
+              variant={followedUsers.has(video.user_id) ? "outline" : "default"}
+              size="sm"
+              onClick={() => handleFollow(video.user_id)}
+            >
+              {followedUsers.has(video.user_id) ? (
+                <>
+                  <UserMinus className="h-4 w-4 mr-1" />
+                  Unfollow
+                </>
+              ) : (
+                <>
+                  <UserPlus className="h-4 w-4 mr-1" />
+                  Follow
+                </>
+              )}
+            </Button>
+          )}
+        </div>
+        <p className="text-sm mb-3">{video.caption}</p>
+      </div>
+
+      <video
+        src={video.video_url}
+        className="w-full aspect-video object-cover"
+        controls
+        preload="metadata"
+      />
+
+      <div className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleLike(video.id)}
+              className={likedVideos.has(video.id) ? "text-red-500" : ""}
+            >
+              <Heart
+                className={`h-5 w-5 ${likedVideos.has(video.id) ? "fill-current" : ""}`}
+              />
+              <span className="ml-1">{video.likes}</span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedVideoId(video.id)}
+            >
+              <MessageCircle className="h-5 w-5" />
+              <span className="ml-1">{commentCounts[video.id] || 0}</span>
+            </Button>
+
+            <Button variant="ghost" size="sm" onClick={() => handleShare(video.id)}>
+              <Share2 className="h-5 w-5" />
+            </Button>
+          </div>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleBookmark(video.id)}
+            className={bookmarkedVideos.has(video.id) ? "text-primary" : ""}
+          >
+            <Bookmark
+              className={`h-5 w-5 ${bookmarkedVideos.has(video.id) ? "fill-current" : ""}`}
+            />
+          </Button>
         </div>
       </div>
-    );
-  }
+    </motion.div>
+  );
 
   return (
-    <div className="relative h-screen overflow-y-scroll snap-y snap-mandatory bg-black text-white">
-      {videos.map((v) => (
-        <motion.div
-          key={v.id}
-          className="h-screen flex flex-col justify-end items-center snap-start relative"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <video
-            src={v.video_url}
-            className="absolute inset-0 w-full h-full object-cover"
-            controls
-            loop
-            autoPlay
-            muted
-          />
-          <div className="absolute bottom-20 left-4 right-4 z-10">
-            <div className="flex justify-between items-end">
-              <div className="text-left flex-1">
-                <p className="font-bold text-white drop-shadow-lg">@{v.username}</p>
-                <p className="text-sm text-gray-200 drop-shadow-lg">{v.caption}</p>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <h1 className="text-3xl font-bold mb-6">🔥 Video Feed</h1>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="forYou">For You</TabsTrigger>
+            <TabsTrigger value="following">Following</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="forYou" className="mt-6">
+            {loading ? (
+              <div className="text-center py-12">Loading amazing content...</div>
+            ) : videos.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">No videos yet</div>
+            ) : (
+              videos.map(renderVideoCard)
+            )}
+          </TabsContent>
+
+          <TabsContent value="following" className="mt-6">
+            {!currentUser ? (
+              <div className="text-center py-12 text-muted-foreground">
+                Please login to see videos from people you follow
               </div>
-              <div className="flex flex-col gap-4 items-center">
-                {/* Follow Button with Avatar */}
-                <div className="relative">
-                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                    <span className="text-white font-bold text-lg">{v.username[0].toUpperCase()}</span>
-                  </div>
-                  <Button
-                    size="icon"
-                    className="absolute -bottom-2 left-1/2 -translate-x-1/2 h-6 w-6 rounded-full bg-primary hover:bg-primary/90"
-                  >
-                    <UserPlus className="h-3 w-3" />
-                  </Button>
-                </div>
-
-                {/* Like Button */}
-                <motion.div
-                  whileTap={{ scale: 0.8 }}
-                  animate={likedVideos.has(v.id) ? { scale: [1, 1.3, 1] } : {}}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 text-white"
-                    onClick={() => handleLike(v.id)}
-                  >
-                    <div className="flex flex-col items-center gap-1">
-                      <Heart 
-                        className={`h-6 w-6 transition-all ${likedVideos.has(v.id) ? 'fill-red-500 text-red-500' : ''}`}
-                      />
-                      <span className="text-xs font-semibold">{v.likes}</span>
-                    </div>
-                  </Button>
-                </motion.div>
-
-                {/* Comments Button */}
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 text-white"
-                  onClick={() => setSelectedVideoId(v.id)}
-                >
-                  <div className="flex flex-col items-center gap-1">
-                    <MessageCircle className="h-6 w-6" />
-                    <span className="text-xs font-semibold">{commentCounts[v.id] || 0}</span>
-                  </div>
-                </Button>
-
-                {/* Bookmark Button */}
-                <motion.div
-                  whileTap={{ scale: 0.8 }}
-                  animate={bookmarkedVideos.has(v.id) ? { scale: [1, 1.2, 1] } : {}}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 text-white"
-                    onClick={() => handleBookmark(v.id)}
-                  >
-                    <div className="flex flex-col items-center gap-1">
-                      <Bookmark 
-                        className={`h-6 w-6 transition-all ${bookmarkedVideos.has(v.id) ? 'fill-yellow-500 text-yellow-500' : ''}`}
-                      />
-                    </div>
-                  </Button>
-                </motion.div>
-
-                {/* Share Button */}
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 text-white"
-                >
-                  <div className="flex flex-col items-center gap-1">
-                    <Share2 className="h-6 w-6" />
-                  </div>
-                </Button>
+            ) : followingVideos.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                No videos from followed users yet. Start following creators!
               </div>
-            </div>
-          </div>
-        </motion.div>
-      ))}
+            ) : (
+              followingVideos.map(renderVideoCard)
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
 
-      {selectedVideoId && (
-        <CommentsDrawer
-          videoId={selectedVideoId}
-          isOpen={!!selectedVideoId}
-          onClose={() => setSelectedVideoId(null)}
-          commentCount={commentCounts[selectedVideoId] || 0}
-          onCommentAdded={() => {
+      <CommentsDrawer
+        videoId={selectedVideoId || ""}
+        isOpen={!!selectedVideoId}
+        onClose={() => setSelectedVideoId(null)}
+        commentCount={selectedVideoId ? commentCounts[selectedVideoId] || 0 : 0}
+        onCommentAdded={() => {
+          if (selectedVideoId) {
             fetchCommentCounts([selectedVideoId]);
-          }}
-        />
-      )}
+          }
+        }}
+      />
     </div>
   );
 }
