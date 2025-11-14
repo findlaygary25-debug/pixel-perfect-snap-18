@@ -7,6 +7,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 type ActivityItem = {
   id: string;
@@ -22,6 +23,7 @@ export default function Activity() {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [filter, setFilter] = useState<"all" | "videos" | "comments">("all");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -272,6 +274,13 @@ export default function Activity() {
     );
   }
 
+  const filteredActivities = activities.filter(activity => {
+    if (filter === "all") return true;
+    if (filter === "videos") return activity.type === "video";
+    if (filter === "comments") return activity.type === "comment";
+    return true;
+  });
+
   if (activities.length === 0) {
     return (
       <div className="container max-w-2xl mx-auto p-6">
@@ -289,9 +298,35 @@ export default function Activity() {
 
   return (
     <div className="container max-w-2xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Activity Feed</h1>
-      <div className="space-y-4">
-        {activities.map((activity) => (
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">Activity Feed</h1>
+        
+        <ToggleGroup type="single" value={filter} onValueChange={(value) => value && setFilter(value as typeof filter)}>
+          <ToggleGroupItem value="all" aria-label="Show all activities">
+            All
+          </ToggleGroupItem>
+          <ToggleGroupItem value="videos" aria-label="Show only videos">
+            <Video className="h-4 w-4 mr-2" />
+            Videos
+          </ToggleGroupItem>
+          <ToggleGroupItem value="comments" aria-label="Show only comments">
+            <MessageCircle className="h-4 w-4 mr-2" />
+            Comments
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </div>
+
+      {filteredActivities.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-muted-foreground">
+              No {filter} activities to show. Try switching to a different filter.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {filteredActivities.map((activity) => (
           <Card key={`${activity.type}-${activity.id}`} className="hover:bg-muted/50 transition-colors">
             <CardContent className="p-4">
               <div className="flex items-start gap-4">
@@ -333,8 +368,9 @@ export default function Activity() {
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
