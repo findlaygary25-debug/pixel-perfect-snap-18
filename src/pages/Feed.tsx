@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Heart, MessageCircle, Bookmark, Share2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import CommentsDrawer from "@/components/CommentsDrawer";
 
 type VideoPost = {
   id: string;
@@ -12,6 +13,7 @@ type VideoPost = {
   username: string;
   likes: number;
   views: number;
+  comments?: number;
 };
 
 export default function Feed() {
@@ -20,6 +22,8 @@ export default function Feed() {
   const [likedVideos, setLikedVideos] = useState<Set<string>>(new Set());
   const [bookmarkedVideos, setBookmarkedVideos] = useState<Set<string>>(new Set());
   const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     fetchVideos();
@@ -58,10 +62,36 @@ export default function Feed() {
 
       if (error) throw error;
       setVideos(data || []);
+      
+      // Fetch comment counts for each video
+      if (data) {
+        fetchCommentCounts(data.map(v => v.id));
+      }
     } catch (error) {
       console.error("Error fetching videos:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCommentCounts = async (videoIds: string[]) => {
+    try {
+      const counts: Record<string, number> = {};
+      
+      for (const videoId of videoIds) {
+        const { count, error } = await supabase
+          .from("comments")
+          .select("*", { count: "exact", head: true })
+          .eq("video_id", videoId);
+
+        if (!error && count !== null) {
+          counts[videoId] = count;
+        }
+      }
+      
+      setCommentCounts(counts);
+    } catch (error) {
+      console.error("Error fetching comment counts:", error);
     }
   };
 
@@ -211,10 +241,11 @@ export default function Feed() {
                   size="icon"
                   variant="ghost"
                   className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50 text-white"
+                  onClick={() => setSelectedVideoId(v.id)}
                 >
                   <div className="flex flex-col items-center gap-1">
                     <MessageCircle className="h-6 w-6" />
-                    <span className="text-xs font-semibold">0</span>
+                    <span className="text-xs font-semibold">{commentCounts[v.id] || 0}</span>
                   </div>
                 </Button>
 
@@ -253,6 +284,18 @@ export default function Feed() {
           </div>
         </motion.div>
       ))}
+
+      {selectedVideoId && (
+        <CommentsDrawer
+          videoId={selectedVideoId}
+          isOpen={!!selectedVideoId}
+          onClose={() => setSelectedVideoId(null)}
+          commentCount={commentCounts[selectedVideoId] || 0}
+          onCommentAdded={() => {
+            fetchCommentCounts([selectedVideoId]);
+          }}
+        />
+      )}
     </div>
   );
 }
