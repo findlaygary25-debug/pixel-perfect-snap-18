@@ -33,6 +33,8 @@ export default function Feed() {
   const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
   const [selectedPromoteVideo, setSelectedPromoteVideo] = useState<VideoPost | null>(null);
   const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
+  const [doubleTapHearts, setDoubleTapHearts] = useState<Set<string>>(new Set());
+  const lastTapRef = useRef<{ videoId: string; time: number } | null>(null);
 
   // Auto-play videos when they come into view (mobile)
   useEffect(() => {
@@ -74,6 +76,33 @@ export default function Feed() {
       videoRefs.current.delete(videoId);
     }
   }, []);
+
+  const handleDoubleTap = async (videoId: string) => {
+    const now = Date.now();
+    const lastTap = lastTapRef.current;
+
+    if (lastTap && lastTap.videoId === videoId && now - lastTap.time < 300) {
+      // Double tap detected
+      lastTapRef.current = null;
+      
+      // Show heart animation
+      setDoubleTapHearts(prev => new Set(prev).add(videoId));
+      setTimeout(() => {
+        setDoubleTapHearts(prev => {
+          const next = new Set(prev);
+          next.delete(videoId);
+          return next;
+        });
+      }, 1000);
+
+      // Trigger like if not already liked
+      if (!likedVideos.has(videoId)) {
+        await handleLike(videoId);
+      }
+    } else {
+      lastTapRef.current = { videoId, time: now };
+    }
+  };
 
   useEffect(() => {
     fetchVideos();
@@ -357,16 +386,35 @@ export default function Feed() {
 
       {/* Mobile: Video with actions on the right side */}
       <div className="relative md:static">
-        <video
-          ref={(el) => setVideoRef(video.id, el)}
-          src={video.video_url}
-          className="w-full aspect-video object-cover"
-          controls
-          preload="metadata"
-          playsInline
-          muted
-          loop
-        />
+        <div
+          className="relative"
+          onClick={() => handleDoubleTap(video.id)}
+          onTouchEnd={() => handleDoubleTap(video.id)}
+        >
+          <video
+            ref={(el) => setVideoRef(video.id, el)}
+            src={video.video_url}
+            className="w-full aspect-video object-cover"
+            controls
+            preload="metadata"
+            playsInline
+            muted
+            loop
+          />
+          
+          {/* Double-tap heart animation */}
+          {doubleTapHearts.has(video.id) && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1.2, opacity: 1 }}
+              exit={{ scale: 1.5, opacity: 0 }}
+              transition={{ duration: 0.5 }}
+              className="absolute inset-0 flex items-center justify-center pointer-events-none"
+            >
+              <Heart className="w-24 h-24 text-red-500 fill-red-500" />
+            </motion.div>
+          )}
+        </div>
         
         {/* Mobile action buttons - right side */}
         <div className="absolute right-2 bottom-20 flex flex-col gap-3 md:hidden">
