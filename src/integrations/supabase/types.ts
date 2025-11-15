@@ -517,6 +517,54 @@ export type Database = {
           },
         ]
       }
+      scheduled_videos: {
+        Row: {
+          created_at: string
+          id: string
+          published_video_id: string | null
+          scheduled_time: string
+          status: string
+          updated_at: string
+          user_id: string
+          youtube_channel: string | null
+          youtube_description: string | null
+          youtube_embed_url: string
+          youtube_thumbnail: string | null
+          youtube_title: string
+          youtube_video_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          published_video_id?: string | null
+          scheduled_time: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          youtube_channel?: string | null
+          youtube_description?: string | null
+          youtube_embed_url: string
+          youtube_thumbnail?: string | null
+          youtube_title: string
+          youtube_video_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          published_video_id?: string | null
+          scheduled_time?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          youtube_channel?: string | null
+          youtube_description?: string | null
+          youtube_embed_url?: string
+          youtube_thumbnail?: string | null
+          youtube_title?: string
+          youtube_video_id?: string
+        }
+        Relationships: []
+      }
       social_shares: {
         Row: {
           id: string
