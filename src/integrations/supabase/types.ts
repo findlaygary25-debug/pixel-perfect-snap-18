@@ -531,6 +531,10 @@ export type Database = {
           level: number
         }[]
       }
+      increment_wallet_balance: {
+        Args: { amount: number; user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       order_status: "pending" | "processing" | "completed" | "cancelled"
