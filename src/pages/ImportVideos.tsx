@@ -5,9 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Download, Eye, ThumbsUp, Clock, Youtube } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, Download, Eye, ThumbsUp, Clock, Youtube, CalendarIcon, Timer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format, addDays, setHours, setMinutes } from "date-fns";
+import { cn } from "@/lib/utils";
 
 type YouTubeVideo = {
   id: string;
@@ -28,6 +32,9 @@ export default function ImportVideos() {
   const [videos, setVideos] = useState<YouTubeVideo[]>([]);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState<Set<string>>(new Set());
+  const [schedulingVideo, setSchedulingVideo] = useState<YouTubeVideo | null>(null);
+  const [scheduleDate, setScheduleDate] = useState<Date>();
+  const [scheduleTime, setScheduleTime] = useState<string>("09:00");
   const { toast } = useToast();
 
   const searchVideos = async () => {
@@ -56,7 +63,57 @@ export default function ImportVideos() {
     }
   };
 
-  const importVideo = async (video: YouTubeVideo) => {
+  const scheduleVideo = async () => {
+    if (!schedulingVideo || !scheduleDate) return;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to schedule videos",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const [hours, minutes] = scheduleTime.split(':').map(Number);
+      const scheduledTime = setMinutes(setHours(scheduleDate, hours), minutes);
+
+      const { error } = await supabase
+        .from('scheduled_videos')
+        .insert({
+          user_id: user.id,
+          youtube_video_id: schedulingVideo.id,
+          youtube_title: schedulingVideo.title,
+          youtube_description: schedulingVideo.description,
+          youtube_thumbnail: schedulingVideo.thumbnail,
+          youtube_channel: schedulingVideo.channelTitle,
+          youtube_embed_url: schedulingVideo.embedUrl,
+          scheduled_time: scheduledTime.toISOString(),
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Video scheduled",
+        description: `Will be published on ${format(scheduledTime, "PPP 'at' p")}`,
+      });
+
+      setSchedulingVideo(null);
+      setScheduleDate(undefined);
+      setScheduleTime("09:00");
+    } catch (error) {
+      console.error('Error scheduling video:', error);
+      toast({
+        title: "Scheduling failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const importVideo = async (video: YouTubeVideo, immediate: boolean = true) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       toast({
@@ -64,6 +121,11 @@ export default function ImportVideos() {
         description: "Please sign in to import videos",
         variant: "destructive",
       });
+      return;
+    }
+
+    if (!immediate) {
+      setSchedulingVideo(video);
       return;
     }
 
@@ -205,11 +267,18 @@ export default function ImportVideos() {
                   <Button
                     size="sm"
                     className="flex-1"
-                    onClick={() => importVideo(video)}
+                    onClick={() => importVideo(video, true)}
                     disabled={importing.has(video.id)}
                   >
                     <Download className="h-3 w-3 mr-1" />
-                    {importing.has(video.id) ? 'Importing...' : 'Import'}
+                    {importing.has(video.id) ? 'Importing...' : 'Import Now'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => importVideo(video, false)}
+                  >
+                    <Timer className="h-3 w-3" />
                   </Button>
                   <Button
                     size="sm"
@@ -228,6 +297,132 @@ export default function ImportVideos() {
           <CardContent className="py-12 text-center text-muted-foreground">
             <Youtube className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>Search for Christian short videos to import to your collection</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Schedule Dialog */}
+      {schedulingVideo && (
+        <Card className="fixed inset-0 z-50 m-auto max-w-lg max-h-[90vh] overflow-auto">
+          <CardHeader>
+            <CardTitle>Schedule Video</CardTitle>
+            <p className="text-sm text-muted-foreground mt-2">{schedulingVideo.title}</p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Select Date</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !scheduleDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {scheduleDate ? format(scheduleDate, "PPP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={scheduleDate}
+                    onSelect={setScheduleDate}
+                    disabled={(date) => date < new Date()}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Select Time</label>
+              <Select value={scheduleTime} onValueChange={setScheduleTime}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 24 }, (_, i) => {
+                    const hour = i.toString().padStart(2, '0');
+                    return ['00', '30'].map(minute => (
+                      <SelectItem key={`${hour}:${minute}`} value={`${hour}:${minute}`}>
+                        {`${hour}:${minute}`}
+                      </SelectItem>
+                    ));
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Quick Schedule</label>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setScheduleDate(addDays(new Date(), 1));
+                    setScheduleTime("09:00");
+                  }}
+                >
+                  Tomorrow 9 AM
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setScheduleDate(addDays(new Date(), 1));
+                    setScheduleTime("18:00");
+                  }}
+                >
+                  Tomorrow 6 PM
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setScheduleDate(addDays(new Date(), 7));
+                    setScheduleTime("12:00");
+                  }}
+                >
+                  Next Week Noon
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setScheduleDate(new Date());
+                    const now = new Date();
+                    const nextHour = now.getHours() + 1;
+                    setScheduleTime(`${nextHour.toString().padStart(2, '0')}:00`);
+                  }}
+                >
+                  In 1 Hour
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button
+                className="flex-1"
+                onClick={scheduleVideo}
+                disabled={!scheduleDate}
+              >
+                Schedule Video
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSchedulingVideo(null);
+                  setScheduleDate(undefined);
+                  setScheduleTime("09:00");
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}

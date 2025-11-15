@@ -24,6 +24,7 @@ import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import Shares from "./pages/Shares";
 import ImportVideos from "./pages/ImportVideos";
+import ScheduledVideos from "./pages/ScheduledVideos";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,6 +65,7 @@ const App = () => (
                   <Route path="/profile" element={<Profile />} />
           <Route path="/shares" element={<Shares />} />
           <Route path="/import" element={<ImportVideos />} />
+          <Route path="/scheduled" element={<ScheduledVideos />} />
           <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>
