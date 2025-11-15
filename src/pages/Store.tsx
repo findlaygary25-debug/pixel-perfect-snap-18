@@ -16,6 +16,7 @@ import { useUndoableAction } from "@/hooks/useUndoableAction";
 import { Plus, Pencil, Trash2, Package, ShoppingCart, Truck, CheckSquare, Filter, X, Save, Calendar as CalendarIcon } from "lucide-react";
 import { PlaceOrderDialog } from "@/components/PlaceOrderDialog";
 import { format } from "date-fns";
+import { BreadcrumbSchema } from "@/components/BreadcrumbSchema";
 
 type Store = {
   id: string;
@@ -827,6 +828,12 @@ export default function StorePage() {
 
   return (
     <div className="container mx-auto p-6">
+      <BreadcrumbSchema 
+        items={[
+          { name: "Home", url: "https://voice2fire.com/" },
+          { name: "Store", url: "https://voice2fire.com/store" }
+        ]}
+      />
       <h1 className="text-3xl font-bold mb-6">Store Management</h1>
       
       <Tabs defaultValue="products" className="space-y-6">
