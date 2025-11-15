@@ -35,6 +35,11 @@ export default function Feed() {
   const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
   const [doubleTapHearts, setDoubleTapHearts] = useState<Set<string>>(new Set());
   const lastTapRef = useRef<{ videoId: string; time: number } | null>(null);
+  const [isPulling, setIsPulling] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const touchStartY = useRef(0);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Auto-play videos when they come into view (mobile)
   useEffect(() => {
@@ -101,6 +106,43 @@ export default function Feed() {
       }
     } else {
       lastTapRef.current = { videoId, time: now };
+    }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const container = containerRef.current;
+    if (container && container.scrollTop === 0) {
+      touchStartY.current = e.touches[0].clientY;
+      setIsPulling(true);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isPulling) return;
+    
+    const touchY = e.touches[0].clientY;
+    const distance = touchY - touchStartY.current;
+    
+    if (distance > 0 && distance < 150) {
+      setPullDistance(distance);
+    }
+  };
+
+  const handleTouchEnd = async () => {
+    if (isPulling && pullDistance > 80) {
+      setIsRefreshing(true);
+      await fetchVideos();
+      if (activeTab === "following") {
+        await fetchFollowingVideos();
+      }
+      setTimeout(() => {
+        setIsRefreshing(false);
+        setPullDistance(0);
+        setIsPulling(false);
+      }, 500);
+    } else {
+      setPullDistance(0);
+      setIsPulling(false);
     }
   };
 
@@ -541,7 +583,35 @@ export default function Feed() {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div 
+      ref={containerRef}
+      className="min-h-screen bg-background overflow-y-auto"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Pull to refresh indicator */}
+      <div 
+        className="fixed top-0 left-0 right-0 flex justify-center z-50 transition-all duration-200"
+        style={{
+          transform: `translateY(${isPulling ? Math.min(pullDistance - 40, 60) : -100}px)`,
+          opacity: isPulling ? Math.min(pullDistance / 80, 1) : 0
+        }}
+      >
+        <div className="bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+          {isRefreshing ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-foreground border-t-transparent" />
+              <span className="text-sm font-medium">Refreshing...</span>
+            </>
+          ) : (
+            <span className="text-sm font-medium">
+              {pullDistance > 80 ? 'Release to refresh' : 'Pull to refresh'}
+            </span>
+          )}
+        </div>
+      </div>
+
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         <h1 className="text-3xl font-bold mb-6">🔥 Video Feed</h1>
 
