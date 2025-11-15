@@ -40,6 +40,32 @@ export default function OrdersPage() {
     loadOrders();
   }, []);
 
+  useEffect(() => {
+    // Set up realtime subscription for orders
+    const channel = supabase
+      .channel('customer-orders')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders'
+        },
+        (payload) => {
+          console.log('Order change detected for customer:', payload);
+          // Reload orders when changes occur
+          loadOrders();
+        }
+      )
+      .subscribe((status) => {
+        console.log('Customer orders subscription status:', status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const loadOrders = async () => {
     setLoading(true);
     const user = (await supabase.auth.getUser()).data.user;

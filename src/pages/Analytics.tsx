@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { TrendingUp, DollarSign, Package, ShoppingCart } from "lucide-react";
+import { TrendingUp, DollarSign, Package, ShoppingCart, Wifi } from "lucide-react";
 
 type Order = {
   id: string;
@@ -30,9 +31,38 @@ export default function AnalyticsPage() {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [dateRange, setDateRange] = useState<DateRange>("30days");
   const [loading, setLoading] = useState(true);
+  const [isRealTimeConnected, setIsRealTimeConnected] = useState(false);
 
   useEffect(() => {
     loadAnalyticsData();
+  }, [dateRange]);
+
+  useEffect(() => {
+    // Set up realtime subscription for orders
+    const channel = supabase
+      .channel('analytics-orders')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders'
+        },
+        (payload) => {
+          console.log('Order change detected:', payload);
+          // Reload analytics data when orders change
+          loadAnalyticsData();
+        }
+      )
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+        setIsRealTimeConnected(status === 'SUBSCRIBED');
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+      setIsRealTimeConnected(false);
+    };
   }, [dateRange]);
 
   const getDateRangeStart = (range: DateRange): Date => {
@@ -161,8 +191,21 @@ export default function AnalyticsPage() {
     <div className="container mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Analytics Dashboard</h1>
-          <p className="text-muted-foreground">Track your store's performance and trends</p>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
+            <Badge 
+              variant={isRealTimeConnected ? "default" : "secondary"} 
+              className={`flex items-center gap-1 ${isRealTimeConnected ? 'bg-green-500 hover:bg-green-600' : ''}`}
+            >
+              <Wifi className="h-3 w-3" />
+              {isRealTimeConnected ? 'Live' : 'Connecting...'}
+            </Badge>
+          </div>
+          <p className="text-muted-foreground">
+            {isRealTimeConnected 
+              ? 'Dashboard updates automatically when new orders arrive' 
+              : 'Track your store\'s performance and trends'}
+          </p>
         </div>
         <Select value={dateRange} onValueChange={(value) => setDateRange(value as DateRange)}>
           <SelectTrigger className="w-40">
