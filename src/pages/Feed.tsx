@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import CommentsDrawer from "@/components/CommentsDrawer";
+import { PromotePostDialog } from "@/components/PromotePostDialog";
 
 type VideoPost = {
   id: string;
@@ -29,6 +30,8 @@ export default function Feed() {
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const [activeTab, setActiveTab] = useState("forYou");
+  const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
+  const [selectedPromoteVideo, setSelectedPromoteVideo] = useState<VideoPost | null>(null);
 
   useEffect(() => {
     fetchVideos();
@@ -346,16 +349,31 @@ export default function Feed() {
             </Button>
           </div>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleBookmark(video.id)}
-            className={bookmarkedVideos.has(video.id) ? "text-primary" : ""}
-          >
-            <Bookmark
-              className={`h-5 w-5 ${bookmarkedVideos.has(video.id) ? "fill-current" : ""}`}
-            />
-          </Button>
+          <div className="flex gap-2">
+            {currentUser && video.user_id === currentUser && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSelectedPromoteVideo(video);
+                  setPromoteDialogOpen(true);
+                }}
+                className="text-primary"
+              >
+                <TrendingUp className="h-5 w-5" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleBookmark(video.id)}
+              className={bookmarkedVideos.has(video.id) ? "text-primary" : ""}
+            >
+              <Bookmark
+                className={`h-5 w-5 ${bookmarkedVideos.has(video.id) ? "fill-current" : ""}`}
+              />
+            </Button>
+          </div>
         </div>
       </div>
     </motion.div>
@@ -409,6 +427,16 @@ export default function Feed() {
           }
         }}
       />
+
+      {selectedPromoteVideo && (
+        <PromotePostDialog
+          open={promoteDialogOpen}
+          onOpenChange={setPromoteDialogOpen}
+          videoId={selectedPromoteVideo.id}
+          videoUrl={selectedPromoteVideo.video_url}
+          caption={selectedPromoteVideo.caption || ""}
+        />
+      )}
     </div>
   );
 }
