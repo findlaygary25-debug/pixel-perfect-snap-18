@@ -54,6 +54,7 @@ export default function Feed() {
   const [captionsEnabled, setCaptionsEnabled] = useState<Set<string>>(new Set());
   const [captionTextSize, setCaptionTextSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [captionBackground, setCaptionBackground] = useState<'none' | 'semi' | 'solid'>('semi');
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   // Auto-play videos when they come into view (mobile)
   useEffect(() => {
@@ -165,6 +166,20 @@ export default function Feed() {
   // Keyboard shortcuts for video control
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Handle "?" to show shortcuts overlay
+      if (e.key === '?') {
+        e.preventDefault();
+        setShowShortcuts(true);
+        return;
+      }
+      
+      // Handle Escape to close shortcuts overlay
+      if (e.key === 'Escape' && showShortcuts) {
+        e.preventDefault();
+        setShowShortcuts(false);
+        return;
+      }
+      
       // Don't trigger shortcuts if user is typing in an input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
         return;
@@ -188,6 +203,39 @@ export default function Feed() {
               next.delete(currentVisibleVideoId);
               return next;
             });
+          }
+          break;
+        
+        case 'KeyM':
+          e.preventDefault();
+          setMutedVideos((prev) => {
+            const next = new Set(prev);
+            if (next.has(currentVisibleVideoId)) {
+              next.delete(currentVisibleVideoId);
+              videoElement.muted = false;
+            } else {
+              next.add(currentVisibleVideoId);
+              videoElement.muted = true;
+            }
+            return next;
+          });
+          break;
+        
+        case 'KeyF':
+          e.preventDefault();
+          const videoContainer = videoElement.parentElement;
+          if (!videoContainer) return;
+          
+          if (fullscreenVideoId === currentVisibleVideoId) {
+            if (document.exitFullscreen) {
+              document.exitFullscreen();
+            }
+            setFullscreenVideoId(null);
+          } else {
+            if (videoContainer.requestFullscreen) {
+              videoContainer.requestFullscreen();
+            }
+            setFullscreenVideoId(currentVisibleVideoId);
           }
           break;
         
@@ -215,7 +263,7 @@ export default function Feed() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentVisibleVideoId]);
+  }, [currentVisibleVideoId, showShortcuts, playingVideos, fullscreenVideoId, mutedVideos]);
 
   const setVideoRef = useCallback((videoId: string, element: HTMLVideoElement | null) => {
     if (element) {
@@ -1172,6 +1220,90 @@ export default function Feed() {
           videoUrl={selectedPromoteVideo.video_url}
           caption={selectedPromoteVideo.caption || ""}
         />
+      )}
+      
+      {/* Keyboard Shortcuts Overlay */}
+      {showShortcuts && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          onClick={() => setShowShortcuts(false)}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="bg-background border border-border rounded-lg shadow-xl p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold">Keyboard Shortcuts</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowShortcuts(false)}
+                className="h-8 w-8 p-0"
+              >
+                ✕
+              </Button>
+            </div>
+            
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-primary">Playback Controls</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between py-2 border-b border-border">
+                    <span className="text-muted-foreground">Play / Pause</span>
+                    <kbd className="px-3 py-1.5 text-sm font-semibold bg-muted rounded">Space</kbd>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-border">
+                    <span className="text-muted-foreground">Seek backward 5 seconds</span>
+                    <kbd className="px-3 py-1.5 text-sm font-semibold bg-muted rounded">←</kbd>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-border">
+                    <span className="text-muted-foreground">Seek forward 5 seconds</span>
+                    <kbd className="px-3 py-1.5 text-sm font-semibold bg-muted rounded">→</kbd>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-primary">Audio & Display</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between py-2 border-b border-border">
+                    <span className="text-muted-foreground">Mute / Unmute</span>
+                    <kbd className="px-3 py-1.5 text-sm font-semibold bg-muted rounded">M</kbd>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-border">
+                    <span className="text-muted-foreground">Volume up</span>
+                    <kbd className="px-3 py-1.5 text-sm font-semibold bg-muted rounded">↑</kbd>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-border">
+                    <span className="text-muted-foreground">Volume down</span>
+                    <kbd className="px-3 py-1.5 text-sm font-semibold bg-muted rounded">↓</kbd>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-border">
+                    <span className="text-muted-foreground">Toggle fullscreen</span>
+                    <kbd className="px-3 py-1.5 text-sm font-semibold bg-muted rounded">F</kbd>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-primary">General</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between py-2 border-b border-border">
+                    <span className="text-muted-foreground">Show keyboard shortcuts</span>
+                    <kbd className="px-3 py-1.5 text-sm font-semibold bg-muted rounded">?</kbd>
+                  </div>
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-muted-foreground">Close this dialog</span>
+                    <kbd className="px-3 py-1.5 text-sm font-semibold bg-muted rounded">Esc</kbd>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
       )}
     </div>
   );
