@@ -45,16 +45,11 @@ const App = () => (
               <header className="h-12 flex items-center justify-between border-b bg-background px-4">
                 <div className="flex items-center gap-3">
                   <SidebarTrigger className="md:block" />
-                  <div className="flex items-center gap-2">
-                    <img 
-                      src="/favicon.png" 
-                      alt="Voice2Fire Logo" 
-                      className="w-8 h-8 object-contain"
-                    />
-                    <h1 className="font-bold text-lg bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500 bg-clip-text text-transparent">
-                      Voice2Fire
-                    </h1>
-                  </div>
+                  <img 
+                    src="/voice2fire-logo.png" 
+                    alt="Voice2Fire" 
+                    className="h-10 w-auto object-contain hover-scale"
+                  />
                 </div>
                 <NotificationBell />
               </header>
