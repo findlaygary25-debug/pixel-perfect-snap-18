@@ -1,40 +1,53 @@
 import { useEffect, useState } from "react";
 
 export const LoadingScreen = () => {
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
+  const [shouldShow, setShouldShow] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(false);
-    }, 2000);
+    const hasVisited = localStorage.getItem("voice2fire_visited");
+    
+    if (!hasVisited) {
+      setShouldShow(true);
+      setIsVisible(true);
+      localStorage.setItem("voice2fire_visited", "true");
+      
+      const timer = setTimeout(() => {
+        setIsVisible(false);
+      }, 3000);
 
-    return () => clearTimeout(timer);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
-  if (!isVisible) return null;
+  if (!shouldShow || !isVisible) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-background via-background to-muted animate-fade-in">
+    <div 
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-background via-background to-muted transition-opacity duration-500 ${
+        isVisible ? "animate-fade-in opacity-100" : "animate-fade-out opacity-0"
+      }`}
+    >
       <div className="flex flex-col items-center gap-8">
         <div className="relative animate-scale-in">
-          <div className="absolute inset-0 animate-pulse opacity-50 blur-2xl">
+          <div className="absolute inset-0 animate-pulse opacity-50 blur-3xl">
             <img
               src="/favicon.png"
               alt="Voice2Fire"
-              className="w-32 h-32 object-contain"
+              className="w-40 h-40 object-contain"
             />
           </div>
           <img
             src="/favicon.png"
             alt="Voice2Fire"
-            className="w-32 h-32 object-contain relative z-10 animate-[pulse_2s_ease-in-out_infinite]"
+            className="w-40 h-40 object-contain relative z-10 animate-[pulse_2s_ease-in-out_infinite]"
           />
         </div>
-        <div className="flex flex-col items-center gap-2 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500 bg-clip-text text-transparent">
+        <div className="flex flex-col items-center gap-3 animate-fade-in" style={{ animationDelay: "0.5s" }}>
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500 bg-clip-text text-transparent">
             Voice2Fire
           </h1>
-          <p className="text-muted-foreground text-sm">Share Your Voice, Ignite Your Passion</p>
+          <p className="text-muted-foreground text-base">Share Your Voice, Ignite Your Passion</p>
         </div>
       </div>
     </div>
