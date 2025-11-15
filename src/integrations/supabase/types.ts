@@ -285,6 +285,41 @@ export type Database = {
         }
         Relationships: []
       }
+      live_stream_messages: {
+        Row: {
+          created_at: string | null
+          id: string
+          live_stream_id: string
+          message: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          live_stream_id: string
+          message: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          live_stream_id?: string
+          message?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_stream_messages_live_stream_id_fkey"
+            columns: ["live_stream_id"]
+            isOneToOne: false
+            referencedRelation: "live_streams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       live_streams: {
         Row: {
           created_at: string | null

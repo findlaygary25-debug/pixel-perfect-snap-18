@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Video, VideoOff, Mic, MicOff, Radio, StopCircle, Users } from "lucide-react";
 import { motion } from "framer-motion";
+import LiveChat from "@/components/LiveChat";
 
 export default function Live() {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ export default function Live() {
   const [micEnabled, setMicEnabled] = useState(true);
   const [viewerCount, setViewerCount] = useState(0);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUsername, setCurrentUsername] = useState("");
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const liveStreamId = useRef<string | null>(null);
@@ -38,6 +40,15 @@ export default function Live() {
     }
     setIsAuthenticated(true);
     setCurrentUser(session.user);
+
+    // Get username
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("user_id", session.user.id)
+      .single();
+    
+    setCurrentUsername(profileData?.username || 'Unknown');
   };
 
   const startPreview = async () => {
@@ -173,9 +184,9 @@ export default function Live() {
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-3">
         {/* Video Preview */}
-        <Card>
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Preview</CardTitle>
             <CardDescription>
@@ -302,6 +313,17 @@ export default function Live() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Live Chat */}
+        {isLive && liveStreamId.current && (
+          <Card className="lg:col-span-1 h-[600px]">
+            <LiveChat 
+              liveStreamId={liveStreamId.current}
+              currentUserId={currentUser.id}
+              currentUsername={currentUsername}
+            />
+          </Card>
+        )}
       </div>
     </div>
   );
