@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { VideoSchema } from "@/components/VideoSchema";
 import { BreadcrumbSchema } from "@/components/BreadcrumbSchema";
+import { SocialShareDialog } from "@/components/SocialShareDialog";
 
 type VideoPost = {
   id: string;
@@ -50,6 +51,8 @@ export default function Feed() {
   const [activeTab, setActiveTab] = useState("forYou");
   const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
   const [selectedPromoteVideo, setSelectedPromoteVideo] = useState<VideoPost | null>(null);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [selectedShareVideo, setSelectedShareVideo] = useState<VideoPost | null>(null);
   const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
   const [doubleTapHearts, setDoubleTapHearts] = useState<Set<string>>(new Set());
   const lastTapRef = useRef<{ videoId: string; time: number } | null>(null);
@@ -813,14 +816,10 @@ export default function Feed() {
   };
 
   const handleShare = async (videoId: string) => {
-    try {
-      await navigator.clipboard.writeText(
-        `${window.location.origin}/video/${videoId}`
-      );
-      toast.success("Link copied to clipboard!");
-    } catch (error) {
-      console.error("Error sharing video:", error);
-      toast.error("Failed to copy link");
+    const video = videos.find((v) => v.id === videoId) || followingVideos.find((v) => v.id === videoId);
+    if (video) {
+      setSelectedShareVideo(video);
+      setShareDialogOpen(true);
     }
   };
 
@@ -1664,6 +1663,16 @@ export default function Feed() {
           videoId={selectedPromoteVideo.id}
           videoUrl={selectedPromoteVideo.video_url}
           caption={selectedPromoteVideo.caption || ""}
+        />
+      )}
+      
+      {selectedShareVideo && (
+        <SocialShareDialog
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          videoId={selectedShareVideo.id}
+          videoCaption={selectedShareVideo.caption || undefined}
+          username={selectedShareVideo.username}
         />
       )}
       
