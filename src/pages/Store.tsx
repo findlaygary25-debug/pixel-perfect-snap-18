@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useUndoableAction } from "@/hooks/useUndoableAction";
 import { Plus, Pencil, Trash2, Package, ShoppingCart, Truck } from "lucide-react";
 import { PlaceOrderDialog } from "@/components/PlaceOrderDialog";
 
@@ -93,6 +94,7 @@ export default function StorePage() {
   });
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
+  const { performUndoableAction } = useUndoableAction();
 
   useEffect(() => {
     loadStoreAndProducts();
@@ -236,6 +238,7 @@ export default function StorePage() {
     if (orderIndex === -1) return;
 
     const originalOrder = orders[orderIndex];
+    const previousStatus = originalOrder.status;
     const optimisticOrders = [...orders];
     
     // Apply optimistic update
@@ -249,33 +252,47 @@ export default function StorePage() {
     setUpdatingOrderId(orderId);
 
     try {
-      const { error } = await supabase
-        .from("orders")
-        .update(updateData)
-        .eq("id", orderId);
+      await performUndoableAction(
+        async () => {
+          const { error } = await supabase
+            .from("orders")
+            .update(updateData)
+            .eq("id", orderId);
 
-      if (error) throw error;
+          if (error) throw error;
 
-      toast({
-        title: "Success",
-        description: "Order status updated",
-      });
-      
-      // Send email notification
-      const order = optimisticOrders[orderIndex];
-      const items = orderItems[orderId] || [];
-      await sendOrderNotification(order, items);
-      
-      // Reload to ensure sync
-      loadOrders();
+          // Send email notification
+          const order = optimisticOrders[orderIndex];
+          const items = orderItems[orderId] || [];
+          await sendOrderNotification(order, items);
+          
+          // Reload to ensure sync
+          loadOrders();
+        },
+        async () => {
+          // Undo action: revert to previous status
+          const revertData: any = { status: previousStatus };
+          if (previousStatus !== "completed") {
+            revertData.delivered_at = null;
+          }
+          
+          const { error } = await supabase
+            .from("orders")
+            .update(revertData)
+            .eq("id", orderId);
+
+          if (error) throw error;
+          loadOrders();
+        },
+        {
+          successMessage: `Order status updated to ${newStatus}`,
+          undoMessage: `Order status reverted to ${previousStatus}`,
+          errorMessage: "Failed to update order status",
+        }
+      );
     } catch (error: any) {
       // Rollback on error
       setOrders(orders);
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
     } finally {
       setUpdatingOrderId(null);
     }
@@ -295,6 +312,8 @@ export default function StorePage() {
     if (orderIndex === -1) return;
 
     const originalOrders = [...orders];
+    const previousTrackingNumber = selectedOrder.tracking_number;
+    const previousStatus = selectedOrder.status;
     const optimisticOrders = [...orders];
     
     // Apply optimistic update
@@ -309,43 +328,57 @@ export default function StorePage() {
 
     // Close dialog immediately
     const trackingValue = trackingNumber;
+    const orderId = selectedOrder.id;
     setTrackingDialogOpen(false);
     setTrackingNumber("");
     setSelectedOrder(null);
 
     try {
-      const { error } = await supabase
-        .from("orders")
-        .update({
-          tracking_number: trackingValue,
-          shipped_at: new Date().toISOString(),
-          status: "processing",
-        })
-        .eq("id", selectedOrder.id);
+      await performUndoableAction(
+        async () => {
+          const { error } = await supabase
+            .from("orders")
+            .update({
+              tracking_number: trackingValue,
+              shipped_at: new Date().toISOString(),
+              status: "processing",
+            })
+            .eq("id", orderId);
 
-      if (error) throw error;
+          if (error) throw error;
 
-      toast({
-        title: "Success",
-        description: "Tracking number added and customer notified",
-      });
+          // Send email notification
+          const items = orderItems[orderId] || [];
+          await sendOrderNotification(
+            optimisticOrders[orderIndex],
+            items
+          );
 
-      // Send email notification
-      const items = orderItems[selectedOrder.id] || [];
-      await sendOrderNotification(
-        optimisticOrders[orderIndex],
-        items
+          loadOrders();
+        },
+        async () => {
+          // Undo action: revert tracking number and status
+          const { error } = await supabase
+            .from("orders")
+            .update({
+              tracking_number: previousTrackingNumber,
+              shipped_at: null,
+              status: previousStatus,
+            })
+            .eq("id", orderId);
+
+          if (error) throw error;
+          loadOrders();
+        },
+        {
+          successMessage: "Tracking number added and customer notified",
+          undoMessage: "Tracking number change reverted",
+          errorMessage: "Failed to add tracking number",
+        }
       );
-
-      loadOrders();
     } catch (error: any) {
       // Rollback on error
       setOrders(originalOrders);
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
     } finally {
       setUpdatingOrderId(null);
     }
