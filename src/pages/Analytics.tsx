@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart } from "recharts";
-import { TrendingUp, TrendingDown, DollarSign, Package, ShoppingCart, Wifi, ArrowUp, ArrowDown, Eye, Play } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, Package, ShoppingCart, Wifi, ArrowUp, ArrowDown, Eye, Play, Share2 } from "lucide-react";
 
 type Order = {
   id: string;
@@ -44,9 +44,16 @@ export default function AnalyticsPage() {
     avgEngagement: number;
   }>({ totalViews: 0, totalWatchTime: 0, avgEngagement: 0 });
 
+  const [socialShareStats, setSocialShareStats] = useState<{
+    totalShares: number;
+    platformBreakdown: Array<{ platform: string; count: number }>;
+    topSharedVideos: Array<{ video_id: string; shares: number; caption: string }>;
+  }>({ totalShares: 0, platformBreakdown: [], topSharedVideos: [] });
+
   useEffect(() => {
     loadAnalyticsData();
     loadVideoAnalytics();
+    loadSocialShareAnalytics();
   }, [dateRange]);
 
   useEffect(() => {
@@ -118,11 +125,28 @@ export default function AnalyticsPage() {
       )
       .subscribe();
 
+    const socialSharesChannel = supabase
+      .channel('analytics-social-shares')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'social_shares'
+        },
+        (payload) => {
+          console.log('New social share detected:', payload);
+          loadSocialShareAnalytics();
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(ordersChannel);
       supabase.removeChannel(videoViewsChannel);
       supabase.removeChannel(videoEngagementChannel);
       supabase.removeChannel(watchSessionsChannel);
+      supabase.removeChannel(socialSharesChannel);
       setIsRealTimeConnected(false);
     };
   }, [dateRange]);
@@ -187,6 +211,73 @@ export default function AnalyticsPage() {
       totalViews: viewsCount || 0,
       totalWatchTime: Math.round(totalWatchTime / 60), // Convert to minutes
       avgEngagement: Math.round(avgEngagement)
+    });
+  };
+
+  const loadSocialShareAnalytics = async () => {
+    const user = (await supabase.auth.getUser()).data.user;
+    if (!user) return;
+
+    const startDate = getDateRangeStart(dateRange).toISOString();
+
+    // Get user's videos
+    const { data: videos } = await supabase
+      .from("videos")
+      .select("id, caption")
+      .eq("user_id", user.id);
+
+    if (!videos || videos.length === 0) return;
+
+    const videoIds = videos.map(v => v.id);
+
+    // Get social shares for user's videos
+    const { data: shares, count: totalSharesCount } = await supabase
+      .from("social_shares")
+      .select("*, videos!inner(user_id)", { count: 'exact' })
+      .in("video_id", videoIds)
+      .gte("shared_at", startDate);
+
+    if (!shares) {
+      setSocialShareStats({ totalShares: 0, platformBreakdown: [], topSharedVideos: [] });
+      return;
+    }
+
+    // Calculate platform breakdown
+    const platformCounts: Record<string, number> = {};
+    shares.forEach(share => {
+      platformCounts[share.platform] = (platformCounts[share.platform] || 0) + 1;
+    });
+
+    const platformBreakdown = Object.entries(platformCounts)
+      .map(([platform, count]) => ({ platform, count }))
+      .sort((a, b) => b.count - a.count);
+
+    // Calculate top shared videos
+    const videoShareCounts: Record<string, { count: number; caption: string }> = {};
+    shares.forEach(share => {
+      if (!videoShareCounts[share.video_id]) {
+        const video = videos.find(v => v.id === share.video_id);
+        videoShareCounts[share.video_id] = {
+          count: 0,
+          caption: video?.caption || 'Untitled Video'
+        };
+      }
+      videoShareCounts[share.video_id].count++;
+    });
+
+    const topSharedVideos = Object.entries(videoShareCounts)
+      .map(([video_id, data]) => ({
+        video_id,
+        shares: data.count,
+        caption: data.caption
+      }))
+      .sort((a, b) => b.shares - a.shares)
+      .slice(0, 5);
+
+    setSocialShareStats({
+      totalShares: totalSharesCount || 0,
+      platformBreakdown,
+      topSharedVideos
     });
   };
 
@@ -499,6 +590,89 @@ export default function AnalyticsPage() {
               <p className="text-xs text-muted-foreground">
                 Avg engagement
               </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Social Share Analytics Section */}
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold mb-4">Social Share Analytics</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Total Shares</CardTitle>
+              <Share2 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{socialShareStats.totalShares.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">
+                Across all platforms
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Platform Breakdown</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {socialShareStats.platformBreakdown.length > 0 ? (
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={socialShareStats.platformBreakdown}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ platform, count }) => `${platform}: ${count}`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="count"
+                    >
+                      {socialShareStats.platformBreakdown.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="text-center text-muted-foreground py-8">
+                  No social shares yet
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="lg:col-span-3">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Top Shared Videos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {socialShareStats.topSharedVideos.length > 0 ? (
+                <div className="space-y-3">
+                  {socialShareStats.topSharedVideos.map((video, index) => (
+                    <div key={video.video_id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <Badge variant="outline" className="shrink-0">#{index + 1}</Badge>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate">{video.caption}</p>
+                          <p className="text-xs text-muted-foreground">{video.shares} shares</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Share2 className="h-4 w-4" />
+                        <span className="text-sm font-semibold">{video.shares}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-muted-foreground py-8">
+                  No video shares yet
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
