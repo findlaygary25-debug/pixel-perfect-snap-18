@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { VideoSchema } from "@/components/VideoSchema";
+import { BreadcrumbSchema } from "@/components/BreadcrumbSchema";
 
 type VideoPost = {
   id: string;
@@ -1581,6 +1582,12 @@ export default function Feed() {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
+      <BreadcrumbSchema 
+        items={[
+          { name: "Home", url: "https://voice2fire.com/" },
+          { name: "Feed", url: "https://voice2fire.com/feed" }
+        ]}
+      />
       {/* Pull to refresh indicator */}
       <div 
         className="fixed top-0 left-0 right-0 flex justify-center z-50 transition-all duration-200"

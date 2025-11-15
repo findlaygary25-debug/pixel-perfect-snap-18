@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Video, Bookmark, Settings, LogOut } from "lucide-react";
+import { BreadcrumbSchema } from "@/components/BreadcrumbSchema";
 
 interface Profile {
   username: string;
@@ -167,6 +168,12 @@ const Profile = () => {
 
   return (
     <div className="container max-w-6xl py-8">
+      <BreadcrumbSchema 
+        items={[
+          { name: "Home", url: "https://voice2fire.com/" },
+          { name: "Profile", url: "https://voice2fire.com/profile" }
+        ]}
+      />
       <div className="flex items-center gap-6 mb-8">
         <Avatar className="h-24 w-24">
           <AvatarImage src={profile?.avatar_url || undefined} />
