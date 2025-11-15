@@ -1476,6 +1476,26 @@ export default function Feed() {
             <p className="text-sm drop-shadow-lg line-clamp-2">{video.caption}</p>
           )}
         </div>
+
+        {/* Mini progress bar at the bottom */}
+        {videoProgress[video.id] && (
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 z-20">
+            {/* Buffered progress (light gray) */}
+            <div
+              className="absolute top-0 left-0 h-full bg-white/40 transition-all duration-300"
+              style={{
+                width: `${(videoProgress[video.id].buffered / videoProgress[video.id].duration) * 100}%`
+              }}
+            />
+            {/* Playback progress (white/primary) */}
+            <div
+              className="absolute top-0 left-0 h-full bg-white transition-all duration-100"
+              style={{
+                width: `${(videoProgress[video.id].current / videoProgress[video.id].duration) * 100}%`
+              }}
+            />
+          </div>
+        )}
       </div>
       
       {/* Chapters list */}
