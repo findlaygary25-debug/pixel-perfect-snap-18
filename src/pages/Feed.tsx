@@ -31,6 +31,7 @@ type VideoPost = {
   likes: number;
   views: number;
   comments?: number;
+  avatar_url?: string | null;
 };
 
 type VideoChapter = {
@@ -771,7 +772,26 @@ export default function Feed() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setVideos(data || []);
+      
+      // Fetch profiles for all video creators
+      if (data && data.length > 0) {
+        const userIds = [...new Set(data.map(v => v.user_id))];
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("user_id, avatar_url")
+          .in("user_id", userIds);
+        
+        const profilesMap = new Map(profilesData?.map(p => [p.user_id, p.avatar_url]) || []);
+        
+        const videosWithAvatars = data.map(video => ({
+          ...video,
+          avatar_url: profilesMap.get(video.user_id)
+        }));
+        
+        setVideos(videosWithAvatars);
+      } else {
+        setVideos(data || []);
+      }
       
       // Initialize all videos as muted by default
       if (data) {
@@ -812,7 +832,26 @@ export default function Feed() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setFollowingVideos(data || []);
+      
+      // Fetch profiles for all video creators
+      if (data && data.length > 0) {
+        const userIds = [...new Set(data.map(v => v.user_id))];
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("user_id, avatar_url")
+          .in("user_id", userIds);
+        
+        const profilesMap = new Map(profilesData?.map(p => [p.user_id, p.avatar_url]) || []);
+        
+        const videosWithAvatars = data.map(video => ({
+          ...video,
+          avatar_url: profilesMap.get(video.user_id)
+        }));
+        
+        setFollowingVideos(videosWithAvatars);
+      } else {
+        setFollowingVideos(data || []);
+      }
       
       // Initialize all videos as muted by default
       if (data) {
@@ -1606,12 +1645,20 @@ export default function Feed() {
             >
               <div className="flex flex-col items-center">
                 <div className="relative">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-sm font-semibold text-foreground">{video.username[0].toUpperCase()}</span>
-                  </div>
+                  {video.avatar_url ? (
+                    <img 
+                      src={video.avatar_url} 
+                      alt={video.username}
+                      className="h-12 w-12 rounded-full object-cover border-2 border-background"
+                    />
+                  ) : (
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center border-2 border-background">
+                      <span className="text-sm font-semibold text-foreground">{video.username[0].toUpperCase()}</span>
+                    </div>
+                  )}
                   {!followedUsers.has(video.user_id) && (
                     <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-primary rounded-full h-6 w-6 flex items-center justify-center">
-                      <Heart className="h-4 w-4 text-primary-foreground" />
+                      <UserPlus className="h-3.5 w-3.5 text-primary-foreground" />
                     </div>
                   )}
                 </div>
