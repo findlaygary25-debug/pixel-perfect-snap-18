@@ -84,6 +84,7 @@ export default function StorePage() {
   const [trackingDialogOpen, setTrackingDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [trackingNumber, setTrackingNumber] = useState("");
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const [productForm, setProductForm] = useState<ProductFormData>({
     title: "",
     description: "",
@@ -230,38 +231,53 @@ export default function StorePage() {
     }
   };
 
-  const updateOrderStatus = async (orderId: string, status: "pending" | "processing" | "completed" | "cancelled") => {
-    const updateData: any = { status };
+  const updateOrderStatus = async (orderId: string, newStatus: "pending" | "processing" | "completed" | "cancelled") => {
+    const orderIndex = orders.findIndex((o) => o.id === orderId);
+    if (orderIndex === -1) return;
+
+    const originalOrder = orders[orderIndex];
+    const optimisticOrders = [...orders];
     
-    if (status === "completed") {
+    // Apply optimistic update
+    const updateData: any = { status: newStatus };
+    if (newStatus === "completed") {
       updateData.delivered_at = new Date().toISOString();
     }
+    
+    optimisticOrders[orderIndex] = { ...originalOrder, ...updateData };
+    setOrders(optimisticOrders);
+    setUpdatingOrderId(orderId);
 
-    const { error } = await supabase
-      .from("orders")
-      .update(updateData)
-      .eq("id", orderId);
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update(updateData)
+        .eq("id", orderId);
 
-    if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
+      if (error) throw error;
+
       toast({
         title: "Success",
         description: "Order status updated",
       });
       
       // Send email notification
-      const order = orders.find((o) => o.id === orderId);
-      if (order) {
-        const items = orderItems[orderId] || [];
-        await sendOrderNotification({ ...order, status }, items);
-      }
+      const order = optimisticOrders[orderIndex];
+      const items = orderItems[orderId] || [];
+      await sendOrderNotification(order, items);
       
+      // Reload to ensure sync
       loadOrders();
+    } catch (error: any) {
+      // Rollback on error
+      setOrders(orders);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingOrderId(null);
     }
   };
 
@@ -275,22 +291,40 @@ export default function StorePage() {
       return;
     }
 
-    const { error } = await supabase
-      .from("orders")
-      .update({
-        tracking_number: trackingNumber,
-        shipped_at: new Date().toISOString(),
-        status: "processing",
-      })
-      .eq("id", selectedOrder.id);
+    const orderIndex = orders.findIndex((o) => o.id === selectedOrder.id);
+    if (orderIndex === -1) return;
 
-    if (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
+    const originalOrders = [...orders];
+    const optimisticOrders = [...orders];
+    
+    // Apply optimistic update
+    optimisticOrders[orderIndex] = {
+      ...selectedOrder,
+      tracking_number: trackingNumber,
+      shipped_at: new Date().toISOString(),
+      status: "processing",
+    };
+    setOrders(optimisticOrders);
+    setUpdatingOrderId(selectedOrder.id);
+
+    // Close dialog immediately
+    const trackingValue = trackingNumber;
+    setTrackingDialogOpen(false);
+    setTrackingNumber("");
+    setSelectedOrder(null);
+
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({
+          tracking_number: trackingValue,
+          shipped_at: new Date().toISOString(),
+          status: "processing",
+        })
+        .eq("id", selectedOrder.id);
+
+      if (error) throw error;
+
       toast({
         title: "Success",
         description: "Tracking number added and customer notified",
@@ -299,18 +333,21 @@ export default function StorePage() {
       // Send email notification
       const items = orderItems[selectedOrder.id] || [];
       await sendOrderNotification(
-        {
-          ...selectedOrder,
-          tracking_number: trackingNumber,
-          status: "processing",
-        },
+        optimisticOrders[orderIndex],
         items
       );
 
-      setTrackingDialogOpen(false);
-      setTrackingNumber("");
-      setSelectedOrder(null);
       loadOrders();
+    } catch (error: any) {
+      // Rollback on error
+      setOrders(originalOrders);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingOrderId(null);
     }
   };
 
@@ -677,8 +714,9 @@ export default function StorePage() {
                           <Select
                             value={order.status}
                             onValueChange={(value) => updateOrderStatus(order.id, value as any)}
+                            disabled={updatingOrderId === order.id}
                           >
-                            <SelectTrigger className="w-36">
+                            <SelectTrigger className={`w-36 ${updatingOrderId === order.id ? 'opacity-50' : ''}`}>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -760,13 +798,14 @@ export default function StorePage() {
                             <Button
                               variant="outline"
                               className="w-full mt-4"
+                              disabled={updatingOrderId === order.id}
                               onClick={() => {
                                 setSelectedOrder(order);
                                 setTrackingDialogOpen(true);
                               }}
                             >
                               <Truck className="mr-2 h-4 w-4" />
-                              Add Tracking Number
+                              {updatingOrderId === order.id ? 'Updating...' : 'Add Tracking Number'}
                             </Button>
                           )}
 
@@ -839,6 +878,10 @@ export default function StorePage() {
           product={selectedProduct}
           open={orderDialogOpen}
           onOpenChange={setOrderDialogOpen}
+          onOrderCreated={() => {
+            loadStoreAndProducts();
+            loadOrders();
+          }}
         />
       )}
 
