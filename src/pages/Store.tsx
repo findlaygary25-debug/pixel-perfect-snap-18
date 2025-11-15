@@ -98,6 +98,32 @@ export default function StorePage() {
     loadOrders();
   }, []);
 
+  useEffect(() => {
+    // Set up realtime subscription for orders
+    const channel = supabase
+      .channel('store-orders')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders'
+        },
+        (payload) => {
+          console.log('Order change detected in store:', payload);
+          // Reload orders when changes occur
+          loadOrders();
+        }
+      )
+      .subscribe((status) => {
+        console.log('Store orders subscription status:', status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const loadStoreAndProducts = async () => {
     setLoading(true);
     const user = (await supabase.auth.getUser()).data.user;
