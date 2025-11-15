@@ -8,9 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useUndoableAction } from "@/hooks/useUndoableAction";
-import { Plus, Pencil, Trash2, Package, ShoppingCart, Truck } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, ShoppingCart, Truck, CheckSquare } from "lucide-react";
 import { PlaceOrderDialog } from "@/components/PlaceOrderDialog";
 
 type Store = {
@@ -86,6 +87,8 @@ export default function StorePage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [trackingNumber, setTrackingNumber] = useState("");
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState<string>("");
   const [productForm, setProductForm] = useState<ProductFormData>({
     title: "",
     description: "",
@@ -295,6 +298,109 @@ export default function StorePage() {
       setOrders(orders);
     } finally {
       setUpdatingOrderId(null);
+    }
+  };
+
+  const handleBulkStatusUpdate = async () => {
+    if (selectedOrderIds.size === 0 || !bulkStatus) return;
+
+    const selectedOrders = orders.filter((o) => selectedOrderIds.has(o.id));
+    const orderUpdates = selectedOrders.map((order) => ({
+      orderId: order.id,
+      previousStatus: order.status,
+      newStatus: bulkStatus as any,
+    }));
+
+    setUpdatingOrderId("bulk");
+    const currentOrders = [...orders];
+    const optimisticOrders = orders.map((order) =>
+      selectedOrderIds.has(order.id)
+        ? {
+            ...order,
+            status: bulkStatus as any,
+            delivered_at: bulkStatus === "completed" ? new Date().toISOString() : order.delivered_at,
+          }
+        : order
+    );
+    setOrders(optimisticOrders);
+
+    try {
+      await performUndoableAction(
+        async () => {
+          // Update all selected orders
+          for (const update of orderUpdates) {
+            const updateData: any = { status: update.newStatus };
+            if (update.newStatus === "completed") {
+              updateData.delivered_at = new Date().toISOString();
+            }
+            
+            const { error } = await supabase
+              .from("orders")
+              .update(updateData)
+              .eq("id", update.orderId);
+
+            if (error) throw error;
+          }
+
+          // Send notifications for all updated orders
+          for (const update of orderUpdates) {
+            const order = optimisticOrders.find((o) => o.id === update.orderId);
+            if (order) {
+              const items = orderItems[update.orderId] || [];
+              await sendOrderNotification(order, items);
+            }
+          }
+
+          loadOrders();
+        },
+        async () => {
+          // Undo action: revert all statuses
+          for (const update of orderUpdates) {
+            const revertData: any = { status: update.previousStatus };
+            if (update.previousStatus !== "completed") {
+              revertData.delivered_at = null;
+            }
+
+            const { error } = await supabase
+              .from("orders")
+              .update(revertData)
+              .eq("id", update.orderId);
+
+            if (error) throw error;
+          }
+          loadOrders();
+        },
+        {
+          successMessage: `${selectedOrderIds.size} order(s) updated to ${bulkStatus}`,
+          undoMessage: `Bulk update reverted`,
+          errorMessage: "Failed to update orders",
+        }
+      );
+
+      setSelectedOrderIds(new Set());
+      setBulkStatus("");
+    } catch (error: any) {
+      setOrders(currentOrders);
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
+  const toggleOrderSelection = (orderId: string) => {
+    const newSelection = new Set(selectedOrderIds);
+    if (newSelection.has(orderId)) {
+      newSelection.delete(orderId);
+    } else {
+      newSelection.add(orderId);
+    }
+    setSelectedOrderIds(newSelection);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedOrderIds.size === orders.length) {
+      setSelectedOrderIds(new Set());
+    } else {
+      setSelectedOrderIds(new Set(orders.map((o) => o.id)));
     }
   };
 
@@ -720,12 +826,57 @@ export default function StorePage() {
         <TabsContent value="orders" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Orders
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Orders
+                </CardTitle>
+                {orders.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleSelectAll}
+                  >
+                    <CheckSquare className="h-4 w-4 mr-2" />
+                    {selectedOrderIds.size === orders.length ? "Deselect All" : "Select All"}
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
+              {selectedOrderIds.size > 0 && (
+                <div className="mb-4 p-4 bg-muted rounded-lg flex items-center gap-4">
+                  <Badge variant="secondary">{selectedOrderIds.size} selected</Badge>
+                  <div className="flex items-center gap-2 flex-1">
+                    <Select value={bulkStatus} onValueChange={setBulkStatus}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Update status..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="processing">Processing</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      onClick={handleBulkStatusUpdate}
+                      disabled={!bulkStatus || updatingOrderId === "bulk"}
+                    >
+                      {updatingOrderId === "bulk" ? "Updating..." : "Apply"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedOrderIds(new Set());
+                        setBulkStatus("");
+                      }}
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                </div>
+              )}
               {orders.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">
                   No orders yet
@@ -733,16 +884,23 @@ export default function StorePage() {
               ) : (
                 <div className="space-y-4">
                   {orders.map((order) => (
-                    <Card key={order.id}>
+                    <Card key={order.id} className={selectedOrderIds.has(order.id) ? "ring-2 ring-primary" : ""}>
                       <CardHeader>
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <CardTitle className="text-lg">
-                              Order #{order.id.slice(0, 8)}
-                            </CardTitle>
-                            <p className="text-sm text-muted-foreground">
-                              {new Date(order.created_at).toLocaleDateString()}
-                            </p>
+                        <div className="flex justify-between items-start gap-4">
+                          <div className="flex items-start gap-3">
+                            <Checkbox
+                              checked={selectedOrderIds.has(order.id)}
+                              onCheckedChange={() => toggleOrderSelection(order.id)}
+                              className="mt-1"
+                            />
+                            <div>
+                              <CardTitle className="text-lg">
+                                Order #{order.id.slice(0, 8)}
+                              </CardTitle>
+                              <p className="text-sm text-muted-foreground">
+                                {new Date(order.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
                           </div>
                           <Select
                             value={order.status}
