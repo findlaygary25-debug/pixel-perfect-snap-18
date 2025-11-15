@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Video, Bookmark, Settings, LogOut } from "lucide-react";
 import { BreadcrumbSchema } from "@/components/BreadcrumbSchema";
+import { PersonSchema } from "@/components/PersonSchema";
 
 interface Profile {
   username: string;
@@ -174,6 +175,19 @@ const Profile = () => {
           { name: "Profile", url: "https://voice2fire.com/profile" }
         ]}
       />
+      {user && profile && (
+        <PersonSchema
+          userId={user.id}
+          name={profile.username}
+          image={profile.avatar_url || undefined}
+          description={profile.bio || undefined}
+          email={user.email}
+          url={`https://voice2fire.com/profile/${user.id}`}
+          followers={followingFollowerCounts[user.id]?.followers || 0}
+          following={followingFollowerCounts[user.id]?.following || 0}
+          numberOfVideos={videos.length}
+        />
+      )}
       <div className="flex items-center gap-6 mb-8">
         <Avatar className="h-24 w-24">
           <AvatarImage src={profile?.avatar_url || undefined} />
