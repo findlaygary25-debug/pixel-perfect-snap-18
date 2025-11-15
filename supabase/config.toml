@@ -1,1 +1,7 @@
 project_id = "konbogydmhjhrlaskbgv"
+
+[functions.publish-scheduled-videos]
+verify_jwt = false
+
+[functions.get-optimal-schedule-times]
+verify_jwt = false

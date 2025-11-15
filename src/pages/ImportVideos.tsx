@@ -27,6 +27,14 @@ type YouTubeVideo = {
   likeCount: number;
 };
 
+type ScheduleRecommendation = {
+  dayOfWeek: string;
+  hour: number;
+  minute: number;
+  reason: string;
+  confidence: 'high' | 'medium' | 'low';
+};
+
 export default function ImportVideos() {
   const [searchQuery, setSearchQuery] = useState("Christian shorts");
   const [videos, setVideos] = useState<YouTubeVideo[]>([]);
@@ -35,6 +43,9 @@ export default function ImportVideos() {
   const [schedulingVideo, setSchedulingVideo] = useState<YouTubeVideo | null>(null);
   const [scheduleDate, setScheduleDate] = useState<Date>();
   const [scheduleTime, setScheduleTime] = useState<string>("09:00");
+  const [recommendations, setRecommendations] = useState<ScheduleRecommendation[]>([]);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+  const [showRecommendations, setShowRecommendations] = useState(false);
   const { toast } = useToast();
 
   const searchVideos = async () => {
@@ -61,6 +72,82 @@ export default function ImportVideos() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getOptimalTimes = async () => {
+    setLoadingRecommendations(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to get recommendations",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('get-optimal-schedule-times', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        }
+      });
+
+      if (error) {
+        if (error.message?.includes('429') || error.message?.includes('Rate limit')) {
+          toast({
+            title: "Rate limit exceeded",
+            description: "Please try again in a few moments",
+            variant: "destructive",
+          });
+        } else if (error.message?.includes('402') || error.message?.includes('credits')) {
+          toast({
+            title: "AI credits exhausted",
+            description: "Please add credits to your workspace",
+            variant: "destructive",
+          });
+        } else {
+          throw error;
+        }
+        return;
+      }
+
+      setRecommendations(data.recommendations || []);
+      setShowRecommendations(true);
+      
+      toast({
+        title: "Recommendations ready",
+        description: data.overallInsight || "AI has analyzed your engagement patterns",
+      });
+    } catch (error) {
+      console.error('Error getting recommendations:', error);
+      toast({
+        title: "Analysis failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingRecommendations(false);
+    }
+  };
+
+  const applyRecommendation = (rec: ScheduleRecommendation) => {
+    const dayMap = {
+      'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3,
+      'Thursday': 4, 'Friday': 5, 'Saturday': 6
+    };
+    
+    const today = new Date();
+    const currentDay = today.getDay();
+    const targetDay = dayMap[rec.dayOfWeek as keyof typeof dayMap];
+    
+    let daysToAdd = targetDay - currentDay;
+    if (daysToAdd <= 0) daysToAdd += 7; // Next occurrence
+    
+    const targetDate = addDays(today, daysToAdd);
+    setScheduleDate(targetDate);
+    setScheduleTime(`${rec.hour.toString().padStart(2, '0')}:${rec.minute.toString().padStart(2, '0')}`);
+    setShowRecommendations(false);
   };
 
   const scheduleVideo = async () => {
@@ -303,13 +390,60 @@ export default function ImportVideos() {
 
       {/* Schedule Dialog */}
       {schedulingVideo && (
-        <Card className="fixed inset-0 z-50 m-auto max-w-lg max-h-[90vh] overflow-auto">
-          <CardHeader>
-            <CardTitle>Schedule Video</CardTitle>
-            <p className="text-sm text-muted-foreground mt-2">{schedulingVideo.title}</p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-auto">
+            <CardHeader>
+              <CardTitle>Schedule Video</CardTitle>
+              <p className="text-sm text-muted-foreground mt-2">{schedulingVideo.title}</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* AI Recommendations Section */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">AI-Powered Recommendations</label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={getOptimalTimes}
+                    disabled={loadingRecommendations}
+                  >
+                    {loadingRecommendations ? 'Analyzing...' : 'Get Optimal Times'}
+                  </Button>
+                </div>
+                
+                {showRecommendations && recommendations.length > 0 && (
+                  <div className="border rounded-lg p-4 space-y-3 bg-muted/50">
+                    <p className="text-xs text-muted-foreground">
+                      Based on your audience engagement patterns
+                    </p>
+                    <div className="grid gap-2">
+                      {recommendations.map((rec, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => applyRecommendation(rec)}
+                          className="text-left p-3 rounded border bg-background hover:bg-muted/50 transition-colors"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="font-medium text-sm">
+                                {rec.dayOfWeek} at {rec.hour.toString().padStart(2, '0')}:{rec.minute.toString().padStart(2, '0')}
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {rec.reason}
+                              </div>
+                            </div>
+                            <Badge variant={rec.confidence === 'high' ? 'default' : 'secondary'}>
+                              {rec.confidence}
+                            </Badge>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
               <label className="text-sm font-medium">Select Date</label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -425,6 +559,7 @@ export default function ImportVideos() {
             </div>
           </CardContent>
         </Card>
+      </div>
       )}
     </div>
   );
