@@ -41,6 +41,8 @@ export default function Feed() {
   const touchStartY = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const [videoProgress, setVideoProgress] = useState<Record<string, { current: number; duration: number; buffered: number }>>({});
+  const [hoveredProgress, setHoveredProgress] = useState<{ videoId: string; percentage: number; x: number; thumbnail: string } | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Auto-play videos when they come into view (mobile)
   useEffect(() => {
@@ -532,7 +534,52 @@ export default function Feed() {
           
           {/* Video progress bar */}
           {videoProgress[video.id] && (
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-background/30 backdrop-blur-sm">
+            <div 
+              className="absolute bottom-0 left-0 right-0 h-1 bg-background/30 backdrop-blur-sm cursor-pointer hover:h-2 transition-all duration-200"
+              onMouseEnter={() => {
+                if (!canvasRef.current) {
+                  canvasRef.current = document.createElement('canvas');
+                }
+              }}
+              onMouseMove={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const percentage = (x / rect.width) * 100;
+                const timestamp = (percentage / 100) * videoProgress[video.id].duration;
+                
+                // Capture thumbnail at hovered timestamp
+                const videoElement = videoRefs.current.get(video.id);
+                if (videoElement && canvasRef.current) {
+                  const canvas = canvasRef.current;
+                  canvas.width = 160;
+                  canvas.height = 90;
+                  const ctx = canvas.getContext('2d');
+                  
+                  // Store current time to restore later
+                  const currentTime = videoElement.currentTime;
+                  videoElement.currentTime = timestamp;
+                  
+                  // Wait for seek to complete
+                  videoElement.onseeked = () => {
+                    if (ctx) {
+                      ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                      const thumbnail = canvas.toDataURL();
+                      setHoveredProgress({
+                        videoId: video.id,
+                        percentage,
+                        x: e.clientX,
+                        thumbnail
+                      });
+                      // Restore original time
+                      videoElement.currentTime = currentTime;
+                    }
+                  };
+                }
+              }}
+              onMouseLeave={() => {
+                setHoveredProgress(null);
+              }}
+            >
               {/* Buffered progress */}
               <div
                 className="absolute top-0 left-0 h-full bg-muted/50 transition-all duration-300"
@@ -547,6 +594,38 @@ export default function Feed() {
                   width: `${(videoProgress[video.id].current / videoProgress[video.id].duration) * 100}%`
                 }}
               />
+              
+              {/* Hover indicator */}
+              {hoveredProgress && hoveredProgress.videoId === video.id && (
+                <div
+                  className="absolute top-0 h-full w-0.5 bg-foreground/80"
+                  style={{
+                    left: `${hoveredProgress.percentage}%`
+                  }}
+                />
+              )}
+            </div>
+          )}
+          
+          {/* Thumbnail preview tooltip */}
+          {hoveredProgress && hoveredProgress.videoId === video.id && (
+            <div
+              className="fixed z-50 -translate-x-1/2 pointer-events-none"
+              style={{
+                left: `${hoveredProgress.x}px`,
+                bottom: '80px'
+              }}
+            >
+              <div className="bg-background border border-border rounded-lg shadow-lg overflow-hidden">
+                <img 
+                  src={hoveredProgress.thumbnail} 
+                  alt="Video preview"
+                  className="w-40 h-auto"
+                />
+                <div className="px-2 py-1 text-xs text-center text-muted-foreground">
+                  {new Date((hoveredProgress.percentage / 100) * videoProgress[video.id].duration * 1000).toISOString().substr(14, 5)}
+                </div>
+              </div>
             </div>
           )}
           
