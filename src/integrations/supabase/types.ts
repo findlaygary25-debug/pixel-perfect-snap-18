@@ -14,6 +14,104 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_commissions: {
+        Row: {
+          ad_id: string
+          advertiser_id: string
+          affiliate_id: string
+          amount: number
+          commission_rate: number
+          created_at: string
+          id: string
+          paid_at: string | null
+          status: string
+        }
+        Insert: {
+          ad_id: string
+          advertiser_id: string
+          affiliate_id: string
+          amount: number
+          commission_rate?: number
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          status?: string
+        }
+        Update: {
+          ad_id?: string
+          advertiser_id?: string
+          affiliate_id?: string
+          amount?: number
+          commission_rate?: number
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_commissions_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "advertisements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      advertisements: {
+        Row: {
+          advertiser_id: string
+          amount_spent: number
+          clicks: number
+          created_at: string
+          description: string | null
+          end_date: string | null
+          id: string
+          impressions: number
+          media_type: string
+          media_url: string
+          referred_by: string | null
+          start_date: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          advertiser_id: string
+          amount_spent: number
+          clicks?: number
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          impressions?: number
+          media_type?: string
+          media_url: string
+          referred_by?: string | null
+          start_date?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          advertiser_id?: string
+          amount_spent?: number
+          clicks?: number
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          impressions?: number
+          media_type?: string
+          media_url?: string
+          referred_by?: string | null
+          start_date?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       affiliate_links: {
         Row: {
           created_at: string
