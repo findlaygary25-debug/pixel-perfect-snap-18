@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { VideoSchema } from "@/components/VideoSchema";
 
 type VideoPost = {
   id: string;
@@ -924,6 +925,24 @@ export default function Feed() {
       animate={{ opacity: 1, y: 0 }}
       className="bg-card rounded-lg shadow-lg overflow-hidden mb-6"
     >
+      <VideoSchema
+        videoId={video.id}
+        name={video.caption || `Video by ${video.username}`}
+        description={video.caption || `Watch this video by ${video.username} on Voice2Fire`}
+        thumbnailUrl={video.video_url}
+        uploadDate={new Date().toISOString()}
+        contentUrl={video.video_url}
+        embedUrl={`https://voice2fire.com/video/${video.id}`}
+        interactionStatistic={{
+          viewCount: video.views,
+          likeCount: video.likes,
+          commentCount: commentCounts[video.id] || 0,
+        }}
+        author={{
+          name: video.username,
+          url: `https://voice2fire.com/profile/${video.user_id}`,
+        }}
+      />
       <div className="p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
