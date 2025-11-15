@@ -57,6 +57,85 @@ export default function Feed() {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [miniPlayerVideo, setMiniPlayerVideo] = useState<{ video: VideoPost; wasPlaying: boolean } | null>(null);
   const videoContainerRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const [videoQuality, setVideoQuality] = useState<'auto' | '360p' | '480p' | '720p' | '1080p'>('auto');
+  const [networkSpeed, setNetworkSpeed] = useState<'slow' | 'medium' | 'fast'>('medium');
+  const [autoQualityEnabled, setAutoQualityEnabled] = useState(true);
+  const [currentQuality, setCurrentQuality] = useState<'360p' | '480p' | '720p' | '1080p'>('720p');
+
+  // Network speed detection
+  useEffect(() => {
+    const detectNetworkSpeed = () => {
+      // @ts-ignore - Network Information API
+      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      
+      if (connection) {
+        const effectiveType = connection.effectiveType;
+        
+        if (effectiveType === '4g') {
+          setNetworkSpeed('fast');
+          if (autoQualityEnabled) setCurrentQuality('1080p');
+        } else if (effectiveType === '3g') {
+          setNetworkSpeed('medium');
+          if (autoQualityEnabled) setCurrentQuality('720p');
+        } else if (effectiveType === '2g' || effectiveType === 'slow-2g') {
+          setNetworkSpeed('slow');
+          if (autoQualityEnabled) setCurrentQuality('480p');
+        } else {
+          setNetworkSpeed('medium');
+          if (autoQualityEnabled) setCurrentQuality('720p');
+        }
+        
+        // Also check downlink speed if available
+        if (connection.downlink) {
+          const mbps = connection.downlink;
+          if (mbps >= 5) {
+            setNetworkSpeed('fast');
+            if (autoQualityEnabled) setCurrentQuality('1080p');
+          } else if (mbps >= 1.5) {
+            setNetworkSpeed('medium');
+            if (autoQualityEnabled) setCurrentQuality('720p');
+          } else {
+            setNetworkSpeed('slow');
+            if (autoQualityEnabled) setCurrentQuality('480p');
+          }
+        }
+      } else {
+        // Fallback: detect based on device performance
+        const memory = (navigator as any).deviceMemory;
+        const cores = navigator.hardwareConcurrency;
+        
+        if (memory >= 8 && cores >= 4) {
+          setNetworkSpeed('fast');
+          if (autoQualityEnabled) setCurrentQuality('1080p');
+        } else if (memory >= 4 || cores >= 2) {
+          setNetworkSpeed('medium');
+          if (autoQualityEnabled) setCurrentQuality('720p');
+        } else {
+          setNetworkSpeed('slow');
+          if (autoQualityEnabled) setCurrentQuality('480p');
+        }
+      }
+    };
+
+    detectNetworkSpeed();
+
+    // @ts-ignore
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (connection) {
+      connection.addEventListener('change', detectNetworkSpeed);
+      return () => connection.removeEventListener('change', detectNetworkSpeed);
+    }
+  }, [autoQualityEnabled]);
+
+  // Update quality when manual selection changes
+  useEffect(() => {
+    if (videoQuality === 'auto') {
+      setAutoQualityEnabled(true);
+    } else {
+      setAutoQualityEnabled(false);
+      setCurrentQuality(videoQuality);
+    }
+  }, [videoQuality]);
 
   // Auto-play videos when they come into view (mobile) + mini player
   useEffect(() => {
@@ -862,8 +941,31 @@ export default function Feed() {
                   <Settings className="h-5 w-5" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-64" onClick={(e) => e.stopPropagation()}>
+              <PopoverContent className="w-72" onClick={(e) => e.stopPropagation()}>
                 <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="video-quality">Video Quality</Label>
+                    <Select value={videoQuality} onValueChange={(value: typeof videoQuality) => setVideoQuality(value)}>
+                      <SelectTrigger id="video-quality">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="auto">
+                          Auto (Currently: {currentQuality})
+                        </SelectItem>
+                        <SelectItem value="360p">360p</SelectItem>
+                        <SelectItem value="480p">480p</SelectItem>
+                        <SelectItem value="720p">720p (HD)</SelectItem>
+                        <SelectItem value="1080p">1080p (Full HD)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {autoQualityEnabled && (
+                      <p className="text-xs text-muted-foreground">
+                        Network: {networkSpeed === 'fast' ? '🟢 Fast' : networkSpeed === 'medium' ? '🟡 Medium' : '🔴 Slow'}
+                      </p>
+                    )}
+                  </div>
+                  
                   <div className="space-y-2">
                     <Label htmlFor="caption-size">Caption Size</Label>
                     <Select value={captionTextSize} onValueChange={(value: 'small' | 'medium' | 'large') => setCaptionTextSize(value)}>
@@ -895,6 +997,17 @@ export default function Feed() {
               </PopoverContent>
             </Popover>
           </div>
+          
+          {/* Quality Badge */}
+          {videoQuality === 'auto' && (
+            <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded flex items-center gap-1 z-10">
+              <span className={cn(
+                "w-1.5 h-1.5 rounded-full",
+                networkSpeed === 'fast' ? "bg-green-500" : networkSpeed === 'medium' ? "bg-yellow-500" : "bg-red-500"
+              )} />
+              {currentQuality}
+            </div>
+          )}
           
           {/* Caption overlay */}
           {captionsEnabled.has(video.id) && video.caption && (
