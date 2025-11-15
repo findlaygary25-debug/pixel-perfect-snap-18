@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp, Play, Pause, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -44,6 +44,8 @@ export default function Feed() {
   const [hoveredProgress, setHoveredProgress] = useState<{ videoId: string; percentage: number; x: number; thumbnail: string } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [currentVisibleVideoId, setCurrentVisibleVideoId] = useState<string | null>(null);
+  const [playingVideos, setPlayingVideos] = useState<Set<string>>(new Set());
+  const [mutedVideos, setMutedVideos] = useState<Set<string>>(new Set());
 
   // Auto-play videos when they come into view (mobile)
   useEffect(() => {
@@ -64,7 +66,11 @@ export default function Feed() {
             setCurrentVisibleVideoId(videoId);
           }
           
-          video.play().catch(() => {
+          video.play().then(() => {
+            if (videoId) {
+              setPlayingVideos((prev) => new Set(prev).add(videoId));
+            }
+          }).catch(() => {
             // Auto-play failed, user needs to interact first
           });
           
@@ -88,6 +94,13 @@ export default function Feed() {
           }
         } else {
           video.pause();
+          if (videoId) {
+            setPlayingVideos((prev) => {
+              const next = new Set(prev);
+              next.delete(videoId);
+              return next;
+            });
+          }
           if (videoId === currentVisibleVideoId) {
             setCurrentVisibleVideoId(null);
           }
@@ -138,8 +151,14 @@ export default function Feed() {
           e.preventDefault();
           if (videoElement.paused) {
             videoElement.play();
+            setPlayingVideos((prev) => new Set(prev).add(currentVisibleVideoId));
           } else {
             videoElement.pause();
+            setPlayingVideos((prev) => {
+              const next = new Set(prev);
+              next.delete(currentVisibleVideoId);
+              return next;
+            });
           }
           break;
         
@@ -350,7 +369,9 @@ export default function Feed() {
       if (error) throw error;
       setVideos(data || []);
       
+      // Initialize all videos as muted by default
       if (data) {
+        setMutedVideos(new Set(data.map(v => v.id)));
         fetchCommentCounts(data.map(v => v.id));
       }
     } catch (error) {
@@ -388,7 +409,9 @@ export default function Feed() {
       if (error) throw error;
       setFollowingVideos(data || []);
       
+      // Initialize all videos as muted by default
       if (data) {
+        setMutedVideos((prev) => new Set([...prev, ...data.map(v => v.id)]));
         fetchCommentCounts(data.map(v => v.id));
       }
     } catch (error) {
@@ -583,12 +606,72 @@ export default function Feed() {
             data-video-id={video.id}
             src={video.video_url}
             className="w-full aspect-video object-cover"
-            controls
             preload="metadata"
             playsInline
-            muted
+            muted={mutedVideos.has(video.id)}
             loop
           />
+          
+          {/* Play/Pause and Mute controls */}
+          <div className="absolute top-4 left-4 flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                const videoElement = videoRefs.current.get(video.id);
+                if (!videoElement) return;
+                
+                if (videoElement.paused) {
+                  videoElement.play();
+                  setPlayingVideos((prev) => new Set(prev).add(video.id));
+                } else {
+                  videoElement.pause();
+                  setPlayingVideos((prev) => {
+                    const next = new Set(prev);
+                    next.delete(video.id);
+                    return next;
+                  });
+                }
+              }}
+              className="bg-background/80 backdrop-blur-sm rounded-full h-10 w-10 p-0 hover:bg-background/90"
+            >
+              {playingVideos.has(video.id) ? (
+                <Pause className="h-5 w-5" />
+              ) : (
+                <Play className="h-5 w-5" />
+              )}
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                const videoElement = videoRefs.current.get(video.id);
+                if (!videoElement) return;
+                
+                if (mutedVideos.has(video.id)) {
+                  videoElement.muted = false;
+                  setMutedVideos((prev) => {
+                    const next = new Set(prev);
+                    next.delete(video.id);
+                    return next;
+                  });
+                } else {
+                  videoElement.muted = true;
+                  setMutedVideos((prev) => new Set(prev).add(video.id));
+                }
+              }}
+              className="bg-background/80 backdrop-blur-sm rounded-full h-10 w-10 p-0 hover:bg-background/90"
+            >
+              {mutedVideos.has(video.id) ? (
+                <VolumeX className="h-5 w-5" />
+              ) : (
+                <Volume2 className="h-5 w-5" />
+              )}
+            </Button>
+          </div>
           
           {/* Video progress bar */}
           {videoProgress[video.id] && (
