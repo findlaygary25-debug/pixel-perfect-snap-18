@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp, Play, Pause, Volume2, VolumeX } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp, Play, Pause, Volume2, VolumeX, Maximize, Minimize } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -46,6 +46,7 @@ export default function Feed() {
   const [currentVisibleVideoId, setCurrentVisibleVideoId] = useState<string | null>(null);
   const [playingVideos, setPlayingVideos] = useState<Set<string>>(new Set());
   const [mutedVideos, setMutedVideos] = useState<Set<string>>(new Set());
+  const [fullscreenVideoId, setFullscreenVideoId] = useState<string | null>(null);
 
   // Auto-play videos when they come into view (mobile)
   useEffect(() => {
@@ -132,6 +133,27 @@ export default function Feed() {
       }
     }
   }, [videos, followingVideos, activeTab]);
+
+  // Handle fullscreen change events
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        setFullscreenVideoId(null);
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, []);
 
   // Keyboard shortcuts for video control
   useEffect(() => {
@@ -669,6 +691,52 @@ export default function Feed() {
                 <VolumeX className="h-5 w-5" />
               ) : (
                 <Volume2 className="h-5 w-5" />
+              )}
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                const videoElement = videoRefs.current.get(video.id);
+                if (!videoElement) return;
+                
+                const videoContainer = videoElement.parentElement;
+                if (!videoContainer) return;
+                
+                if (fullscreenVideoId === video.id) {
+                  // Exit fullscreen
+                  if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                  } else if ((document as any).webkitExitFullscreen) {
+                    (document as any).webkitExitFullscreen();
+                  } else if ((document as any).mozCancelFullScreen) {
+                    (document as any).mozCancelFullScreen();
+                  } else if ((document as any).msExitFullscreen) {
+                    (document as any).msExitFullscreen();
+                  }
+                  setFullscreenVideoId(null);
+                } else {
+                  // Enter fullscreen
+                  if (videoContainer.requestFullscreen) {
+                    videoContainer.requestFullscreen();
+                  } else if ((videoContainer as any).webkitRequestFullscreen) {
+                    (videoContainer as any).webkitRequestFullscreen();
+                  } else if ((videoContainer as any).mozRequestFullScreen) {
+                    (videoContainer as any).mozRequestFullScreen();
+                  } else if ((videoContainer as any).msRequestFullscreen) {
+                    (videoContainer as any).msRequestFullscreen();
+                  }
+                  setFullscreenVideoId(video.id);
+                }
+              }}
+              className="bg-background/80 backdrop-blur-sm rounded-full h-10 w-10 p-0 hover:bg-background/90"
+            >
+              {fullscreenVideoId === video.id ? (
+                <Minimize className="h-5 w-5" />
+              ) : (
+                <Maximize className="h-5 w-5" />
               )}
             </Button>
           </div>
