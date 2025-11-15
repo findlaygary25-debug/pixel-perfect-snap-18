@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart } from "recharts";
-import { TrendingUp, TrendingDown, DollarSign, Package, ShoppingCart, Wifi, ArrowUp, ArrowDown } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, Package, ShoppingCart, Wifi, ArrowUp, ArrowDown, Eye, Play } from "lucide-react";
 
 type Order = {
   id: string;
@@ -38,13 +38,20 @@ export default function AnalyticsPage() {
   const [isRealTimeConnected, setIsRealTimeConnected] = useState(false);
   const [previousPeriodOrders, setPreviousPeriodOrders] = useState<Order[]>([]);
 
+  const [videoStats, setVideoStats] = useState<{
+    totalViews: number;
+    totalWatchTime: number;
+    avgEngagement: number;
+  }>({ totalViews: 0, totalWatchTime: 0, avgEngagement: 0 });
+
   useEffect(() => {
     loadAnalyticsData();
+    loadVideoAnalytics();
   }, [dateRange]);
 
   useEffect(() => {
-    // Set up realtime subscription for orders
-    const channel = supabase
+    // Set up realtime subscriptions for orders and video analytics
+    const ordersChannel = supabase
       .channel('analytics-orders')
       .on(
         'postgres_changes',
@@ -55,17 +62,67 @@ export default function AnalyticsPage() {
         },
         (payload) => {
           console.log('Order change detected:', payload);
-          // Reload analytics data when orders change
           loadAnalyticsData();
         }
       )
       .subscribe((status) => {
-        console.log('Realtime subscription status:', status);
+        console.log('Orders realtime status:', status);
         setIsRealTimeConnected(status === 'SUBSCRIBED');
       });
 
+    const videoViewsChannel = supabase
+      .channel('analytics-video-views')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'video_views'
+        },
+        (payload) => {
+          console.log('New video view detected:', payload);
+          loadVideoAnalytics();
+        }
+      )
+      .subscribe();
+
+    const videoEngagementChannel = supabase
+      .channel('analytics-video-engagement')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'video_engagement'
+        },
+        (payload) => {
+          console.log('New video engagement detected:', payload);
+          loadVideoAnalytics();
+        }
+      )
+      .subscribe();
+
+    const watchSessionsChannel = supabase
+      .channel('analytics-watch-sessions')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'video_watch_sessions'
+        },
+        (payload) => {
+          console.log('Watch session update detected:', payload);
+          loadVideoAnalytics();
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(ordersChannel);
+      supabase.removeChannel(videoViewsChannel);
+      supabase.removeChannel(videoEngagementChannel);
+      supabase.removeChannel(watchSessionsChannel);
       setIsRealTimeConnected(false);
     };
   }, [dateRange]);
@@ -82,6 +139,55 @@ export default function AnalyticsPage() {
       case "365days":
         return new Date(now.setDate(now.getDate() - 365));
     }
+  };
+
+  const loadVideoAnalytics = async () => {
+    const user = (await supabase.auth.getUser()).data.user;
+    if (!user) return;
+
+    const startDate = getDateRangeStart(dateRange).toISOString();
+
+    // Get user's videos
+    const { data: videos } = await supabase
+      .from("videos")
+      .select("id")
+      .eq("user_id", user.id);
+
+    if (!videos || videos.length === 0) return;
+
+    const videoIds = videos.map(v => v.id);
+
+    // Get video views
+    const { data: views, count: viewsCount } = await supabase
+      .from("video_views")
+      .select("*", { count: 'exact' })
+      .in("video_id", videoIds)
+      .gte("created_at", startDate);
+
+    // Get watch sessions
+    const { data: sessions } = await supabase
+      .from("video_watch_sessions")
+      .select("watch_duration, video_duration")
+      .in("video_id", videoIds)
+      .gte("created_at", startDate);
+
+    // Get engagement
+    const { data: engagement, count: engagementCount } = await supabase
+      .from("video_engagement")
+      .select("*", { count: 'exact' })
+      .in("video_id", videoIds)
+      .gte("created_at", startDate);
+
+    const totalWatchTime = sessions?.reduce((sum, s) => sum + Number(s.watch_duration), 0) || 0;
+    const avgEngagement = viewsCount && engagementCount 
+      ? (engagementCount / viewsCount) * 100 
+      : 0;
+
+    setVideoStats({
+      totalViews: viewsCount || 0,
+      totalWatchTime: Math.round(totalWatchTime / 60), // Convert to minutes
+      avgEngagement: Math.round(avgEngagement)
+    });
   };
 
   const loadAnalyticsData = async () => {
@@ -351,6 +457,51 @@ export default function AnalyticsPage() {
             </p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Video Analytics Section */}
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold mb-4">Video Analytics</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Total Views</CardTitle>
+              <Eye className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{videoStats.totalViews.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">
+                Video views
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Watch Time</CardTitle>
+              <Play className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{videoStats.totalWatchTime.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">
+                Minutes watched
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Engagement Rate</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{videoStats.avgEngagement}%</div>
+              <p className="text-xs text-muted-foreground">
+                Avg engagement
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Charts */}

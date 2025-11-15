@@ -1205,7 +1205,7 @@ export default function Feed() {
           
           {/* Quality Badge */}
           {videoQuality === 'auto' && (
-            <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded flex items-center gap-1 z-10">
+            <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded flex items-center gap-1 z-10">
               <span className={cn(
                 "w-1.5 h-1.5 rounded-full",
                 networkSpeed === 'fast' ? "bg-green-500" : networkSpeed === 'medium' ? "bg-yellow-500" : "bg-red-500"
