@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Video, VideoOff, Mic, MicOff, Radio, StopCircle, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import LiveChat from "@/components/LiveChat";
+import ViewerList from "@/components/ViewerList";
 
 export default function Live() {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ export default function Live() {
   const [viewerCount, setViewerCount] = useState(0);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [currentUsername, setCurrentUsername] = useState("");
+  const [currentAvatar, setCurrentAvatar] = useState<string | undefined>();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const liveStreamId = useRef<string | null>(null);
@@ -41,14 +43,15 @@ export default function Live() {
     setIsAuthenticated(true);
     setCurrentUser(session.user);
 
-    // Get username
+    // Get username and avatar
     const { data: profileData } = await supabase
       .from("profiles")
-      .select("username")
+      .select("username, avatar_url")
       .eq("user_id", session.user.id)
       .single();
     
     setCurrentUsername(profileData?.username || 'Unknown');
+    setCurrentAvatar(profileData?.avatar_url || undefined);
   };
 
   const startPreview = async () => {
@@ -143,12 +146,8 @@ export default function Live() {
   };
 
   const startViewerCountUpdates = () => {
-    // Simulate viewer count updates
-    const interval = setInterval(() => {
-      setViewerCount(prev => prev + Math.floor(Math.random() * 3));
-    }, 5000);
-
-    return () => clearInterval(interval);
+    // Viewer count is now managed by ViewerList component
+    return () => {};
   };
 
   const toggleCamera = () => {
@@ -184,9 +183,9 @@ export default function Live() {
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         {/* Video Preview */}
-        <Card className="lg:col-span-2">
+        <Card>
           <CardHeader>
             <CardTitle>Preview</CardTitle>
             <CardDescription>
@@ -314,15 +313,26 @@ export default function Live() {
           </CardContent>
         </Card>
 
-        {/* Live Chat */}
+        {/* Live Chat and Viewer List */}
         {isLive && liveStreamId.current && (
-          <Card className="lg:col-span-1 h-[600px]">
-            <LiveChat 
-              liveStreamId={liveStreamId.current}
-              currentUserId={currentUser.id}
-              currentUsername={currentUsername}
-            />
-          </Card>
+          <div className="flex flex-col gap-6">
+            <Card className="h-[350px]">
+              <ViewerList 
+                liveStreamId={liveStreamId.current}
+                currentUserId={currentUser.id}
+                currentUsername={currentUsername}
+                currentAvatar={currentAvatar}
+                onViewerCountChange={setViewerCount}
+              />
+            </Card>
+            <Card className="h-[350px]">
+              <LiveChat 
+                liveStreamId={liveStreamId.current}
+                currentUserId={currentUser.id}
+                currentUsername={currentUsername}
+              />
+            </Card>
+          </div>
         )}
       </div>
     </div>
