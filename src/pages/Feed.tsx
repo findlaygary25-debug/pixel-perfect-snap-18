@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp } from "lucide-react";
@@ -32,6 +32,48 @@ export default function Feed() {
   const [activeTab, setActiveTab] = useState("forYou");
   const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
   const [selectedPromoteVideo, setSelectedPromoteVideo] = useState<VideoPost | null>(null);
+  const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
+
+  // Auto-play videos when they come into view (mobile)
+  useEffect(() => {
+    const observerOptions = {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.5 // Video must be 50% visible
+    };
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        const video = entry.target as HTMLVideoElement;
+        if (entry.isIntersecting) {
+          video.play().catch(() => {
+            // Auto-play failed, user needs to interact first
+          });
+        } else {
+          video.pause();
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+
+    // Observe all video elements
+    videoRefs.current.forEach((video) => {
+      if (video) observer.observe(video);
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [videos, followingVideos, activeTab]);
+
+  const setVideoRef = useCallback((videoId: string, element: HTMLVideoElement | null) => {
+    if (element) {
+      videoRefs.current.set(videoId, element);
+    } else {
+      videoRefs.current.delete(videoId);
+    }
+  }, []);
 
   useEffect(() => {
     fetchVideos();
@@ -316,10 +358,14 @@ export default function Feed() {
       {/* Mobile: Video with actions on the right side */}
       <div className="relative md:static">
         <video
+          ref={(el) => setVideoRef(video.id, el)}
           src={video.video_url}
           className="w-full aspect-video object-cover"
           controls
           preload="metadata"
+          playsInline
+          muted
+          loop
         />
         
         {/* Mobile action buttons - right side */}
