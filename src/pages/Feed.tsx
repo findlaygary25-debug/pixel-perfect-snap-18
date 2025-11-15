@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp, Play, Pause, Volume2, VolumeX, Maximize, Minimize, Subtitles, Settings } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp, Play, Pause, Volume2, VolumeX, Maximize, Minimize, Subtitles, Settings, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -55,8 +55,10 @@ export default function Feed() {
   const [captionTextSize, setCaptionTextSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [captionBackground, setCaptionBackground] = useState<'none' | 'semi' | 'solid'>('semi');
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [miniPlayerVideo, setMiniPlayerVideo] = useState<{ video: VideoPost; wasPlaying: boolean } | null>(null);
+  const videoContainerRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  // Auto-play videos when they come into view (mobile)
+  // Auto-play videos when they come into view (mobile) + mini player
   useEffect(() => {
     const observerOptions = {
       root: null,
@@ -73,6 +75,13 @@ export default function Feed() {
           // Track currently visible video
           if (videoId) {
             setCurrentVisibleVideoId(videoId);
+            // Close mini player if scrolling back to the video
+            setMiniPlayerVideo((prev) => {
+              if (prev && prev.video.id === videoId) {
+                return null;
+              }
+              return prev;
+            });
           }
           
           video.play().then(() => {
@@ -80,38 +89,33 @@ export default function Feed() {
               setPlayingVideos((prev) => new Set(prev).add(videoId));
             }
           }).catch(() => {
-            // Auto-play failed, user needs to interact first
-          });
-          
-          // Preload next videos when current video is in view
-          if (videoId) {
-            const currentVideos = activeTab === "following" ? followingVideos : videos;
-            const currentIndex = currentVideos.findIndex(v => v.id === videoId);
-            
-            // Preload next 2 videos
-            for (let i = 1; i <= 2; i++) {
-              const nextIndex = currentIndex + i;
-              if (nextIndex < currentVideos.length) {
-                const nextVideoId = currentVideos[nextIndex].id;
-                const nextVideoElement = videoRefs.current.get(nextVideoId);
-                if (nextVideoElement) {
-                  nextVideoElement.preload = 'auto';
-                  nextVideoElement.load();
-                }
-              }
+            if (videoId) {
+              setPlayingVideos((prev) => {
+                const newSet = new Set(prev);
+                newSet.delete(videoId);
+                return newSet;
+              });
             }
-          }
+          });
         } else {
+          // Check if video was playing before pausing
+          const wasPlaying = !video.paused;
           video.pause();
           if (videoId) {
             setPlayingVideos((prev) => {
-              const next = new Set(prev);
-              next.delete(videoId);
-              return next;
+              const newSet = new Set(prev);
+              newSet.delete(videoId);
+              return newSet;
             });
-          }
-          if (videoId === currentVisibleVideoId) {
-            setCurrentVisibleVideoId(null);
+            
+            // Show mini player if video was playing and scrolled away
+            if (wasPlaying && !miniPlayerVideo) {
+              const currentVideos = activeTab === "following" ? followingVideos : videos;
+              const videoData = currentVideos.find(v => v.id === videoId);
+              if (videoData) {
+                setMiniPlayerVideo({ video: videoData, wasPlaying: true });
+              }
+            }
           }
         }
       });
@@ -127,7 +131,7 @@ export default function Feed() {
     return () => {
       observer.disconnect();
     };
-  }, [videos, followingVideos, activeTab]);
+  }, [videos, followingVideos, activeTab, miniPlayerVideo]);
 
   // Preload first video on mount for immediate playback
   useEffect(() => {
@@ -633,8 +637,37 @@ export default function Feed() {
     }
   };
 
+  const setVideoContainerRef = useCallback((videoId: string, element: HTMLDivElement | null) => {
+    if (element) {
+      videoContainerRefs.current.set(videoId, element);
+    } else {
+      videoContainerRefs.current.delete(videoId);
+    }
+  }, []);
+
+  const handleMiniPlayerClick = () => {
+    if (miniPlayerVideo) {
+      const container = videoContainerRefs.current.get(miniPlayerVideo.video.id);
+      if (container) {
+        container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setMiniPlayerVideo(null);
+      }
+    }
+  };
+
+  const handleCloseMiniPlayer = () => {
+    if (miniPlayerVideo) {
+      const video = videoRefs.current.get(miniPlayerVideo.video.id);
+      if (video) {
+        video.pause();
+      }
+    }
+    setMiniPlayerVideo(null);
+  };
+
   const renderVideoCard = (video: VideoPost) => (
     <motion.div
+      ref={(el) => setVideoContainerRef(video.id, el)}
       key={video.id}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -1304,6 +1337,62 @@ export default function Feed() {
             </div>
           </motion.div>
         </div>
+      )}
+
+      {/* Mini Player */}
+      {miniPlayerVideo && (
+        <motion.div
+          initial={{ opacity: 0, y: 100, scale: 0.8 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 100, scale: 0.8 }}
+          className="fixed bottom-20 right-4 z-50 w-64 bg-card border border-border rounded-lg shadow-2xl overflow-hidden"
+        >
+          {/* Close button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleCloseMiniPlayer}
+            className="absolute top-2 right-2 z-10 h-6 w-6 bg-background/50 hover:bg-background/80 backdrop-blur-sm"
+          >
+            <X className="h-3 w-3" />
+          </Button>
+
+          {/* Video */}
+          <div 
+            className="relative aspect-[9/16] cursor-pointer"
+            onClick={handleMiniPlayerClick}
+          >
+            <video
+              ref={(el) => el && setVideoRef(miniPlayerVideo.video.id, el)}
+              data-video-id={miniPlayerVideo.video.id}
+              src={miniPlayerVideo.video.video_url}
+              className="w-full h-full object-cover"
+              loop
+              playsInline
+              autoPlay={miniPlayerVideo.wasPlaying}
+              muted={mutedVideos.has(miniPlayerVideo.video.id)}
+            />
+            
+            {/* Play/Pause overlay */}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+              {!playingVideos.has(miniPlayerVideo.video.id) && (
+                <Play className="h-8 w-8 text-white" />
+              )}
+            </div>
+
+            {/* Video info */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+              <p className="text-white text-xs font-medium truncate">
+                @{miniPlayerVideo.video.username}
+              </p>
+              {miniPlayerVideo.video.caption && (
+                <p className="text-white/80 text-xs truncate">
+                  {miniPlayerVideo.video.caption}
+                </p>
+              )}
+            </div>
+          </div>
+        </motion.div>
       )}
     </div>
   );
