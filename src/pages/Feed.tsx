@@ -43,6 +43,7 @@ export default function Feed() {
   const [videoProgress, setVideoProgress] = useState<Record<string, { current: number; duration: number; buffered: number }>>({});
   const [hoveredProgress, setHoveredProgress] = useState<{ videoId: string; percentage: number; x: number; thumbnail: string } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [currentVisibleVideoId, setCurrentVisibleVideoId] = useState<string | null>(null);
 
   // Auto-play videos when they come into view (mobile)
   useEffect(() => {
@@ -58,6 +59,11 @@ export default function Feed() {
         const videoId = video.dataset.videoId;
         
         if (entry.isIntersecting) {
+          // Track currently visible video
+          if (videoId) {
+            setCurrentVisibleVideoId(videoId);
+          }
+          
           video.play().catch(() => {
             // Auto-play failed, user needs to interact first
           });
@@ -82,6 +88,9 @@ export default function Feed() {
           }
         } else {
           video.pause();
+          if (videoId === currentVisibleVideoId) {
+            setCurrentVisibleVideoId(null);
+          }
         }
       });
     };
@@ -110,6 +119,55 @@ export default function Feed() {
       }
     }
   }, [videos, followingVideos, activeTab]);
+
+  // Keyboard shortcuts for video control
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      if (!currentVisibleVideoId) return;
+      
+      const videoElement = videoRefs.current.get(currentVisibleVideoId);
+      if (!videoElement) return;
+
+      switch (e.code) {
+        case 'Space':
+          e.preventDefault();
+          if (videoElement.paused) {
+            videoElement.play();
+          } else {
+            videoElement.pause();
+          }
+          break;
+        
+        case 'ArrowLeft':
+          e.preventDefault();
+          videoElement.currentTime = Math.max(0, videoElement.currentTime - 5);
+          break;
+        
+        case 'ArrowRight':
+          e.preventDefault();
+          videoElement.currentTime = Math.min(videoElement.duration, videoElement.currentTime + 5);
+          break;
+        
+        case 'ArrowUp':
+          e.preventDefault();
+          videoElement.volume = Math.min(1, videoElement.volume + 0.1);
+          break;
+        
+        case 'ArrowDown':
+          e.preventDefault();
+          videoElement.volume = Math.max(0, videoElement.volume - 0.1);
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentVisibleVideoId]);
 
   const setVideoRef = useCallback((videoId: string, element: HTMLVideoElement | null) => {
     if (element) {
