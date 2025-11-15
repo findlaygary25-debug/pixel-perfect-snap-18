@@ -105,6 +105,67 @@ export type Database = {
           },
         ]
       }
+      commissions: {
+        Row: {
+          affiliate_id: string
+          amount: number
+          commission_rate: number
+          created_at: string | null
+          customer_id: string
+          id: string
+          level: number
+          order_id: string
+          paid_at: string | null
+          status: string
+        }
+        Insert: {
+          affiliate_id: string
+          amount: number
+          commission_rate: number
+          created_at?: string | null
+          customer_id: string
+          id?: string
+          level: number
+          order_id: string
+          paid_at?: string | null
+          status?: string
+        }
+        Update: {
+          affiliate_id?: string
+          amount?: number
+          commission_rate?: number
+          created_at?: string | null
+          customer_id?: string
+          id?: string
+          level?: number
+          order_id?: string
+          paid_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commissions_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "commissions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "commissions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       follows: {
         Row: {
           created_at: string
@@ -206,6 +267,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          affiliate_id: string | null
           created_at: string
           customer_email: string
           customer_id: string
@@ -222,6 +284,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          affiliate_id?: string | null
           created_at?: string
           customer_email: string
           customer_id: string
@@ -238,6 +301,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          affiliate_id?: string | null
           created_at?: string
           customer_email?: string
           customer_id?: string
@@ -254,6 +318,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "orders_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "orders_store_id_fkey"
             columns: ["store_id"]
@@ -313,6 +384,7 @@ export type Database = {
           bio: string | null
           created_at: string
           id: string
+          referred_by: string | null
           updated_at: string
           user_id: string
           username: string
@@ -322,6 +394,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           id?: string
+          referred_by?: string | null
           updated_at?: string
           user_id: string
           username: string
@@ -331,11 +404,20 @@ export type Database = {
           bio?: string | null
           created_at?: string
           id?: string
+          referred_by?: string | null
           updated_at?: string
           user_id?: string
           username?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       stores: {
         Row: {
@@ -441,7 +523,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_affiliate_chain: {
+        Args: { user_id: string }
+        Returns: {
+          affiliate_id: string
+          affiliate_username: string
+          level: number
+        }[]
+      }
     }
     Enums: {
       order_status: "pending" | "processing" | "completed" | "cancelled"

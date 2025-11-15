@@ -47,7 +47,14 @@ export function PlaceOrderDialog({ product, open, onOpenChange, onOrderCreated }
         return;
       }
 
-      // Create order
+      // Get user's profile to find their referrer (affiliate)
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("referred_by")
+        .eq("user_id", user.id)
+        .single();
+
+      // Create order with affiliate tracking
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
@@ -58,6 +65,7 @@ export function PlaceOrderDialog({ product, open, onOpenChange, onOrderCreated }
           customer_email: customerEmail,
           customer_phone: customerPhone,
           shipping_address: shippingAddress,
+          affiliate_id: profile?.referred_by || null, // Track the affiliate
         })
         .select()
         .single();
@@ -75,6 +83,16 @@ export function PlaceOrderDialog({ product, open, onOpenChange, onOrderCreated }
         });
 
       if (itemError) throw itemError;
+
+      // Calculate commissions for the affiliate chain
+      try {
+        await supabase.functions.invoke("calculate-commissions", {
+          body: { orderId: order.id },
+        });
+      } catch (commissionError) {
+        console.error("Commission calculation error:", commissionError);
+        // Don't fail the order if commission calc fails
+      }
 
       toast({
         title: "Success",
