@@ -891,6 +891,21 @@ export default function Feed() {
             />
           </Button>
 
+          {currentUser && video.user_id !== currentUser && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleFollow(video.user_id)}
+              className={`bg-background/80 backdrop-blur-sm rounded-full h-12 w-12 p-0 ${followedUsers.has(video.user_id) ? "text-primary" : ""}`}
+            >
+              {followedUsers.has(video.user_id) ? (
+                <UserMinus className="h-6 w-6" />
+              ) : (
+                <UserPlus className="h-6 w-6" />
+              )}
+            </Button>
+          )}
+
           <Button
             variant="ghost"
             size="sm"
