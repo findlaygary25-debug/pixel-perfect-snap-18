@@ -236,18 +236,56 @@ export default function Feed() {
     };
   }, [videos, followingVideos, activeTab, miniPlayerVideo]);
 
-  // Preload first video on mount for immediate playback
+  // Smart video preloading - preload next 2-3 videos based on current visible video
   useEffect(() => {
     const currentVideos = activeTab === "following" ? followingVideos : videos;
-    if (currentVideos.length > 0) {
-      const firstVideoId = currentVideos[0].id;
-      const firstVideo = videoRefs.current.get(firstVideoId);
-      if (firstVideo) {
-        firstVideo.preload = 'auto';
-        firstVideo.load();
+    if (currentVideos.length === 0 || !currentVisibleVideoId) return;
+    
+    const currentIndex = currentVideos.findIndex(v => v.id === currentVisibleVideoId);
+    if (currentIndex === -1) return;
+    
+    // Determine how many videos to preload based on network speed
+    const preloadCount = networkSpeed === 'fast' ? 3 : networkSpeed === 'medium' ? 2 : 1;
+    
+    // Preload current + next videos
+    for (let i = currentIndex; i <= currentIndex + preloadCount && i < currentVideos.length; i++) {
+      const videoId = currentVideos[i].id;
+      const videoElement = videoRefs.current.get(videoId);
+      
+      if (videoElement) {
+        // Set preload to 'auto' for current and next videos
+        if (i === currentIndex) {
+          videoElement.preload = 'auto';
+        } else {
+          // For upcoming videos, use 'metadata' on slow connections, 'auto' on fast
+          videoElement.preload = networkSpeed === 'slow' ? 'metadata' : 'auto';
+        }
+        
+        // Trigger load if not already loading
+        if (videoElement.readyState < 2) {
+          videoElement.load();
+        }
       }
     }
-  }, [videos, followingVideos, activeTab]);
+    
+    // Clean up: set videos far behind to preload='none' to save bandwidth
+    for (let i = 0; i < currentIndex - 1; i++) {
+      const videoId = currentVideos[i]?.id;
+      const videoElement = videoRefs.current.get(videoId);
+      if (videoElement) {
+        videoElement.preload = 'none';
+      }
+    }
+    
+    // Clean up: set videos far ahead to preload='none' to save bandwidth
+    for (let i = currentIndex + preloadCount + 1; i < currentVideos.length; i++) {
+      const videoId = currentVideos[i]?.id;
+      const videoElement = videoRefs.current.get(videoId);
+      if (videoElement) {
+        videoElement.preload = 'none';
+      }
+    }
+  }, [currentVisibleVideoId, videos, followingVideos, activeTab, networkSpeed]);
 
   // Handle fullscreen change events
   useEffect(() => {
