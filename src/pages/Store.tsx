@@ -9,10 +9,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { useUndoableAction } from "@/hooks/useUndoableAction";
-import { Plus, Pencil, Trash2, Package, ShoppingCart, Truck, CheckSquare } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, ShoppingCart, Truck, CheckSquare, Filter, X, Save, Calendar as CalendarIcon } from "lucide-react";
 import { PlaceOrderDialog } from "@/components/PlaceOrderDialog";
+import { format } from "date-fns";
 
 type Store = {
   id: string;
@@ -73,6 +76,22 @@ type OrderItem = {
   };
 };
 
+type FilterPreset = {
+  id: string;
+  name: string;
+  status: string[];
+  dateFrom: Date | null;
+  dateTo: Date | null;
+  customerName: string;
+};
+
+type OrderFilters = {
+  status: string[];
+  dateFrom: Date | null;
+  dateTo: Date | null;
+  customerName: string;
+};
+
 export default function StorePage() {
   const [store, setStore] = useState<Store | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -89,6 +108,16 @@ export default function StorePage() {
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   const [bulkStatus, setBulkStatus] = useState<string>("");
+  const [filters, setFilters] = useState<OrderFilters>({
+    status: [],
+    dateFrom: null,
+    dateTo: null,
+    customerName: "",
+  });
+  const [filterPresets, setFilterPresets] = useState<FilterPreset[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
+  const [presetName, setPresetName] = useState("");
+  const [savePresetDialogOpen, setSavePresetDialogOpen] = useState(false);
   const [productForm, setProductForm] = useState<ProductFormData>({
     title: "",
     description: "",
@@ -98,6 +127,25 @@ export default function StorePage() {
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
   const { performUndoableAction } = useUndoableAction();
+
+  // Load filter presets from localStorage
+  useEffect(() => {
+    const savedPresets = localStorage.getItem("orderFilterPresets");
+    if (savedPresets) {
+      try {
+        const presets = JSON.parse(savedPresets);
+        // Convert date strings back to Date objects
+        const parsedPresets = presets.map((preset: any) => ({
+          ...preset,
+          dateFrom: preset.dateFrom ? new Date(preset.dateFrom) : null,
+          dateTo: preset.dateTo ? new Date(preset.dateTo) : null,
+        }));
+        setFilterPresets(parsedPresets);
+      } catch (e) {
+        console.error("Failed to load presets:", e);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     loadStoreAndProducts();
@@ -397,11 +445,112 @@ export default function StorePage() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedOrderIds.size === orders.length) {
+    if (selectedOrderIds.size === filteredOrders.length) {
       setSelectedOrderIds(new Set());
     } else {
-      setSelectedOrderIds(new Set(orders.map((o) => o.id)));
+      setSelectedOrderIds(new Set(filteredOrders.map((o) => o.id)));
     }
+  };
+
+  const filteredOrders = orders.filter((order) => {
+    // Filter by status
+    if (filters.status.length > 0 && !filters.status.includes(order.status)) {
+      return false;
+    }
+
+    // Filter by date range
+    if (filters.dateFrom) {
+      const orderDate = new Date(order.created_at);
+      if (orderDate < filters.dateFrom) return false;
+    }
+    if (filters.dateTo) {
+      const orderDate = new Date(order.created_at);
+      const endOfDay = new Date(filters.dateTo);
+      endOfDay.setHours(23, 59, 59, 999);
+      if (orderDate > endOfDay) return false;
+    }
+
+    // Filter by customer name
+    if (filters.customerName.trim()) {
+      const searchTerm = filters.customerName.toLowerCase();
+      return order.customer_name.toLowerCase().includes(searchTerm) ||
+             order.customer_email.toLowerCase().includes(searchTerm);
+    }
+
+    return true;
+  });
+
+  const toggleStatusFilter = (status: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      status: prev.status.includes(status)
+        ? prev.status.filter((s) => s !== status)
+        : [...prev.status, status],
+    }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      status: [],
+      dateFrom: null,
+      dateTo: null,
+      customerName: "",
+    });
+  };
+
+  const hasActiveFilters = 
+    filters.status.length > 0 ||
+    filters.dateFrom !== null ||
+    filters.dateTo !== null ||
+    filters.customerName.trim() !== "";
+
+  const saveFilterPreset = () => {
+    if (!presetName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a preset name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newPreset: FilterPreset = {
+      id: Date.now().toString(),
+      name: presetName.trim(),
+      ...filters,
+    };
+
+    const updatedPresets = [...filterPresets, newPreset];
+    setFilterPresets(updatedPresets);
+    localStorage.setItem("orderFilterPresets", JSON.stringify(updatedPresets));
+
+    toast({
+      title: "Success",
+      description: "Filter preset saved",
+    });
+
+    setPresetName("");
+    setSavePresetDialogOpen(false);
+  };
+
+  const loadFilterPreset = (preset: FilterPreset) => {
+    setFilters({
+      status: preset.status,
+      dateFrom: preset.dateFrom,
+      dateTo: preset.dateTo,
+      customerName: preset.customerName,
+    });
+  };
+
+  const deleteFilterPreset = (presetId: string) => {
+    const updatedPresets = filterPresets.filter((p) => p.id !== presetId);
+    setFilterPresets(updatedPresets);
+    localStorage.setItem("orderFilterPresets", JSON.stringify(updatedPresets));
+
+    toast({
+      title: "Success",
+      description: "Preset deleted",
+    });
   };
 
   const addTrackingNumber = async () => {
@@ -826,22 +975,192 @@ export default function StorePage() {
         <TabsContent value="orders" className="space-y-6">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-4">
                 <CardTitle className="flex items-center gap-2">
                   <Package className="h-5 w-5" />
-                  Orders
+                  Orders {filteredOrders.length !== orders.length && (
+                    <Badge variant="secondary">
+                      {filteredOrders.length} of {orders.length}
+                    </Badge>
+                  )}
                 </CardTitle>
-                {orders.length > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={toggleSelectAll}
-                  >
-                    <CheckSquare className="h-4 w-4 mr-2" />
-                    {selectedOrderIds.size === orders.length ? "Deselect All" : "Select All"}
-                  </Button>
-                )}
+                <div className="flex items-center gap-2">
+                  {orders.length > 0 && (
+                    <>
+                      <Button
+                        variant={showFilters ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setShowFilters(!showFilters)}
+                      >
+                        <Filter className="h-4 w-4 mr-2" />
+                        Filters
+                        {hasActiveFilters && (
+                          <Badge variant="destructive" className="ml-2 h-5 w-5 rounded-full p-0 flex items-center justify-center">
+                            {filters.status.length + (filters.dateFrom ? 1 : 0) + (filters.dateTo ? 1 : 0) + (filters.customerName ? 1 : 0)}
+                          </Badge>
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={toggleSelectAll}
+                      >
+                        <CheckSquare className="h-4 w-4 mr-2" />
+                        {selectedOrderIds.size === filteredOrders.length ? "Deselect All" : "Select All"}
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
+              
+              {showFilters && (
+                <div className="mt-4 p-4 bg-muted rounded-lg space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">Filter Orders</h4>
+                    <div className="flex items-center gap-2">
+                      {hasActiveFilters && (
+                        <Button variant="ghost" size="sm" onClick={clearFilters}>
+                          <X className="h-4 w-4 mr-2" />
+                          Clear All
+                        </Button>
+                      )}
+                      {hasActiveFilters && (
+                        <Dialog open={savePresetDialogOpen} onOpenChange={setSavePresetDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Save className="h-4 w-4 mr-2" />
+                              Save Preset
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Save Filter Preset</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div>
+                                <label className="text-sm font-medium">Preset Name</label>
+                                <Input
+                                  value={presetName}
+                                  onChange={(e) => setPresetName(e.target.value)}
+                                  placeholder="e.g., Pending Orders This Week"
+                                />
+                              </div>
+                              <Button onClick={saveFilterPreset} className="w-full">
+                                Save Preset
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Status</label>
+                      <div className="space-y-2">
+                        {["pending", "processing", "completed", "cancelled"].map((status) => (
+                          <div key={status} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`status-${status}`}
+                              checked={filters.status.includes(status)}
+                              onCheckedChange={() => toggleStatusFilter(status)}
+                            />
+                            <label
+                              htmlFor={`status-${status}`}
+                              className="text-sm capitalize cursor-pointer"
+                            >
+                              {status}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Date From</label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start text-left font-normal"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {filters.dateFrom ? format(filters.dateFrom, "PPP") : "Pick a date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 bg-background" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={filters.dateFrom || undefined}
+                            onSelect={(date) => setFilters({ ...filters, dateFrom: date || null })}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Date To</label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start text-left font-normal"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {filters.dateTo ? format(filters.dateTo, "PPP") : "Pick a date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 bg-background" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={filters.dateTo || undefined}
+                            onSelect={(date) => setFilters({ ...filters, dateTo: date || null })}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Customer Search</label>
+                      <Input
+                        placeholder="Name or email..."
+                        value={filters.customerName}
+                        onChange={(e) => setFilters({ ...filters, customerName: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  
+                  {filterPresets.length > 0 && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Saved Presets</label>
+                      <div className="flex flex-wrap gap-2">
+                        {filterPresets.map((preset) => (
+                          <div key={preset.id} className="flex items-center gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => loadFilterPreset(preset)}
+                            >
+                              {preset.name}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => deleteFilterPreset(preset.id)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               {selectedOrderIds.size > 0 && (
@@ -877,13 +1196,13 @@ export default function StorePage() {
                   </div>
                 </div>
               )}
-              {orders.length === 0 ? (
+              {filteredOrders.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">
-                  No orders yet
+                  {hasActiveFilters ? "No orders match the current filters" : "No orders yet"}
                 </p>
               ) : (
                 <div className="space-y-4">
-                  {orders.map((order) => (
+                  {filteredOrders.map((order) => (
                     <Card key={order.id} className={selectedOrderIds.has(order.id) ? "ring-2 ring-primary" : ""}>
                       <CardHeader>
                         <div className="flex justify-between items-start gap-4">
