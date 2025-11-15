@@ -12,6 +12,7 @@ import Activity from "./pages/Activity";
 import Upload from "./pages/Upload";
 import Store from "./pages/Store";
 import Orders from "./pages/Orders";
+import Analytics from "./pages/Analytics";
 import Wallet from "./pages/Wallet";
 import Affiliate from "./pages/Affiliate";
 import Makeup from "./pages/Makeup";
@@ -48,6 +49,7 @@ const App = () => (
                   <Route path="/upload" element={<Upload />} />
                   <Route path="/store" element={<Store />} />
                   <Route path="/orders" element={<Orders />} />
+                  <Route path="/analytics" element={<Analytics />} />
                   <Route path="/wallet" element={<Wallet />} />
                   <Route path="/affiliate" element={<Affiliate />} />
                   <Route path="/makeup" element={<Makeup />} />
