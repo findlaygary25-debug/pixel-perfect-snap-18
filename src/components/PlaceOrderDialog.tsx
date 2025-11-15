@@ -18,9 +18,10 @@ type PlaceOrderDialogProps = {
   product: Product;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onOrderCreated?: () => void;
 };
 
-export function PlaceOrderDialog({ product, open, onOpenChange }: PlaceOrderDialogProps) {
+export function PlaceOrderDialog({ product, open, onOpenChange, onOrderCreated }: PlaceOrderDialogProps) {
   const [quantity, setQuantity] = useState(1);
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
@@ -80,6 +81,9 @@ export function PlaceOrderDialog({ product, open, onOpenChange }: PlaceOrderDial
         description: "Order placed successfully!",
       });
 
+      // Notify parent component
+      onOrderCreated?.();
+      
       onOpenChange(false);
       setQuantity(1);
       setCustomerName("");
@@ -112,6 +116,7 @@ export function PlaceOrderDialog({ product, open, onOpenChange }: PlaceOrderDial
               value={quantity}
               onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
               required
+              disabled={submitting}
             />
           </div>
 
@@ -122,6 +127,7 @@ export function PlaceOrderDialog({ product, open, onOpenChange }: PlaceOrderDial
               onChange={(e) => setCustomerName(e.target.value)}
               placeholder="John Doe"
               required
+              disabled={submitting}
             />
           </div>
 
@@ -133,6 +139,7 @@ export function PlaceOrderDialog({ product, open, onOpenChange }: PlaceOrderDial
               onChange={(e) => setCustomerEmail(e.target.value)}
               placeholder="john@example.com"
               required
+              disabled={submitting}
             />
           </div>
 
@@ -143,6 +150,7 @@ export function PlaceOrderDialog({ product, open, onOpenChange }: PlaceOrderDial
               value={customerPhone}
               onChange={(e) => setCustomerPhone(e.target.value)}
               placeholder="+1234567890"
+              disabled={submitting}
             />
           </div>
 
@@ -154,6 +162,7 @@ export function PlaceOrderDialog({ product, open, onOpenChange }: PlaceOrderDial
               placeholder="123 Main St, City, State, ZIP"
               required
               rows={3}
+              disabled={submitting}
             />
           </div>
 
