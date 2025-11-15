@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp, Play, Pause, Volume2, VolumeX, Maximize, Minimize, Subtitles, Settings, X, PictureInPicture } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp, Play, Pause, Volume2, VolumeX, Maximize, Minimize, Subtitles, Settings, X, PictureInPicture, ListVideo, Plus, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -11,6 +11,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type VideoPost = {
   id: string;
@@ -21,6 +24,15 @@ type VideoPost = {
   likes: number;
   views: number;
   comments?: number;
+};
+
+type VideoChapter = {
+  id: string;
+  video_id: string;
+  user_id: string;
+  timestamp: number;
+  label: string;
+  created_at: string;
 };
 
 export default function Feed() {
@@ -62,6 +74,12 @@ export default function Feed() {
   const [autoQualityEnabled, setAutoQualityEnabled] = useState(true);
   const [currentQuality, setCurrentQuality] = useState<'360p' | '480p' | '720p' | '1080p'>('720p');
   const [pipVideo, setPipVideo] = useState<string | null>(null);
+  const [videoChapters, setVideoChapters] = useState<Record<string, VideoChapter[]>>({});
+  const [chaptersDialogOpen, setChaptersDialogOpen] = useState(false);
+  const [selectedChapterVideo, setSelectedChapterVideo] = useState<VideoPost | null>(null);
+  const [newChapterLabel, setNewChapterLabel] = useState("");
+  const [editingChapter, setEditingChapter] = useState<VideoChapter | null>(null);
+  const [showChaptersList, setShowChaptersList] = useState<Set<string>>(new Set());
 
   // Network speed detection
   useEffect(() => {
@@ -534,6 +552,7 @@ export default function Feed() {
       if (data) {
         setMutedVideos(new Set(data.map(v => v.id)));
         fetchCommentCounts(data.map(v => v.id));
+        fetchVideoChapters(data.map(v => v.id));
       }
     } catch (error) {
       console.error("Error fetching videos:", error);
@@ -574,6 +593,7 @@ export default function Feed() {
       if (data) {
         setMutedVideos((prev) => new Set([...prev, ...data.map(v => v.id)]));
         fetchCommentCounts(data.map(v => v.id));
+        fetchVideoChapters(data.map(v => v.id));
       }
     } catch (error) {
       console.error("Error fetching following videos:", error);
@@ -598,6 +618,129 @@ export default function Feed() {
       setCommentCounts(counts);
     } catch (error) {
       console.error("Error fetching comment counts:", error);
+    }
+  };
+
+  const fetchVideoChapters = async (videoIds: string[]) => {
+    try {
+      const { data, error } = await supabase
+        .from("video_chapters")
+        .select("*")
+        .in("video_id", videoIds)
+        .order("timestamp", { ascending: true });
+
+      if (error) throw error;
+
+      const chaptersByVideo: Record<string, VideoChapter[]> = {};
+      data?.forEach((chapter) => {
+        if (!chaptersByVideo[chapter.video_id]) {
+          chaptersByVideo[chapter.video_id] = [];
+        }
+        chaptersByVideo[chapter.video_id].push(chapter);
+      });
+
+      setVideoChapters(chaptersByVideo);
+    } catch (error) {
+      console.error("Error fetching video chapters:", error);
+    }
+  };
+
+  const addChapter = async () => {
+    if (!selectedChapterVideo || !currentUser || !newChapterLabel.trim()) return;
+
+    try {
+      const videoElement = videoRefs.current.get(selectedChapterVideo.id);
+      if (!videoElement) return;
+
+      const timestamp = videoElement.currentTime;
+
+      const { data, error } = await supabase
+        .from("video_chapters")
+        .insert({
+          video_id: selectedChapterVideo.id,
+          user_id: currentUser,
+          timestamp,
+          label: newChapterLabel.trim(),
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setVideoChapters((prev) => ({
+        ...prev,
+        [selectedChapterVideo.id]: [
+          ...(prev[selectedChapterVideo.id] || []),
+          data,
+        ].sort((a, b) => a.timestamp - b.timestamp),
+      }));
+
+      setNewChapterLabel("");
+      toast.success("Chapter added!");
+    } catch (error) {
+      console.error("Error adding chapter:", error);
+      toast.error("Failed to add chapter");
+    }
+  };
+
+  const updateChapterLabel = async (chapterId: string, newLabel: string) => {
+    if (!newLabel.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from("video_chapters")
+        .update({ label: newLabel.trim() })
+        .eq("id", chapterId);
+
+      if (error) throw error;
+
+      setVideoChapters((prev) => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach((videoId) => {
+          updated[videoId] = updated[videoId].map((chapter) =>
+            chapter.id === chapterId
+              ? { ...chapter, label: newLabel.trim() }
+              : chapter
+          );
+        });
+        return updated;
+      });
+
+      setEditingChapter(null);
+      toast.success("Chapter updated!");
+    } catch (error) {
+      console.error("Error updating chapter:", error);
+      toast.error("Failed to update chapter");
+    }
+  };
+
+  const deleteChapter = async (chapterId: string, videoId: string) => {
+    try {
+      const { error } = await supabase
+        .from("video_chapters")
+        .delete()
+        .eq("id", chapterId);
+
+      if (error) throw error;
+
+      setVideoChapters((prev) => ({
+        ...prev,
+        [videoId]: (prev[videoId] || []).filter((c) => c.id !== chapterId),
+      }));
+
+      toast.success("Chapter deleted!");
+    } catch (error) {
+      console.error("Error deleting chapter:", error);
+      toast.error("Failed to delete chapter");
+    }
+  };
+
+  const jumpToChapter = (videoId: string, timestamp: number) => {
+    const videoElement = videoRefs.current.get(videoId);
+    if (videoElement) {
+      videoElement.currentTime = timestamp;
+      videoElement.play();
+      setPlayingVideos((prev) => new Set(prev).add(videoId));
     }
   };
 
@@ -974,6 +1117,24 @@ export default function Feed() {
               <PictureInPicture className="h-5 w-5" />
             </Button>
             
+            {currentUser === video.user_id && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedChapterVideo(video);
+                  setChaptersDialogOpen(true);
+                }}
+                className={cn(
+                  "bg-background/80 backdrop-blur-sm rounded-full h-10 w-10 p-0 hover:bg-background/90",
+                  videoChapters[video.id]?.length > 0 && "text-primary"
+                )}
+              >
+                <ListVideo className="h-5 w-5" />
+              </Button>
+            )}
+            
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -1147,6 +1308,22 @@ export default function Feed() {
                   }}
                 />
               )}
+              
+              {/* Chapter markers */}
+              {videoChapters[video.id]?.map((chapter) => (
+                <div
+                  key={chapter.id}
+                  className="absolute top-0 h-full w-1 bg-accent hover:bg-accent/80 cursor-pointer transition-colors"
+                  style={{
+                    left: `${(chapter.timestamp / videoProgress[video.id].duration) * 100}%`
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    jumpToChapter(video.id, chapter.timestamp);
+                  }}
+                  title={chapter.label}
+                />
+              ))}
             </div>
           )}
           
@@ -1322,6 +1499,58 @@ export default function Feed() {
           </div>
         </div>
       </div>
+      
+      {/* Chapters list */}
+      {videoChapters[video.id]?.length > 0 && (
+        <div className="px-4 pb-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setShowChaptersList(prev => {
+                const next = new Set(prev);
+                if (next.has(video.id)) {
+                  next.delete(video.id);
+                } else {
+                  next.add(video.id);
+                }
+                return next;
+              });
+            }}
+            className="w-full flex items-center justify-between text-sm"
+          >
+            <span className="flex items-center gap-2">
+              <ListVideo className="h-4 w-4" />
+              {videoChapters[video.id].length} Chapter{videoChapters[video.id].length !== 1 ? 's' : ''}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {showChaptersList.has(video.id) ? 'Hide' : 'Show'}
+            </span>
+          </Button>
+          
+          {showChaptersList.has(video.id) && (
+            <ScrollArea className="h-32 mt-2">
+              <div className="space-y-2">
+                {videoChapters[video.id].map((chapter) => (
+                  <button
+                    key={chapter.id}
+                    onClick={() => jumpToChapter(video.id, chapter.timestamp)}
+                    className="w-full text-left px-3 py-2 rounded-md bg-muted/50 hover:bg-muted transition-colors flex items-start justify-between group"
+                  >
+                    <div className="flex-1">
+                      <div className="text-sm font-medium">{chapter.label}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(chapter.timestamp * 1000).toISOString().substr(14, 5)}
+                      </div>
+                    </div>
+                    <Play className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0 mt-1" />
+                  </button>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+        </div>
+      )}
     </motion.div>
   );
 
@@ -1411,6 +1640,121 @@ export default function Feed() {
           caption={selectedPromoteVideo.caption || ""}
         />
       )}
+      
+      {/* Chapters Management Dialog */}
+      <Dialog open={chaptersDialogOpen} onOpenChange={setChaptersDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Manage Chapters</DialogTitle>
+            <DialogDescription>
+              Add chapters to help viewers navigate your video
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Add new chapter */}
+            <div className="space-y-2">
+              <Label htmlFor="chapter-label">Add Chapter at Current Time</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="chapter-label"
+                  placeholder="Chapter label"
+                  value={newChapterLabel}
+                  onChange={(e) => setNewChapterLabel(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newChapterLabel.trim()) {
+                      addChapter();
+                    }
+                  }}
+                />
+                <Button onClick={addChapter} disabled={!newChapterLabel.trim()}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {selectedChapterVideo && (
+                <p className="text-xs text-muted-foreground">
+                  Current time: {new Date((videoRefs.current.get(selectedChapterVideo.id)?.currentTime || 0) * 1000).toISOString().substr(14, 5)}
+                </p>
+              )}
+            </div>
+            
+            {/* Existing chapters */}
+            {selectedChapterVideo && videoChapters[selectedChapterVideo.id]?.length > 0 && (
+              <div className="space-y-2">
+                <Label>Existing Chapters</Label>
+                <ScrollArea className="h-64">
+                  <div className="space-y-2">
+                    {videoChapters[selectedChapterVideo.id].map((chapter) => (
+                      <div
+                        key={chapter.id}
+                        className="flex items-center gap-2 p-2 rounded-md bg-muted/50"
+                      >
+                        <div className="flex-1">
+                          {editingChapter?.id === chapter.id ? (
+                            <Input
+                              value={editingChapter.label}
+                              onChange={(e) =>
+                                setEditingChapter({ ...editingChapter, label: e.target.value })
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  updateChapterLabel(chapter.id, editingChapter.label);
+                                } else if (e.key === 'Escape') {
+                                  setEditingChapter(null);
+                                }
+                              }}
+                              autoFocus
+                            />
+                          ) : (
+                            <>
+                              <div className="text-sm font-medium">{chapter.label}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {new Date(chapter.timestamp * 1000).toISOString().substr(14, 5)}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <div className="flex gap-1">
+                          {editingChapter?.id === chapter.id ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => updateChapterLabel(chapter.id, editingChapter.label)}
+                            >
+                              Save
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setEditingChapter(chapter)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => deleteChapter(chapter.id, selectedChapterVideo.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setChaptersDialogOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       {/* Keyboard Shortcuts Overlay */}
       {showShortcuts && (
