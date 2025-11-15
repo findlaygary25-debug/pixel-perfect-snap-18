@@ -10,8 +10,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, TrendingUp, Users, Zap } from "lucide-react";
+import { Loader2, TrendingUp, Users, Zap, CalendarIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { Label } from "@/components/ui/label";
 
 interface PromotePostDialogProps {
   open: boolean;
@@ -74,6 +79,8 @@ export function PromotePostDialog({
 }: PromotePostDialogProps) {
   const [selectedTier, setSelectedTier] = useState<number | null>(null);
   const [promoting, setPromoting] = useState(false);
+  const [startDate, setStartDate] = useState<Date>();
+  const [endDate, setEndDate] = useState<Date>();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -82,6 +89,15 @@ export function PromotePostDialog({
       toast({
         title: "Select a tier",
         description: "Please select a promotion tier",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (startDate && endDate && endDate <= startDate) {
+      toast({
+        title: "Invalid dates",
+        description: "End date must be after start date",
         variant: "destructive",
       });
       return;
@@ -132,6 +148,8 @@ export function PromotePostDialog({
         media_type: "video",
         amount_spent: tier.price,
         status: "pending",
+        start_date: startDate?.toISOString(),
+        end_date: endDate?.toISOString(),
       });
 
       if (adError) throw adError;
@@ -174,7 +192,78 @@ export function PromotePostDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-3 py-4">
+        <div className="space-y-6 py-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Start Date (Optional)</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !startDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {startDate ? format(startDate, "PPP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={startDate}
+                    onSelect={setStartDate}
+                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+              <p className="text-xs text-muted-foreground">
+                Leave empty to start immediately
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>End Date (Optional)</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !endDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {endDate ? format(endDate, "PPP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={endDate}
+                    onSelect={setEndDate}
+                    disabled={(date) => {
+                      const today = new Date(new Date().setHours(0, 0, 0, 0));
+                      if (startDate) {
+                        return date < startDate;
+                      }
+                      return date < today;
+                    }}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+              <p className="text-xs text-muted-foreground">
+                Leave empty for indefinite promotion
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-3">
           {PROMOTION_TIERS.map((tier) => {
             const Icon = tier.icon;
             return (
@@ -214,6 +303,7 @@ export function PromotePostDialog({
               </Card>
             );
           })}
+          </div>
         </div>
 
         <div className="flex gap-3 pt-4">
