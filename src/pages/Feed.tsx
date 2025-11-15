@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp, Play, Pause, Volume2, VolumeX, Maximize, Minimize, Subtitles, Settings, X } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp, Play, Pause, Volume2, VolumeX, Maximize, Minimize, Subtitles, Settings, X, PictureInPicture } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -61,6 +61,7 @@ export default function Feed() {
   const [networkSpeed, setNetworkSpeed] = useState<'slow' | 'medium' | 'fast'>('medium');
   const [autoQualityEnabled, setAutoQualityEnabled] = useState(true);
   const [currentQuality, setCurrentQuality] = useState<'360p' | '480p' | '720p' | '1080p'>('720p');
+  const [pipVideo, setPipVideo] = useState<string | null>(null);
 
   // Network speed detection
   useEffect(() => {
@@ -744,6 +745,34 @@ export default function Feed() {
     setMiniPlayerVideo(null);
   };
 
+  const handlePiPToggle = async (videoId: string) => {
+    const video = videoRefs.current.get(videoId);
+    if (!video) return;
+
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      } else {
+        await video.requestPictureInPicture();
+        setPipVideo(videoId);
+      }
+    } catch (error) {
+      console.error('PiP error:', error);
+      toast.error('Picture-in-picture not supported');
+    }
+  };
+
+  useEffect(() => {
+    const handlePiPChange = () => {
+      if (!document.pictureInPictureElement) {
+        setPipVideo(null);
+      }
+    };
+
+    document.addEventListener('leavepictureinpicture', handlePiPChange);
+    return () => document.removeEventListener('leavepictureinpicture', handlePiPChange);
+  }, []);
+
   const renderVideoCard = (video: VideoPost) => (
     <motion.div
       ref={(el) => setVideoContainerRef(video.id, el)}
@@ -928,6 +957,21 @@ export default function Feed() {
               )}
             >
               <Subtitles className="h-5 w-5" />
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePiPToggle(video.id);
+              }}
+              className={cn(
+                "bg-background/80 backdrop-blur-sm rounded-full h-10 w-10 p-0 hover:bg-background/90",
+                pipVideo === video.id && "text-primary"
+              )}
+            >
+              <PictureInPicture className="h-5 w-5" />
             </Button>
             
             <Popover>
