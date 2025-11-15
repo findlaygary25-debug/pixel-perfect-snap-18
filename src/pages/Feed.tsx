@@ -313,14 +313,81 @@ export default function Feed() {
         <p className="text-sm mb-3">{video.caption}</p>
       </div>
 
-      <video
-        src={video.video_url}
-        className="w-full aspect-video object-cover"
-        controls
-        preload="metadata"
-      />
+      {/* Mobile: Video with actions on the right side */}
+      <div className="relative md:static">
+        <video
+          src={video.video_url}
+          className="w-full aspect-video object-cover"
+          controls
+          preload="metadata"
+        />
+        
+        {/* Mobile action buttons - right side */}
+        <div className="absolute right-2 bottom-20 flex flex-col gap-3 md:hidden">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleLike(video.id)}
+            className={`bg-background/80 backdrop-blur-sm rounded-full h-12 w-12 p-0 ${likedVideos.has(video.id) ? "text-red-500" : ""}`}
+          >
+            <div className="flex flex-col items-center">
+              <Heart
+                className={`h-6 w-6 ${likedVideos.has(video.id) ? "fill-current" : ""}`}
+              />
+              <span className="text-xs">{video.likes}</span>
+            </div>
+          </Button>
 
-      <div className="p-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelectedVideoId(video.id)}
+            className="bg-background/80 backdrop-blur-sm rounded-full h-12 w-12 p-0"
+          >
+            <div className="flex flex-col items-center">
+              <MessageCircle className="h-6 w-6" />
+              <span className="text-xs">{commentCounts[video.id] || 0}</span>
+            </div>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleBookmark(video.id)}
+            className={`bg-background/80 backdrop-blur-sm rounded-full h-12 w-12 p-0 ${bookmarkedVideos.has(video.id) ? "text-primary" : ""}`}
+          >
+            <Bookmark
+              className={`h-6 w-6 ${bookmarkedVideos.has(video.id) ? "fill-current" : ""}`}
+            />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleShare(video.id)}
+            className="bg-background/80 backdrop-blur-sm rounded-full h-12 w-12 p-0"
+          >
+            <Share2 className="h-6 w-6" />
+          </Button>
+
+          {currentUser && video.user_id === currentUser && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSelectedPromoteVideo(video);
+                setPromoteDialogOpen(true);
+              }}
+              className="bg-background/80 backdrop-blur-sm rounded-full h-12 w-12 p-0 text-primary"
+            >
+              <TrendingUp className="h-6 w-6" />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Desktop action buttons - below video */}
+      <div className="p-4 hidden md:block">
         <div className="flex items-center justify-between">
           <div className="flex gap-4">
             <Button
