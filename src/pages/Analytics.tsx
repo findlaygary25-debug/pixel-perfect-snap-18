@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { TrendingUp, DollarSign, Package, ShoppingCart, Wifi } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart } from "recharts";
+import { TrendingUp, TrendingDown, DollarSign, Package, ShoppingCart, Wifi, ArrowUp, ArrowDown } from "lucide-react";
 
 type Order = {
   id: string;
@@ -24,14 +25,18 @@ type OrderItem = {
 
 type DateRange = "7days" | "30days" | "90days" | "365days";
 
+type TimeGrouping = "day" | "week" | "month";
+
 const COLORS = ["#8b5cf6", "#6366f1", "#3b82f6", "#06b6d4", "#10b981", "#f59e0b"];
 
 export default function AnalyticsPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [dateRange, setDateRange] = useState<DateRange>("30days");
+  const [timeGrouping, setTimeGrouping] = useState<TimeGrouping>("day");
   const [loading, setLoading] = useState(true);
   const [isRealTimeConnected, setIsRealTimeConnected] = useState(false);
+  const [previousPeriodOrders, setPreviousPeriodOrders] = useState<Order[]>([]);
 
   useEffect(() => {
     loadAnalyticsData();
@@ -99,6 +104,10 @@ export default function AnalyticsPage() {
 
     const storeId = stores[0].id;
     const startDate = getDateRangeStart(dateRange).toISOString();
+    
+    // Get previous period for comparison
+    const daysDiff = Math.floor((new Date().getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
+    const previousStartDate = new Date(new Date(startDate).getTime() - (daysDiff * 24 * 60 * 60 * 1000)).toISOString();
 
     const { data: ordersData } = await supabase
       .from("orders")
@@ -107,7 +116,16 @@ export default function AnalyticsPage() {
       .gte("created_at", startDate)
       .order("created_at", { ascending: true });
 
+    const { data: previousOrders } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("store_id", storeId)
+      .gte("created_at", previousStartDate)
+      .lt("created_at", startDate)
+      .order("created_at", { ascending: true });
+
     setOrders(ordersData || []);
+    setPreviousPeriodOrders(previousOrders || []);
 
     // Get all order items for the orders
     if (ordersData && ordersData.length > 0) {
@@ -129,22 +147,45 @@ export default function AnalyticsPage() {
   const completedOrders = orders.filter((o) => o.status === "completed").length;
   const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-  // Order trends by day
-  const orderTrends = orders.reduce((acc, order) => {
-    const date = new Date(order.created_at).toLocaleDateString();
-    const existing = acc.find((item) => item.date === date);
-    if (existing) {
-      existing.orders += 1;
-      existing.revenue += Number(order.total_amount);
-    } else {
-      acc.push({
-        date,
-        orders: 1,
-        revenue: Number(order.total_amount),
-      });
-    }
-    return acc;
-  }, [] as { date: string; orders: number; revenue: number }[]);
+  // Previous period metrics for comparison
+  const previousRevenue = previousPeriodOrders.reduce((sum, order) => sum + Number(order.total_amount), 0);
+  const previousOrders = previousPeriodOrders.length;
+  
+  const revenueGrowth = previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0;
+  const ordersGrowth = previousOrders > 0 ? ((totalOrders - previousOrders) / previousOrders) * 100 : 0;
+
+  // Group orders by time period
+  const groupByTime = (orders: Order[]) => {
+    return orders.reduce((acc, order) => {
+      const date = new Date(order.created_at);
+      let key: string;
+      
+      if (timeGrouping === "day") {
+        key = date.toLocaleDateString();
+      } else if (timeGrouping === "week") {
+        const weekStart = new Date(date);
+        weekStart.setDate(date.getDate() - date.getDay());
+        key = weekStart.toLocaleDateString();
+      } else {
+        key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      }
+      
+      const existing = acc.find((item) => item.date === key);
+      if (existing) {
+        existing.orders += 1;
+        existing.revenue += Number(order.total_amount);
+      } else {
+        acc.push({
+          date: key,
+          orders: 1,
+          revenue: Number(order.total_amount),
+        });
+      }
+      return acc;
+    }, [] as { date: string; orders: number; revenue: number }[]);
+  };
+
+  const orderTrends = groupByTime(orders);
 
   // Revenue by status
   const revenueByStatus = orders.reduce((acc, order) => {
@@ -178,6 +219,7 @@ export default function AnalyticsPage() {
   }, [] as { name: string; quantity: number; revenue: number }[]);
 
   const topProducts = productSales.sort((a, b) => b.quantity - a.quantity).slice(0, 5);
+  const topProductsByRevenue = productSales.sort((a, b) => b.revenue - a.revenue).slice(0, 5);
 
   if (loading) {
     return (
@@ -189,7 +231,7 @@ export default function AnalyticsPage() {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
         <div>
           <div className="flex items-center gap-3 mb-2">
             <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
@@ -207,17 +249,29 @@ export default function AnalyticsPage() {
               : 'Track your store\'s performance and trends'}
           </p>
         </div>
-        <Select value={dateRange} onValueChange={(value) => setDateRange(value as DateRange)}>
-          <SelectTrigger className="w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="7days">Last 7 days</SelectItem>
-            <SelectItem value="30days">Last 30 days</SelectItem>
-            <SelectItem value="90days">Last 90 days</SelectItem>
-            <SelectItem value="365days">Last year</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex gap-2">
+          <Select value={timeGrouping} onValueChange={(value) => setTimeGrouping(value as TimeGrouping)}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="day">Daily</SelectItem>
+              <SelectItem value="week">Weekly</SelectItem>
+              <SelectItem value="month">Monthly</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={dateRange} onValueChange={(value) => setDateRange(value as DateRange)}>
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7days">Last 7 days</SelectItem>
+              <SelectItem value="30days">Last 30 days</SelectItem>
+              <SelectItem value="90days">Last 90 days</SelectItem>
+              <SelectItem value="365days">Last year</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Key Metrics */}
@@ -229,9 +283,20 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${totalRevenue.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">
-              {totalOrders} orders
-            </p>
+            <div className="flex items-center gap-1 text-xs mt-1">
+              {revenueGrowth >= 0 ? (
+                <>
+                  <ArrowUp className="h-3 w-3 text-green-500" />
+                  <span className="text-green-500">+{revenueGrowth.toFixed(1)}%</span>
+                </>
+              ) : (
+                <>
+                  <ArrowDown className="h-3 w-3 text-red-500" />
+                  <span className="text-red-500">{revenueGrowth.toFixed(1)}%</span>
+                </>
+              )}
+              <span className="text-muted-foreground">vs previous period</span>
+            </div>
           </CardContent>
         </Card>
 
@@ -242,9 +307,20 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalOrders}</div>
-            <p className="text-xs text-muted-foreground">
-              {completedOrders} completed
-            </p>
+            <div className="flex items-center gap-1 text-xs mt-1">
+              {ordersGrowth >= 0 ? (
+                <>
+                  <ArrowUp className="h-3 w-3 text-green-500" />
+                  <span className="text-green-500">+{ordersGrowth.toFixed(1)}%</span>
+                </>
+              ) : (
+                <>
+                  <ArrowDown className="h-3 w-3 text-red-500" />
+                  <span className="text-red-500">{ordersGrowth.toFixed(1)}%</span>
+                </>
+              )}
+              <span className="text-muted-foreground">vs previous period</span>
+            </div>
           </CardContent>
         </Card>
 
@@ -279,45 +355,24 @@ export default function AnalyticsPage() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Order Trends */}
-        <Card>
+        {/* Combined Order & Revenue Trends */}
+        <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Order Trends</CardTitle>
+            <CardTitle>Order & Revenue Trends</CardTitle>
           </CardHeader>
           <CardContent>
             {orderTrends.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={orderTrends}>
+              <ResponsiveContainer width="100%" height={350}>
+                <ComposedChart data={orderTrends}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
-                  <YAxis />
+                  <YAxis yAxisId="left" />
+                  <YAxis yAxisId="right" orientation="right" />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="orders" stroke="#8b5cf6" name="Orders" />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="text-center text-muted-foreground py-8">No data available</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Revenue Over Time */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Revenue Over Time</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {orderTrends.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={orderTrends}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Area type="monotone" dataKey="revenue" stroke="#10b981" fill="#10b981" fillOpacity={0.6} name="Revenue ($)" />
-                </AreaChart>
+                  <Bar yAxisId="left" dataKey="orders" fill="#8b5cf6" name="Orders" />
+                  <Line yAxisId="right" type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} name="Revenue ($)" />
+                </ComposedChart>
               </ResponsiveContainer>
             ) : (
               <p className="text-center text-muted-foreground py-8">No data available</p>
@@ -326,62 +381,85 @@ export default function AnalyticsPage() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Popular Products */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Top 5 Products by Units Sold</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {topProducts.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={topProducts}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="quantity" fill="#6366f1" name="Units Sold" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="text-center text-muted-foreground py-8">No data available</p>
-            )}
-          </CardContent>
-        </Card>
+      {/* Product Performance Tabs */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Top Products Performance</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="units" className="w-full">
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="units">By Units Sold</TabsTrigger>
+              <TabsTrigger value="revenue">By Revenue</TabsTrigger>
+            </TabsList>
+            <TabsContent value="units" className="mt-4">
+              {topProducts.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={topProducts}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="quantity" fill="#6366f1" name="Units Sold" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">No data available</p>
+              )}
+            </TabsContent>
+            <TabsContent value="revenue" className="mt-4">
+              {topProductsByRevenue.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={topProductsByRevenue}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="revenue" fill="#10b981" name="Revenue ($)" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">No data available</p>
+              )}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
 
-        {/* Revenue by Status */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Revenue by Order Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {revenueByStatus.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={revenueByStatus}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={(entry) => `${entry.status}: $${entry.revenue.toFixed(0)}`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="revenue"
-                  >
-                    {revenueByStatus.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="text-center text-muted-foreground py-8">No data available</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      {/* Revenue by Status */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Revenue Distribution by Order Status</CardTitle>
+        </CardHeader>
+        <CardContent className="flex justify-center">
+          {revenueByStatus.length > 0 ? (
+            <ResponsiveContainer width="100%" height={350}>
+              <PieChart>
+                <Pie
+                  data={revenueByStatus}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={(entry) => `${entry.status}: $${entry.revenue.toFixed(0)}`}
+                  outerRadius={100}
+                  fill="#8884d8"
+                  dataKey="revenue"
+                >
+                  {revenueByStatus.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-center text-muted-foreground py-8">No data available</p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
