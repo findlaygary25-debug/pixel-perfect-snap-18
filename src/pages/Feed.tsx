@@ -296,6 +296,9 @@ export default function Feed() {
       
       const videoElement = videoRefs.current.get(currentVisibleVideoId);
       if (!videoElement) return;
+      
+      const currentVideos = activeTab === "following" ? followingVideos : videos;
+      const currentIndex = currentVideos.findIndex(v => v.id === currentVisibleVideoId);
 
       switch (e.code) {
         case 'Space':
@@ -358,19 +361,33 @@ export default function Feed() {
         
         case 'ArrowUp':
           e.preventDefault();
-          videoElement.volume = Math.min(1, videoElement.volume + 0.1);
+          // Navigate to previous video
+          if (currentIndex > 0) {
+            const prevVideo = currentVideos[currentIndex - 1];
+            const prevContainer = videoContainerRefs.current.get(prevVideo.id);
+            if (prevContainer) {
+              prevContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }
           break;
         
         case 'ArrowDown':
           e.preventDefault();
-          videoElement.volume = Math.max(0, videoElement.volume - 0.1);
+          // Navigate to next video
+          if (currentIndex < currentVideos.length - 1) {
+            const nextVideo = currentVideos[currentIndex + 1];
+            const nextContainer = videoContainerRefs.current.get(nextVideo.id);
+            if (nextContainer) {
+              nextContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }
           break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentVisibleVideoId, showShortcuts, playingVideos, fullscreenVideoId, mutedVideos]);
+  }, [currentVisibleVideoId, showShortcuts, playingVideos, fullscreenVideoId, mutedVideos, videos, followingVideos, activeTab]);
 
   const setVideoRef = useCallback((videoId: string, element: HTMLVideoElement | null) => {
     if (element) {
@@ -1801,16 +1818,22 @@ export default function Feed() {
                     <kbd className="px-3 py-1.5 text-sm font-semibold bg-muted rounded">M</kbd>
                   </div>
                   <div className="flex items-center justify-between py-2 border-b border-border">
-                    <span className="text-muted-foreground">Volume up</span>
+                    <span className="text-muted-foreground">Toggle fullscreen</span>
+                    <kbd className="px-3 py-1.5 text-sm font-semibold bg-muted rounded">F</kbd>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-primary">Navigation</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between py-2 border-b border-border">
+                    <span className="text-muted-foreground">Previous video</span>
                     <kbd className="px-3 py-1.5 text-sm font-semibold bg-muted rounded">↑</kbd>
                   </div>
                   <div className="flex items-center justify-between py-2 border-b border-border">
-                    <span className="text-muted-foreground">Volume down</span>
+                    <span className="text-muted-foreground">Next video</span>
                     <kbd className="px-3 py-1.5 text-sm font-semibold bg-muted rounded">↓</kbd>
-                  </div>
-                  <div className="flex items-center justify-between py-2 border-b border-border">
-                    <span className="text-muted-foreground">Toggle fullscreen</span>
-                    <kbd className="px-3 py-1.5 text-sm font-semibold bg-muted rounded">F</kbd>
                   </div>
                 </div>
               </div>
