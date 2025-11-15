@@ -1559,47 +1559,48 @@ export default function Feed() {
         </div>
       </div>
 
-      {/* Tab switcher - floating at top */}
-      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+      {/* Tab switcher and content */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        {/* Tab switcher - floating at top */}
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40">
           <TabsList className="bg-background/80 backdrop-blur-sm">
             <TabsTrigger value="forYou">For You</TabsTrigger>
             <TabsTrigger value="following">Following</TabsTrigger>
           </TabsList>
-        </Tabs>
-      </div>
+        </div>
 
-      {/* Video feed */}
-      <TabsContent value="forYou" className="mt-0">
-        {loading ? (
-          <div className="h-screen flex items-center justify-center text-white">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto mb-4" />
-              <p>Loading amazing content...</p>
+        {/* Video feed */}
+        <TabsContent value="forYou" className="mt-0">
+          {loading ? (
+            <div className="h-screen flex items-center justify-center text-white">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto mb-4" />
+                <p>Loading amazing content...</p>
+              </div>
             </div>
-          </div>
-        ) : videos.length === 0 ? (
-          <div className="h-screen flex items-center justify-center text-white text-center px-4">
-            No videos yet
-          </div>
-        ) : (
-          videos.map(renderVideoCard)
-        )}
-      </TabsContent>
+          ) : videos.length === 0 ? (
+            <div className="h-screen flex items-center justify-center text-white text-center px-4">
+              No videos yet
+            </div>
+          ) : (
+            videos.map(renderVideoCard)
+          )}
+        </TabsContent>
 
-      <TabsContent value="following" className="mt-0">
-        {!currentUser ? (
-          <div className="h-screen flex items-center justify-center text-white text-center px-4">
-            Please login to see videos from people you follow
-          </div>
-        ) : followingVideos.length === 0 ? (
-          <div className="h-screen flex items-center justify-center text-white text-center px-4">
-            No videos from followed users yet. Start following creators!
-          </div>
-        ) : (
-          followingVideos.map(renderVideoCard)
-        )}
-      </TabsContent>
+        <TabsContent value="following" className="mt-0">
+          {!currentUser ? (
+            <div className="h-screen flex items-center justify-center text-white text-center px-4">
+              Please login to see videos from people you follow
+            </div>
+          ) : followingVideos.length === 0 ? (
+            <div className="h-screen flex items-center justify-center text-white text-center px-4">
+              No videos from followed users yet. Start following creators!
+            </div>
+          ) : (
+            followingVideos.map(renderVideoCard)
+          )}
+        </TabsContent>
+      </Tabs>
 
       <CommentsDrawer
         videoId={selectedVideoId || ""}
