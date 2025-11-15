@@ -43,9 +43,18 @@ const App = () => (
             <AppSidebar />
             <div className="flex-1 flex flex-col">
               <header className="h-12 flex items-center justify-between border-b bg-background px-4">
-                <div className="flex items-center">
+                <div className="flex items-center gap-3">
                   <SidebarTrigger className="md:block" />
-                  <h1 className="ml-4 font-bold text-lg">🔥 Voice2Fire</h1>
+                  <div className="flex items-center gap-2">
+                    <img 
+                      src="/favicon.png" 
+                      alt="Voice2Fire Logo" 
+                      className="w-8 h-8 object-contain"
+                    />
+                    <h1 className="font-bold text-lg bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500 bg-clip-text text-transparent">
+                      Voice2Fire
+                    </h1>
+                  </div>
                 </div>
                 <NotificationBell />
               </header>
