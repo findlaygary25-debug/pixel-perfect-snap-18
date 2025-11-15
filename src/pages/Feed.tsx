@@ -921,9 +921,9 @@ export default function Feed() {
     <motion.div
       ref={(el) => setVideoContainerRef(video.id, el)}
       key={video.id}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-card rounded-lg shadow-lg overflow-hidden mb-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="relative h-screen w-full snap-start snap-always"
     >
       <VideoSchema
         videoId={video.id}
@@ -943,41 +943,11 @@ export default function Feed() {
           url: `https://voice2fire.com/profile/${video.user_id}`,
         }}
       />
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-sm font-semibold">{video.username[0].toUpperCase()}</span>
-            </div>
-            <span className="font-semibold">{video.username}</span>
-          </div>
-          {currentUser && video.user_id !== currentUser && (
-            <Button
-              variant={followedUsers.has(video.user_id) ? "outline" : "default"}
-              size="sm"
-              onClick={() => handleFollow(video.user_id)}
-            >
-              {followedUsers.has(video.user_id) ? (
-                <>
-                  <UserMinus className="h-4 w-4 mr-1" />
-                  Unfollow
-                </>
-              ) : (
-                <>
-                  <UserPlus className="h-4 w-4 mr-1" />
-                  Follow
-                </>
-              )}
-            </Button>
-          )}
-        </div>
-        <p className="text-sm mb-3">{video.caption}</p>
-      </div>
 
-      {/* Mobile: Video with actions on the right side */}
-      <div className="relative md:static">
+      {/* Full-screen video container */}
+      <div className="relative h-full w-full bg-black">
         <div
-          className="relative"
+          className="relative h-full w-full flex items-center justify-center"
           onClick={() => handleDoubleTap(video.id)}
           onTouchEnd={() => handleDoubleTap(video.id)}
         >
@@ -985,7 +955,8 @@ export default function Feed() {
             ref={(el) => setVideoRef(video.id, el)}
             data-video-id={video.id}
             src={video.video_url}
-            className="w-full aspect-video object-cover"
+            className="h-full w-full object-contain"
+            style={{ aspectRatio: '9/16' }}
             preload="metadata"
             playsInline
             muted={mutedVideos.has(video.id)}
@@ -1382,69 +1353,86 @@ export default function Feed() {
           )}
         </div>
         
-        {/* Mobile action buttons - right side */}
-        <div className="absolute right-2 bottom-20 flex flex-col gap-3 md:hidden">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleLike(video.id)}
-            className={`bg-background/80 backdrop-blur-sm rounded-full h-12 w-12 p-0 ${likedVideos.has(video.id) ? "text-red-500" : ""}`}
-          >
-            <div className="flex flex-col items-center">
-              <Heart
-                className={`h-6 w-6 ${likedVideos.has(video.id) ? "fill-current" : ""}`}
-              />
-              <span className="text-xs">{video.likes}</span>
-            </div>
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSelectedVideoId(video.id)}
-            className="bg-background/80 backdrop-blur-sm rounded-full h-12 w-12 p-0"
-          >
-            <div className="flex flex-col items-center">
-              <MessageCircle className="h-6 w-6" />
-              <span className="text-xs">{commentCounts[video.id] || 0}</span>
-            </div>
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleBookmark(video.id)}
-            className={`bg-background/80 backdrop-blur-sm rounded-full h-12 w-12 p-0 ${bookmarkedVideos.has(video.id) ? "text-primary" : ""}`}
-          >
-            <Bookmark
-              className={`h-6 w-6 ${bookmarkedVideos.has(video.id) ? "fill-current" : ""}`}
-            />
-          </Button>
-
+        {/* Action buttons - TikTok/Shorts style (right side) */}
+        <div className="absolute right-4 bottom-24 flex flex-col gap-6 z-10">
+          {/* Follow button with heart */}
           {currentUser && video.user_id !== currentUser && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => handleFollow(video.user_id)}
-              className={`bg-background/80 backdrop-blur-sm rounded-full h-12 w-12 p-0 ${followedUsers.has(video.user_id) ? "text-primary" : ""}`}
+              className="bg-background/80 backdrop-blur-sm rounded-full h-14 w-14 p-0 relative"
             >
-              {followedUsers.has(video.user_id) ? (
-                <UserMinus className="h-6 w-6" />
-              ) : (
-                <UserPlus className="h-6 w-6" />
-              )}
+              <div className="flex flex-col items-center">
+                <div className="relative">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-sm font-semibold text-foreground">{video.username[0].toUpperCase()}</span>
+                  </div>
+                  {!followedUsers.has(video.user_id) && (
+                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-primary rounded-full h-6 w-6 flex items-center justify-center">
+                      <Heart className="h-4 w-4 text-primary-foreground" />
+                    </div>
+                  )}
+                </div>
+              </div>
             </Button>
           )}
+          
+          {/* Like button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleLike(video.id)}
+            className="bg-background/80 backdrop-blur-sm rounded-full h-14 w-14 p-0"
+          >
+            <div className="flex flex-col items-center gap-1">
+              <Heart
+                className={`h-7 w-7 ${likedVideos.has(video.id) ? "fill-red-500 text-red-500" : "text-white"}`}
+              />
+              <span className="text-xs text-white font-semibold">{video.likes}</span>
+            </div>
+          </Button>
 
+          {/* Comments button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelectedVideoId(video.id)}
+            className="bg-background/80 backdrop-blur-sm rounded-full h-14 w-14 p-0"
+          >
+            <div className="flex flex-col items-center gap-1">
+              <MessageCircle className="h-7 w-7 text-white" />
+              <span className="text-xs text-white font-semibold">{commentCounts[video.id] || 0}</span>
+            </div>
+          </Button>
+
+          {/* Bookmark button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleBookmark(video.id)}
+            className="bg-background/80 backdrop-blur-sm rounded-full h-14 w-14 p-0"
+          >
+            <div className="flex flex-col items-center gap-1">
+              <Bookmark
+                className={`h-7 w-7 ${bookmarkedVideos.has(video.id) ? "fill-yellow-400 text-yellow-400" : "text-white"}`}
+              />
+            </div>
+          </Button>
+
+          {/* Share button */}
           <Button
             variant="ghost"
             size="sm"
             onClick={() => handleShare(video.id)}
-            className="bg-background/80 backdrop-blur-sm rounded-full h-12 w-12 p-0"
+            className="bg-background/80 backdrop-blur-sm rounded-full h-14 w-14 p-0"
           >
-            <Share2 className="h-6 w-6" />
+            <div className="flex flex-col items-center gap-1">
+              <Share2 className="h-7 w-7 text-white" />
+            </div>
           </Button>
 
+          {/* Promote button (only for video owner) */}
           {currentUser && video.user_id === currentUser && (
             <Button
               variant="ghost"
@@ -1453,69 +1441,23 @@ export default function Feed() {
                 setSelectedPromoteVideo(video);
                 setPromoteDialogOpen(true);
               }}
-              className="bg-background/80 backdrop-blur-sm rounded-full h-12 w-12 p-0 text-primary"
+              className="bg-background/80 backdrop-blur-sm rounded-full h-14 w-14 p-0"
             >
-              <TrendingUp className="h-6 w-6" />
+              <div className="flex flex-col items-center gap-1">
+                <TrendingUp className="h-7 w-7 text-primary" />
+              </div>
             </Button>
           )}
         </div>
-      </div>
 
-      {/* Desktop action buttons - below video */}
-      <div className="p-4 hidden md:block">
-        <div className="flex items-center justify-between">
-          <div className="flex gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleLike(video.id)}
-              className={likedVideos.has(video.id) ? "text-red-500" : ""}
-            >
-              <Heart
-                className={`h-5 w-5 ${likedVideos.has(video.id) ? "fill-current" : ""}`}
-              />
-              <span className="ml-1">{video.likes}</span>
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSelectedVideoId(video.id)}
-            >
-              <MessageCircle className="h-5 w-5" />
-              <span className="ml-1">{commentCounts[video.id] || 0}</span>
-            </Button>
-
-            <Button variant="ghost" size="sm" onClick={() => handleShare(video.id)}>
-              <Share2 className="h-5 w-5" />
-            </Button>
+        {/* User info and caption - bottom left */}
+        <div className="absolute left-4 bottom-24 right-24 z-10 text-white">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="font-bold text-lg drop-shadow-lg">@{video.username}</span>
           </div>
-
-          <div className="flex gap-2">
-            {currentUser && video.user_id === currentUser && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setSelectedPromoteVideo(video);
-                  setPromoteDialogOpen(true);
-                }}
-                className="text-primary"
-              >
-                <TrendingUp className="h-5 w-5" />
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleBookmark(video.id)}
-              className={bookmarkedVideos.has(video.id) ? "text-primary" : ""}
-            >
-              <Bookmark
-                className={`h-5 w-5 ${bookmarkedVideos.has(video.id) ? "fill-current" : ""}`}
-              />
-            </Button>
-          </div>
+          {video.caption && (
+            <p className="text-sm drop-shadow-lg line-clamp-2">{video.caption}</p>
+          )}
         </div>
       </div>
       
@@ -1576,17 +1518,25 @@ export default function Feed() {
   return (
     <div 
       ref={containerRef}
-      className="min-h-screen bg-background overflow-y-auto"
+      className="relative h-screen overflow-y-scroll snap-y snap-mandatory bg-black"
+      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
+      <style>{`
+        div::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+      
       <BreadcrumbSchema 
         items={[
           { name: "Home", url: "https://voice2fire.com/" },
           { name: "Feed", url: "https://voice2fire.com/feed" }
         ]}
       />
+      
       {/* Pull to refresh indicator */}
       <div 
         className="fixed top-0 left-0 right-0 flex justify-center z-50 transition-all duration-200"
@@ -1609,40 +1559,47 @@ export default function Feed() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
-        <h1 className="text-3xl font-bold mb-6">🔥 Video Feed</h1>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-          <TabsList className="grid w-full grid-cols-2">
+      {/* Tab switcher - floating at top */}
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="bg-background/80 backdrop-blur-sm">
             <TabsTrigger value="forYou">For You</TabsTrigger>
             <TabsTrigger value="following">Following</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="forYou" className="mt-6">
-            {loading ? (
-              <div className="text-center py-12">Loading amazing content...</div>
-            ) : videos.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">No videos yet</div>
-            ) : (
-              videos.map(renderVideoCard)
-            )}
-          </TabsContent>
-
-          <TabsContent value="following" className="mt-6">
-            {!currentUser ? (
-              <div className="text-center py-12 text-muted-foreground">
-                Please login to see videos from people you follow
-              </div>
-            ) : followingVideos.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                No videos from followed users yet. Start following creators!
-              </div>
-            ) : (
-              followingVideos.map(renderVideoCard)
-            )}
-          </TabsContent>
         </Tabs>
       </div>
+
+      {/* Video feed */}
+      <TabsContent value="forYou" className="mt-0">
+        {loading ? (
+          <div className="h-screen flex items-center justify-center text-white">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto mb-4" />
+              <p>Loading amazing content...</p>
+            </div>
+          </div>
+        ) : videos.length === 0 ? (
+          <div className="h-screen flex items-center justify-center text-white text-center px-4">
+            No videos yet
+          </div>
+        ) : (
+          videos.map(renderVideoCard)
+        )}
+      </TabsContent>
+
+      <TabsContent value="following" className="mt-0">
+        {!currentUser ? (
+          <div className="h-screen flex items-center justify-center text-white text-center px-4">
+            Please login to see videos from people you follow
+          </div>
+        ) : followingVideos.length === 0 ? (
+          <div className="h-screen flex items-center justify-center text-white text-center px-4">
+            No videos from followed users yet. Start following creators!
+          </div>
+        ) : (
+          followingVideos.map(renderVideoCard)
+        )}
+      </TabsContent>
 
       <CommentsDrawer
         videoId={selectedVideoId || ""}
