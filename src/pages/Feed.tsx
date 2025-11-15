@@ -52,10 +52,31 @@ export default function Feed() {
     const observerCallback = (entries: IntersectionObserverEntry[]) => {
       entries.forEach((entry) => {
         const video = entry.target as HTMLVideoElement;
+        const videoId = video.dataset.videoId;
+        
         if (entry.isIntersecting) {
           video.play().catch(() => {
             // Auto-play failed, user needs to interact first
           });
+          
+          // Preload next videos when current video is in view
+          if (videoId) {
+            const currentVideos = activeTab === "following" ? followingVideos : videos;
+            const currentIndex = currentVideos.findIndex(v => v.id === videoId);
+            
+            // Preload next 2 videos
+            for (let i = 1; i <= 2; i++) {
+              const nextIndex = currentIndex + i;
+              if (nextIndex < currentVideos.length) {
+                const nextVideoId = currentVideos[nextIndex].id;
+                const nextVideoElement = videoRefs.current.get(nextVideoId);
+                if (nextVideoElement) {
+                  nextVideoElement.preload = 'auto';
+                  nextVideoElement.load();
+                }
+              }
+            }
+          }
         } else {
           video.pause();
         }
@@ -72,6 +93,19 @@ export default function Feed() {
     return () => {
       observer.disconnect();
     };
+  }, [videos, followingVideos, activeTab]);
+
+  // Preload first video on mount for immediate playback
+  useEffect(() => {
+    const currentVideos = activeTab === "following" ? followingVideos : videos;
+    if (currentVideos.length > 0) {
+      const firstVideoId = currentVideos[0].id;
+      const firstVideo = videoRefs.current.get(firstVideoId);
+      if (firstVideo) {
+        firstVideo.preload = 'auto';
+        firstVideo.load();
+      }
+    }
   }, [videos, followingVideos, activeTab]);
 
   const setVideoRef = useCallback((videoId: string, element: HTMLVideoElement | null) => {
@@ -435,6 +469,7 @@ export default function Feed() {
         >
           <video
             ref={(el) => setVideoRef(video.id, el)}
+            data-video-id={video.id}
             src={video.video_url}
             className="w-full aspect-video object-cover"
             controls
