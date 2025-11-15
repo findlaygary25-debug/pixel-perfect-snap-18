@@ -799,6 +799,10 @@ export type Database = {
           user_id: string
           username: string
           video_url: string
+          video_url_1080p: string | null
+          video_url_360p: string | null
+          video_url_480p: string | null
+          video_url_720p: string | null
           views: number
         }
         Insert: {
@@ -811,6 +815,10 @@ export type Database = {
           user_id: string
           username: string
           video_url: string
+          video_url_1080p?: string | null
+          video_url_360p?: string | null
+          video_url_480p?: string | null
+          video_url_720p?: string | null
           views?: number
         }
         Update: {
@@ -823,6 +831,10 @@ export type Database = {
           user_id?: string
           username?: string
           video_url?: string
+          video_url_1080p?: string | null
+          video_url_360p?: string | null
+          video_url_480p?: string | null
+          video_url_720p?: string | null
           views?: number
         }
         Relationships: []

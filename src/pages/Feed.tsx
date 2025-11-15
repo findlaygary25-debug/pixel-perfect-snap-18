@@ -21,6 +21,10 @@ import { SocialShareDialog } from "@/components/SocialShareDialog";
 type VideoPost = {
   id: string;
   video_url: string;
+  video_url_360p?: string | null;
+  video_url_480p?: string | null;
+  video_url_720p?: string | null;
+  video_url_1080p?: string | null;
   caption: string;
   username: string;
   user_id: string;
@@ -85,6 +89,11 @@ export default function Feed() {
   const [newChapterLabel, setNewChapterLabel] = useState("");
   const [editingChapter, setEditingChapter] = useState<VideoChapter | null>(null);
   const [showChaptersList, setShowChaptersList] = useState<Set<string>>(new Set());
+  
+  // Adaptive bitrate streaming state
+  const [activeQuality, setActiveQuality] = useState<Record<string, '360p' | '480p' | '720p' | '1080p'>>({});
+  const [bufferHealth, setBufferHealth] = useState<Record<string, number>>({});
+  const abrCheckInterval = useRef<NodeJS.Timeout | null>(null);
 
   // Network speed detection
   useEffect(() => {
@@ -160,6 +169,162 @@ export default function Feed() {
       setCurrentQuality(videoQuality);
     }
   }, [videoQuality]);
+
+  // Adaptive Bitrate Streaming (ABR) - Monitor buffer health and switch quality
+  useEffect(() => {
+    // Helper function to get available qualities for a video
+    const getAvailableQualities = (video: VideoPost): Array<'360p' | '480p' | '720p' | '1080p'> => {
+      const qualities: Array<'360p' | '480p' | '720p' | '1080p'> = [];
+      if (video.video_url_360p) qualities.push('360p');
+      if (video.video_url_480p) qualities.push('480p');
+      if (video.video_url_720p) qualities.push('720p');
+      if (video.video_url_1080p) qualities.push('1080p');
+      return qualities;
+    };
+
+    // Helper function to get video URL for quality
+    const getQualityUrl = (video: VideoPost, quality: '360p' | '480p' | '720p' | '1080p'): string => {
+      switch (quality) {
+        case '360p': return video.video_url_360p || video.video_url;
+        case '480p': return video.video_url_480p || video.video_url;
+        case '720p': return video.video_url_720p || video.video_url;
+        case '1080p': return video.video_url_1080p || video.video_url;
+        default: return video.video_url;
+      }
+    };
+
+    // Helper function to determine ideal quality based on buffer and network
+    const calculateIdealQuality = (
+      bufferSeconds: number,
+      currentQualityLevel: '360p' | '480p' | '720p' | '1080p',
+      availableQualities: Array<'360p' | '480p' | '720p' | '1080p'>
+    ): '360p' | '480p' | '720p' | '1080p' => {
+      const qualityLevels = { '360p': 1, '480p': 2, '720p': 3, '1080p': 4 };
+      const currentLevel = qualityLevels[currentQualityLevel];
+
+      // Critical buffer (< 2 seconds): drop quality aggressively
+      if (bufferSeconds < 2) {
+        const lowerQualities = availableQualities.filter(q => qualityLevels[q] < currentLevel);
+        return lowerQualities[0] || availableQualities[0];
+      }
+      
+      // Low buffer (2-5 seconds): drop one level if possible
+      if (bufferSeconds < 5 && bufferSeconds >= 2) {
+        const oneLevelDown = Object.entries(qualityLevels).find(
+          ([_, level]) => level === currentLevel - 1
+        )?.[0] as '360p' | '480p' | '720p' | '1080p' | undefined;
+        if (oneLevelDown && availableQualities.includes(oneLevelDown)) {
+          return oneLevelDown;
+        }
+        return currentQualityLevel;
+      }
+
+      // Good buffer (5-10 seconds): maintain or upgrade slightly
+      if (bufferSeconds >= 5 && bufferSeconds < 10) {
+        // Network-based upgrade decision
+        if (networkSpeed === 'fast' && currentLevel < 4) {
+          const oneLevelUp = Object.entries(qualityLevels).find(
+            ([_, level]) => level === currentLevel + 1
+          )?.[0] as '360p' | '480p' | '720p' | '1080p' | undefined;
+          if (oneLevelUp && availableQualities.includes(oneLevelUp)) {
+            return oneLevelUp;
+          }
+        }
+        return currentQualityLevel;
+      }
+
+      // Excellent buffer (>= 10 seconds): upgrade to best available for network
+      if (bufferSeconds >= 10) {
+        const targetQuality = networkSpeed === 'fast' ? '1080p' 
+                            : networkSpeed === 'medium' ? '720p' 
+                            : '480p';
+        
+        if (availableQualities.includes(targetQuality)) {
+          return targetQuality;
+        }
+        
+        // Fallback to highest available
+        return availableQualities[availableQualities.length - 1];
+      }
+
+      return currentQualityLevel;
+    };
+
+    // ABR monitoring loop
+    const checkBufferHealth = () => {
+      if (!autoQualityEnabled || videoQuality !== 'auto') return;
+
+      const currentVideos = activeTab === "following" ? followingVideos : videos;
+      
+      currentVideos.forEach(video => {
+        const videoElement = videoRefs.current.get(video.id);
+        if (!videoElement || videoElement.paused) return;
+
+        const availableQualities = getAvailableQualities(video);
+        if (availableQualities.length === 0) return; // No quality variants available
+
+        // Calculate buffer health
+        const buffered = videoElement.buffered;
+        let bufferSeconds = 0;
+        
+        if (buffered.length > 0) {
+          const currentTime = videoElement.currentTime;
+          // Find the buffered range that contains current playback position
+          for (let i = 0; i < buffered.length; i++) {
+            if (buffered.start(i) <= currentTime && buffered.end(i) >= currentTime) {
+              bufferSeconds = buffered.end(i) - currentTime;
+              break;
+            }
+          }
+        }
+
+        // Update buffer health state
+        setBufferHealth(prev => ({ ...prev, [video.id]: bufferSeconds }));
+
+        // Get current active quality or initialize with default
+        const currentActiveQuality = activeQuality[video.id] || 
+          (networkSpeed === 'fast' ? '1080p' : networkSpeed === 'medium' ? '720p' : '480p');
+
+        // Calculate ideal quality
+        const idealQuality = calculateIdealQuality(bufferSeconds, currentActiveQuality, availableQualities);
+
+        // Switch quality if different and not already at the ideal
+        if (idealQuality !== currentActiveQuality) {
+          const newUrl = getQualityUrl(video, idealQuality);
+          const currentTime = videoElement.currentTime;
+          const wasPlaying = !videoElement.paused;
+
+          console.log(`[ABR] Switching ${video.id} from ${currentActiveQuality} to ${idealQuality} (buffer: ${bufferSeconds.toFixed(1)}s)`);
+
+          // Smoothly transition to new quality
+          videoElement.src = newUrl;
+          videoElement.currentTime = currentTime;
+          
+          if (wasPlaying) {
+            videoElement.play().catch(err => console.error('ABR play error:', err));
+          }
+
+          // Update active quality
+          setActiveQuality(prev => ({ ...prev, [video.id]: idealQuality }));
+          
+          // Show toast notification for quality change
+          toast.info(`Video quality: ${idealQuality}`, { duration: 2000 });
+        }
+      });
+    };
+
+    // Start monitoring
+    if (autoQualityEnabled && videoQuality === 'auto') {
+      abrCheckInterval.current = setInterval(checkBufferHealth, 2000); // Check every 2 seconds
+    }
+
+    return () => {
+      if (abrCheckInterval.current) {
+        clearInterval(abrCheckInterval.current);
+        abrCheckInterval.current = null;
+      }
+    };
+  }, [videos, followingVideos, activeTab, autoQualityEnabled, videoQuality, networkSpeed, activeQuality]);
 
   // Auto-play videos when they come into view (mobile) + mini player
   useEffect(() => {
@@ -1078,6 +1243,18 @@ export default function Feed() {
               )}
             </Button>
             
+            {/* Quality indicator badge (ABR) */}
+            {autoQualityEnabled && activeQuality[video.id] && (
+              <div className="bg-background/90 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-1.5">
+                <div className={`h-2 w-2 rounded-full ${
+                  bufferHealth[video.id] >= 10 ? 'bg-green-500' :
+                  bufferHealth[video.id] >= 5 ? 'bg-yellow-500' :
+                  bufferHealth[video.id] >= 2 ? 'bg-orange-500' : 'bg-red-500'
+                } animate-pulse`} />
+                <span className="text-xs font-semibold">{activeQuality[video.id]}</span>
+              </div>
+            )}
+            
             <Button
               variant="ghost"
               size="sm"
@@ -1201,7 +1378,7 @@ export default function Feed() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="auto">
-                          Auto (Currently: {currentQuality})
+                          Auto - Adaptive (ABR)
                         </SelectItem>
                         <SelectItem value="360p">360p</SelectItem>
                         <SelectItem value="480p">480p</SelectItem>
@@ -1209,9 +1386,18 @@ export default function Feed() {
                         <SelectItem value="1080p">1080p (Full HD)</SelectItem>
                       </SelectContent>
                     </Select>
-                    {autoQualityEnabled && (
+                    {autoQualityEnabled ? (
+                      <div className="text-xs space-y-1">
+                        <p className="text-muted-foreground">
+                          Network: {networkSpeed === 'fast' ? '🟢 Fast' : networkSpeed === 'medium' ? '🟡 Medium' : '🔴 Slow'}
+                        </p>
+                        <p className="text-primary font-medium">
+                          ✨ Adaptive streaming automatically adjusts quality based on buffer health
+                        </p>
+                      </div>
+                    ) : (
                       <p className="text-xs text-muted-foreground">
-                        Network: {networkSpeed === 'fast' ? '🟢 Fast' : networkSpeed === 'medium' ? '🟡 Medium' : '🔴 Slow'}
+                        Quality locked to {videoQuality}
                       </p>
                     )}
                   </div>
