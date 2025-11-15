@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { NotificationBell } from "@/components/NotificationBell";
+import { BottomNav } from "@/components/BottomNav";
 import Index from "./pages/Index";
 import Feed from "./pages/Feed";
 import Activity from "./pages/Activity";
@@ -30,18 +31,18 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <SidebarProvider>
+        <SidebarProvider defaultOpen={false}>
           <div className="flex min-h-screen w-full">
             <AppSidebar />
             <div className="flex-1 flex flex-col">
               <header className="h-12 flex items-center justify-between border-b bg-background px-4">
                 <div className="flex items-center">
-                  <SidebarTrigger />
+                  <SidebarTrigger className="md:block" />
                   <h1 className="ml-4 font-bold text-lg">🔥 Voice2Fire</h1>
                 </div>
                 <NotificationBell />
               </header>
-              <main className="flex-1">
+              <main className="flex-1 pb-16 md:pb-0">
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/feed" element={<Feed />} />
@@ -60,6 +61,7 @@ const App = () => (
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>
+              <BottomNav />
             </div>
           </div>
         </SidebarProvider>

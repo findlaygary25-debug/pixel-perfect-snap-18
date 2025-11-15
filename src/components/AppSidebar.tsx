@@ -58,7 +58,7 @@ export function AppSidebar() {
 
   return (
     <>
-      <Sidebar className={state === "collapsed" ? "w-14" : "w-60"} collapsible="icon">
+      <Sidebar className={state === "collapsed" ? "w-14" : "w-48"} collapsible="icon">
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupLabel>Voice2Fire</SidebarGroupLabel>
@@ -74,7 +74,7 @@ export function AppSidebar() {
                         activeClassName="bg-muted text-primary font-medium"
                       >
                         <item.icon className="h-4 w-4" />
-                        {state !== "collapsed" && <span>{item.title}</span>}
+                        {state !== "collapsed" && <span className="text-sm">{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -84,7 +84,7 @@ export function AppSidebar() {
                   <SidebarMenuItem>
                     <SidebarMenuButton onClick={() => setAdvertiseDialogOpen(true)}>
                       <Megaphone className="h-4 w-4" />
-                      {state !== "collapsed" && <span>Advertise</span>}
+                      {state !== "collapsed" && <span className="text-sm">Advertise</span>}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
