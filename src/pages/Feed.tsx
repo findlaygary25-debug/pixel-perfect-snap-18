@@ -40,6 +40,7 @@ export default function Feed() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const touchStartY = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [videoProgress, setVideoProgress] = useState<Record<string, { current: number; duration: number; buffered: number }>>({});
 
   // Auto-play videos when they come into view (mobile)
   useEffect(() => {
@@ -111,7 +112,57 @@ export default function Feed() {
   const setVideoRef = useCallback((videoId: string, element: HTMLVideoElement | null) => {
     if (element) {
       videoRefs.current.set(videoId, element);
+      
+      // Add event listeners for progress tracking
+      const handleTimeUpdate = () => {
+        setVideoProgress(prev => ({
+          ...prev,
+          [videoId]: {
+            current: element.currentTime,
+            duration: element.duration,
+            buffered: element.buffered.length > 0 ? element.buffered.end(element.buffered.length - 1) : 0
+          }
+        }));
+      };
+      
+      const handleProgress = () => {
+        if (element.buffered.length > 0) {
+          setVideoProgress(prev => ({
+            ...prev,
+            [videoId]: {
+              ...prev[videoId],
+              buffered: element.buffered.end(element.buffered.length - 1)
+            }
+          }));
+        }
+      };
+      
+      const handleLoadedMetadata = () => {
+        setVideoProgress(prev => ({
+          ...prev,
+          [videoId]: {
+            current: 0,
+            duration: element.duration,
+            buffered: 0
+          }
+        }));
+      };
+      
+      element.addEventListener('timeupdate', handleTimeUpdate);
+      element.addEventListener('progress', handleProgress);
+      element.addEventListener('loadedmetadata', handleLoadedMetadata);
+      
+      // Store cleanup function
+      (element as any)._cleanup = () => {
+        element.removeEventListener('timeupdate', handleTimeUpdate);
+        element.removeEventListener('progress', handleProgress);
+        element.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      };
     } else {
+      const video = videoRefs.current.get(videoId);
+      if (video && (video as any)._cleanup) {
+        (video as any)._cleanup();
+      }
       videoRefs.current.delete(videoId);
     }
   }, []);
@@ -478,6 +529,26 @@ export default function Feed() {
             muted
             loop
           />
+          
+          {/* Video progress bar */}
+          {videoProgress[video.id] && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-background/30 backdrop-blur-sm">
+              {/* Buffered progress */}
+              <div
+                className="absolute top-0 left-0 h-full bg-muted/50 transition-all duration-300"
+                style={{
+                  width: `${(videoProgress[video.id].buffered / videoProgress[video.id].duration) * 100}%`
+                }}
+              />
+              {/* Playback progress */}
+              <div
+                className="absolute top-0 left-0 h-full bg-primary transition-all duration-100"
+                style={{
+                  width: `${(videoProgress[video.id].current / videoProgress[video.id].duration) * 100}%`
+                }}
+              />
+            </div>
+          )}
           
           {/* Double-tap heart animation */}
           {doubleTapHearts.has(video.id) && (
