@@ -77,11 +77,19 @@ export default function Live() {
     }
 
     try {
+      // Get username from profiles
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("user_id", currentUser.id)
+        .single();
+
       // Create live stream record
       const { data, error } = await supabase
         .from("live_streams")
         .insert({
           user_id: currentUser.id,
+          username: profileData?.username || 'Unknown',
           title,
           description,
           is_live: true,

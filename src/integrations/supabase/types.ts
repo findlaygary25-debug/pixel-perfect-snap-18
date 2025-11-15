@@ -285,6 +285,48 @@ export type Database = {
         }
         Relationships: []
       }
+      live_streams: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          ended_at: string | null
+          id: string
+          is_live: boolean | null
+          started_at: string | null
+          title: string
+          updated_at: string | null
+          user_id: string
+          username: string
+          viewer_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          ended_at?: string | null
+          id?: string
+          is_live?: boolean | null
+          started_at?: string | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+          username: string
+          viewer_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          ended_at?: string | null
+          id?: string
+          is_live?: boolean | null
+          started_at?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+          username?: string
+          viewer_count?: number | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
