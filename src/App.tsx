@@ -23,6 +23,7 @@ import FAQ from "./pages/FAQ";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import Shares from "./pages/Shares";
+import ImportVideos from "./pages/ImportVideos";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -61,8 +62,9 @@ const App = () => (
                   <Route path="/faq" element={<FAQ />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/profile" element={<Profile />} />
-                  <Route path="/shares" element={<Shares />} />
-                  <Route path="*" element={<NotFound />} />
+          <Route path="/shares" element={<Shares />} />
+          <Route path="/import" element={<ImportVideos />} />
+          <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>
               <BottomNav />
