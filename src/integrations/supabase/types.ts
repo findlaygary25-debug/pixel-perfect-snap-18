@@ -517,6 +517,41 @@ export type Database = {
           },
         ]
       }
+      social_shares: {
+        Row: {
+          id: string
+          platform: string
+          session_id: string | null
+          shared_at: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          id?: string
+          platform: string
+          session_id?: string | null
+          shared_at?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          id?: string
+          platform?: string
+          session_id?: string | null
+          shared_at?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_shares_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stores: {
         Row: {
           created_at: string

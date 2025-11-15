@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 type SocialShareDialogProps = {
   open: boolean;
@@ -29,9 +30,24 @@ export function SocialShareDialog({
     ? `Check out this video by @${username}: ${videoCaption}` 
     : `Check out this video by @${username} on Voice2Fire!`;
 
+  const trackShare = async (platform: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      await supabase.from('social_shares').insert({
+        video_id: videoId,
+        user_id: user?.id || 'anonymous',
+        platform,
+        session_id: sessionStorage.getItem('sessionId') || crypto.randomUUID()
+      });
+    } catch (error) {
+      console.error('Error tracking share:', error);
+    }
+  };
+
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(videoUrl);
+      await trackShare('copy_link');
       toast.success("Link copied to clipboard!");
       onOpenChange(false);
     } catch (error) {
@@ -40,37 +56,43 @@ export function SocialShareDialog({
     }
   };
 
-  const handleShareFacebook = () => {
+  const handleShareFacebook = async () => {
+    await trackShare('facebook');
     const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(videoUrl)}`;
     window.open(fbUrl, '_blank', 'width=600,height=400');
     onOpenChange(false);
   };
 
-  const handleShareTwitter = () => {
+  const handleShareTwitter = async () => {
+    await trackShare('twitter');
     const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(videoUrl)}&text=${encodeURIComponent(shareText)}`;
     window.open(twitterUrl, '_blank', 'width=600,height=400');
     onOpenChange(false);
   };
 
-  const handleShareLinkedIn = () => {
+  const handleShareLinkedIn = async () => {
+    await trackShare('linkedin');
     const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(videoUrl)}`;
     window.open(linkedInUrl, '_blank', 'width=600,height=400');
     onOpenChange(false);
   };
 
-  const handleShareWhatsApp = () => {
+  const handleShareWhatsApp = async () => {
+    await trackShare('whatsapp');
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText + ' ' + videoUrl)}`;
     window.open(whatsappUrl, '_blank');
     onOpenChange(false);
   };
 
-  const handleShareTikTok = () => {
+  const handleShareTikTok = async () => {
+    await trackShare('tiktok');
     // TikTok doesn't have a direct share URL, so we copy and show instructions
     handleCopyLink();
     toast.info("Link copied! Open TikTok to share the video.");
   };
 
-  const handleShareEmail = () => {
+  const handleShareEmail = async () => {
+    await trackShare('email');
     const subject = encodeURIComponent(`Check out this video on Voice2Fire`);
     const body = encodeURIComponent(`${shareText}\n\n${videoUrl}`);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
