@@ -1,0 +1,101 @@
+import { useEffect } from 'react';
+
+type VideoSchemaProps = {
+  videoId: string;
+  name: string;
+  description: string;
+  thumbnailUrl: string;
+  uploadDate: string;
+  duration?: string;
+  contentUrl: string;
+  embedUrl: string;
+  interactionStatistic: {
+    viewCount: number;
+    likeCount: number;
+    commentCount: number;
+  };
+  author: {
+    name: string;
+    url: string;
+  };
+};
+
+export const VideoSchema = ({
+  videoId,
+  name,
+  description,
+  thumbnailUrl,
+  uploadDate,
+  duration,
+  contentUrl,
+  embedUrl,
+  interactionStatistic,
+  author,
+}: VideoSchemaProps) => {
+  useEffect(() => {
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": "VideoObject",
+      "@id": `https://voice2fire.com/video/${videoId}`,
+      name,
+      description,
+      thumbnailUrl,
+      uploadDate,
+      contentUrl,
+      embedUrl,
+      ...(duration && { duration }),
+      interactionStatistic: [
+        {
+          "@type": "InteractionCounter",
+          "interactionType": "https://schema.org/WatchAction",
+          "userInteractionCount": interactionStatistic.viewCount
+        },
+        {
+          "@type": "InteractionCounter",
+          "interactionType": "https://schema.org/LikeAction",
+          "userInteractionCount": interactionStatistic.likeCount
+        },
+        {
+          "@type": "InteractionCounter",
+          "interactionType": "https://schema.org/CommentAction",
+          "userInteractionCount": interactionStatistic.commentCount
+        }
+      ],
+      author: {
+        "@type": "Person",
+        "name": author.name,
+        "url": author.url
+      },
+      publisher: {
+        "@type": "Organization",
+        "@id": "https://voice2fire.com/#organization",
+        "name": "Voice2Fire",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://voice2fire.com/favicon.png"
+        }
+      }
+    };
+
+    const scriptId = `video-schema-${videoId}`;
+    let scriptElement = document.getElementById(scriptId) as HTMLScriptElement;
+
+    if (!scriptElement) {
+      scriptElement = document.createElement('script') as HTMLScriptElement;
+      scriptElement.id = scriptId;
+      scriptElement.type = 'application/ld+json';
+      document.head.appendChild(scriptElement);
+    }
+
+    scriptElement.textContent = JSON.stringify(schema);
+
+    return () => {
+      const element = document.getElementById(scriptId);
+      if (element) {
+        element.remove();
+      }
+    };
+  }, [videoId, name, description, thumbnailUrl, uploadDate, duration, contentUrl, embedUrl, interactionStatistic, author]);
+
+  return null;
+};
