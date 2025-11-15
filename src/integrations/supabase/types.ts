@@ -591,6 +591,120 @@ export type Database = {
           },
         ]
       }
+      video_engagement: {
+        Row: {
+          created_at: string
+          engagement_type: string
+          id: string
+          video_id: string
+          viewer_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          engagement_type: string
+          id?: string
+          video_id: string
+          viewer_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          engagement_type?: string
+          id?: string
+          video_id?: string
+          viewer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_engagement_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_views: {
+        Row: {
+          created_at: string
+          device_type: string | null
+          id: string
+          session_id: string
+          source: string | null
+          video_id: string
+          viewer_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          session_id: string
+          source?: string | null
+          video_id: string
+          viewer_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          session_id?: string
+          source?: string | null
+          video_id?: string
+          viewer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_views_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_watch_sessions: {
+        Row: {
+          completion_rate: number
+          created_at: string
+          id: string
+          session_id: string
+          updated_at: string
+          video_duration: number
+          video_id: string
+          viewer_id: string | null
+          watch_duration: number
+        }
+        Insert: {
+          completion_rate?: number
+          created_at?: string
+          id?: string
+          session_id: string
+          updated_at?: string
+          video_duration: number
+          video_id: string
+          viewer_id?: string | null
+          watch_duration?: number
+        }
+        Update: {
+          completion_rate?: number
+          created_at?: string
+          id?: string
+          session_id?: string
+          updated_at?: string
+          video_duration?: number
+          video_id?: string
+          viewer_id?: string | null
+          watch_duration?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_watch_sessions_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       videos: {
         Row: {
           caption: string | null
