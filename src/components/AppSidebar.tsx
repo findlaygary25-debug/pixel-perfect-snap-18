@@ -1,4 +1,4 @@
-import { Home, Video, Upload as UploadIcon, Store, Wallet, Users, Mail, Info, Palette, LogIn, User, Activity, BarChart3, Megaphone, HelpCircle, Share2, Youtube, CalendarClock } from "lucide-react";
+import { Home, Video, Upload as UploadIcon, Store, Wallet, Users, Mail, Info, Palette, LogIn, User, Activity, BarChart3, Megaphone, HelpCircle, Share2, Youtube, CalendarClock, Radio } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,7 @@ import {
 const baseItems = [
   { title: "Home", url: "/", icon: Home },
   { title: "Feed", url: "/feed", icon: Video },
+  { title: "Go Live", url: "/live", icon: Radio },
   { title: "Activity", url: "/activity", icon: Activity },
   { title: "Upload", url: "/upload", icon: UploadIcon },
   { title: "Import Videos", url: "/import", icon: Youtube },
