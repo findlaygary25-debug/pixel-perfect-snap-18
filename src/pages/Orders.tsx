@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Package } from "lucide-react";
+import { Package, Truck } from "lucide-react";
 
 type Order = {
   id: string;
@@ -13,6 +13,9 @@ type Order = {
   customer_email: string;
   customer_phone: string | null;
   shipping_address: string;
+  tracking_number: string | null;
+  shipped_at: string | null;
+  delivered_at: string | null;
   created_at: string;
 };
 
@@ -153,6 +156,28 @@ export default function OrdersPage() {
                       ))}
                     </div>
                   </div>
+
+                  {order.tracking_number && (
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mt-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Truck className="h-5 w-5 text-blue-600" />
+                        <h4 className="font-medium text-blue-900">Tracking Information</h4>
+                      </div>
+                      <p className="text-lg font-mono font-bold text-blue-700">
+                        {order.tracking_number}
+                      </p>
+                      {order.shipped_at && (
+                        <p className="text-sm text-blue-600 mt-1">
+                          Shipped: {new Date(order.shipped_at).toLocaleDateString()}
+                        </p>
+                      )}
+                      {order.delivered_at && (
+                        <p className="text-sm text-green-600 mt-1">
+                          Delivered: {new Date(order.delivered_at).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
                     <div>

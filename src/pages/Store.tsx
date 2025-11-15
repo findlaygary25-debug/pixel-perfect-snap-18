@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Package, ShoppingCart } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, ShoppingCart, Truck } from "lucide-react";
 import { PlaceOrderDialog } from "@/components/PlaceOrderDialog";
 
 type Store = {
@@ -53,6 +53,9 @@ type Order = {
   customer_email: string;
   customer_phone: string | null;
   shipping_address: string;
+  tracking_number: string | null;
+  shipped_at: string | null;
+  delivered_at: string | null;
   created_at: string;
 };
 
@@ -78,6 +81,9 @@ export default function StorePage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [orderDialogOpen, setOrderDialogOpen] = useState(false);
+  const [trackingDialogOpen, setTrackingDialogOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [trackingNumber, setTrackingNumber] = useState("");
   const [productForm, setProductForm] = useState<ProductFormData>({
     title: "",
     description: "",
@@ -172,10 +178,42 @@ export default function StorePage() {
     setOrderItems(itemsMap);
   };
 
+  const sendOrderNotification = async (order: Order, items: OrderItem[]) => {
+    try {
+      const { error } = await supabase.functions.invoke("send-order-notification", {
+        body: {
+          customerEmail: order.customer_email,
+          customerName: order.customer_name,
+          orderId: order.id,
+          status: order.status,
+          trackingNumber: order.tracking_number,
+          orderTotal: order.total_amount,
+          items: items.map((item) => ({
+            title: item.products.title,
+            quantity: item.quantity,
+            price: item.price_at_purchase,
+          })),
+        },
+      });
+
+      if (error) {
+        console.error("Failed to send email:", error);
+      }
+    } catch (error) {
+      console.error("Error sending notification:", error);
+    }
+  };
+
   const updateOrderStatus = async (orderId: string, status: "pending" | "processing" | "completed" | "cancelled") => {
+    const updateData: any = { status };
+    
+    if (status === "completed") {
+      updateData.delivered_at = new Date().toISOString();
+    }
+
     const { error } = await supabase
       .from("orders")
-      .update({ status })
+      .update(updateData)
       .eq("id", orderId);
 
     if (error) {
@@ -189,6 +227,63 @@ export default function StorePage() {
         title: "Success",
         description: "Order status updated",
       });
+      
+      // Send email notification
+      const order = orders.find((o) => o.id === orderId);
+      if (order) {
+        const items = orderItems[orderId] || [];
+        await sendOrderNotification({ ...order, status }, items);
+      }
+      
+      loadOrders();
+    }
+  };
+
+  const addTrackingNumber = async () => {
+    if (!selectedOrder || !trackingNumber.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a tracking number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { error } = await supabase
+      .from("orders")
+      .update({
+        tracking_number: trackingNumber,
+        shipped_at: new Date().toISOString(),
+        status: "processing",
+      })
+      .eq("id", selectedOrder.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Tracking number added and customer notified",
+      });
+
+      // Send email notification
+      const items = orderItems[selectedOrder.id] || [];
+      await sendOrderNotification(
+        {
+          ...selectedOrder,
+          tracking_number: trackingNumber,
+          status: "processing",
+        },
+        items
+      );
+
+      setTrackingDialogOpen(false);
+      setTrackingNumber("");
+      setSelectedOrder(null);
       loadOrders();
     }
   };
@@ -618,6 +713,37 @@ export default function StorePage() {
                             </div>
                           </div>
 
+                          {order.tracking_number && (
+                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mt-4">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Truck className="h-5 w-5 text-blue-600" />
+                                <h4 className="font-medium text-blue-900">Tracking Information</h4>
+                              </div>
+                              <p className="text-lg font-mono font-bold text-blue-700">
+                                {order.tracking_number}
+                              </p>
+                              {order.shipped_at && (
+                                <p className="text-sm text-blue-600 mt-1">
+                                  Shipped: {new Date(order.shipped_at).toLocaleDateString()}
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          {!order.tracking_number && order.status !== "cancelled" && (
+                            <Button
+                              variant="outline"
+                              className="w-full mt-4"
+                              onClick={() => {
+                                setSelectedOrder(order);
+                                setTrackingDialogOpen(true);
+                              }}
+                            >
+                              <Truck className="mr-2 h-4 w-4" />
+                              Add Tracking Number
+                            </Button>
+                          )}
+
                           <div className="flex justify-between items-center pt-4 border-t">
                             <span className="font-medium">Total Amount:</span>
                             <span className="text-xl font-bold">${order.total_amount}</span>
@@ -689,6 +815,35 @@ export default function StorePage() {
           onOpenChange={setOrderDialogOpen}
         />
       )}
+
+      <Dialog open={trackingDialogOpen} onOpenChange={setTrackingDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Tracking Number</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Tracking Number</label>
+              <Input
+                value={trackingNumber}
+                onChange={(e) => setTrackingNumber(e.target.value)}
+                placeholder="Enter tracking number"
+              />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Adding a tracking number will automatically update the order status to "Processing" and send an email notification to the customer.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTrackingDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={addTrackingNumber}>
+              Add Tracking & Notify Customer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
