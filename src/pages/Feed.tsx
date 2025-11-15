@@ -1,12 +1,16 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp, Play, Pause, Volume2, VolumeX, Maximize, Minimize } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp, Play, Pause, Volume2, VolumeX, Maximize, Minimize, Subtitles, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import CommentsDrawer from "@/components/CommentsDrawer";
 import { PromotePostDialog } from "@/components/PromotePostDialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 type VideoPost = {
   id: string;
@@ -47,6 +51,9 @@ export default function Feed() {
   const [playingVideos, setPlayingVideos] = useState<Set<string>>(new Set());
   const [mutedVideos, setMutedVideos] = useState<Set<string>>(new Set());
   const [fullscreenVideoId, setFullscreenVideoId] = useState<string | null>(null);
+  const [captionsEnabled, setCaptionsEnabled] = useState<Set<string>>(new Set());
+  const [captionTextSize, setCaptionTextSize] = useState<'small' | 'medium' | 'large'>('medium');
+  const [captionBackground, setCaptionBackground] = useState<'none' | 'semi' | 'solid'>('semi');
 
   // Auto-play videos when they come into view (mobile)
   useEffect(() => {
@@ -739,8 +746,97 @@ export default function Feed() {
                 <Maximize className="h-5 w-5" />
               )}
             </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                setCaptionsEnabled(prev => {
+                  const next = new Set(prev);
+                  if (next.has(video.id)) {
+                    next.delete(video.id);
+                  } else {
+                    next.add(video.id);
+                  }
+                  return next;
+                });
+              }}
+              className={cn(
+                "bg-background/80 backdrop-blur-sm rounded-full h-10 w-10 p-0 hover:bg-background/90",
+                captionsEnabled.has(video.id) && "text-primary"
+              )}
+            >
+              <Subtitles className="h-5 w-5" />
+            </Button>
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-background/80 backdrop-blur-sm rounded-full h-10 w-10 p-0 hover:bg-background/90"
+                >
+                  <Settings className="h-5 w-5" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64" onClick={(e) => e.stopPropagation()}>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="caption-size">Caption Size</Label>
+                    <Select value={captionTextSize} onValueChange={(value: 'small' | 'medium' | 'large') => setCaptionTextSize(value)}>
+                      <SelectTrigger id="caption-size">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="small">Small</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="large">Large</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="caption-bg">Caption Background</Label>
+                    <Select value={captionBackground} onValueChange={(value: 'none' | 'semi' | 'solid') => setCaptionBackground(value)}>
+                      <SelectTrigger id="caption-bg">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        <SelectItem value="semi">Semi-transparent</SelectItem>
+                        <SelectItem value="solid">Solid</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
           
+          {/* Caption overlay */}
+          {captionsEnabled.has(video.id) && video.caption && (
+            <div className="absolute bottom-16 left-0 right-0 flex justify-center px-4 pointer-events-none">
+              <div
+                className={cn(
+                  "px-4 py-2 rounded-lg max-w-[90%] text-center text-white font-medium",
+                  captionTextSize === 'small' && "text-sm",
+                  captionTextSize === 'medium' && "text-base",
+                  captionTextSize === 'large' && "text-lg",
+                  captionBackground === 'none' && "text-shadow-lg",
+                  captionBackground === 'semi' && "bg-black/60 backdrop-blur-sm",
+                  captionBackground === 'solid' && "bg-black"
+                )}
+                style={captionBackground === 'none' ? {
+                  textShadow: '2px 2px 4px rgba(0,0,0,0.8), -2px -2px 4px rgba(0,0,0,0.8)'
+                } : undefined}
+              >
+                {video.caption}
+              </div>
+            </div>
+          )}
+
           {/* Video progress bar */}
           {videoProgress[video.id] && (
             <div 
