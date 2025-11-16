@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Settings, Layers, LayoutPanelTop, Volume2, Gauge, Vibrate } from "lucide-react";
+import { Settings, Layers, LayoutPanelTop, Volume2, Gauge, Vibrate, RotateCcw } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -36,7 +36,7 @@ export function FeedSettingsDialog({
   triggerHaptic,
 }: FeedSettingsProps) {
   const [open, setOpen] = useState(false);
-  const { settings: hapticSettings, updateSettings: updateHapticSettings } = useHapticSettings();
+  const { settings: hapticSettings, updateSettings: updateHapticSettings, resetSettings } = useHapticSettings();
 
   const handleLayoutChange = (newMode: 'side-panel' | 'overlay') => {
     onLayoutModeChange(newMode);
@@ -71,6 +71,17 @@ export function FeedSettingsDialog({
     triggerHaptic?.('light', 'interactions');
   };
 
+  const handleResetToDefaults = () => {
+    // Reset all settings to defaults
+    onLayoutModeChange('side-panel');
+    onAutoPlayChange(true);
+    onVideoQualityChange('auto');
+    resetSettings();
+    
+    toast.success('All settings reset to defaults');
+    triggerHaptic?.('medium', 'interactions');
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -85,7 +96,18 @@ export function FeedSettingsDialog({
       </DialogTrigger>
       <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Feed Settings</DialogTitle>
+          <DialogTitle className="flex items-center justify-between">
+            <span>Feed Settings</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleResetToDefaults}
+              className="h-8 gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <RotateCcw className="h-3 w-3" />
+              Reset
+            </Button>
+          </DialogTitle>
           <DialogDescription>
             Customize your feed viewing experience
           </DialogDescription>
