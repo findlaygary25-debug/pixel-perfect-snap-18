@@ -4,6 +4,13 @@ import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { AdvertiseDialog } from "@/components/AdvertiseDialog";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import {
   Sidebar,
   SidebarContent,
@@ -36,11 +43,12 @@ const baseItems = [
 ];
 
 export function AppSidebar() {
-  const { state, toggleSidebar, open } = useSidebar();
+  const { state, toggleSidebar, open, setOpen } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [advertiseDialogOpen, setAdvertiseDialogOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -61,67 +69,97 @@ export function AppSidebar() {
       : { title: "Login", url: "/login", icon: LogIn }
   ];
 
+  const menuContent = (
+    <SidebarMenu>
+      {items.map((item) => (
+        <SidebarMenuItem key={item.title}>
+          <SidebarMenuButton asChild className="px-3 py-3 gap-3 min-h-[44px]">
+            <NavLink
+              to={item.url}
+              end
+              className="hover:bg-muted/50"
+              activeClassName="bg-muted text-primary font-medium"
+              onClick={() => {
+                if (isMobile && open) {
+                  toggleSidebar();
+                }
+              }}
+            >
+              <item.icon className="h-5 w-5 flex-shrink-0" />
+              <span className="text-sm truncate">{item.title}</span>
+            </NavLink>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      ))}
+      
+      {isAuthenticated && (
+        <SidebarMenuItem>
+          <SidebarMenuButton 
+            onClick={() => {
+              setAdvertiseDialogOpen(true);
+              if (isMobile && open) {
+                toggleSidebar();
+              }
+            }} 
+            className="px-3 py-3 gap-3 min-h-[44px]"
+          >
+            <Megaphone className="h-5 w-5 flex-shrink-0" />
+            <span className="text-sm truncate">Advertise</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      )}
+    </SidebarMenu>
+  );
+
+  if (isMobile) {
+    return (
+      <>
+        <Drawer open={open} onOpenChange={setOpen}>
+          <DrawerContent className="h-[85vh]">
+            <DrawerHeader className="border-b">
+              <DrawerTitle className="flex items-center justify-between">
+                <span>Voice2Fire</span>
+                <button 
+                  onClick={() => setOpen(false)}
+                  className="p-1 hover:bg-muted rounded"
+                  aria-label="Close menu"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </DrawerTitle>
+            </DrawerHeader>
+            <div className="overflow-y-auto pb-20 px-2">
+              <SidebarGroup>
+                <SidebarGroupContent>
+                  {menuContent}
+                </SidebarGroupContent>
+              </SidebarGroup>
+            </div>
+          </DrawerContent>
+        </Drawer>
+
+        <AdvertiseDialog 
+          open={advertiseDialogOpen} 
+          onOpenChange={setAdvertiseDialogOpen} 
+        />
+      </>
+    );
+  }
+
   return (
     <>
       <Sidebar 
-        className="w-64 md:w-48" 
-        collapsible="offcanvas"
+        className="w-48" 
+        collapsible="icon"
         side="left"
       >
         <SidebarContent className="pb-20">
           <SidebarGroup>
-            <SidebarGroupLabel className="text-sm px-3 flex items-center justify-between">
-              <span>Voice2Fire</span>
-              <button 
-                onClick={() => toggleSidebar()}
-                className="md:hidden p-1 hover:bg-muted rounded"
-                aria-label="Close menu"
-              >
-                <X className="h-4 w-4" />
-              </button>
+            <SidebarGroupLabel className="text-sm px-3">
+              Voice2Fire
             </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
-                {items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild className="px-3 py-3 gap-3 min-h-[44px]">
-                      <NavLink
-                        to={item.url}
-                        end
-                        className="hover:bg-muted/50"
-                        activeClassName="bg-muted text-primary font-medium"
-                        onClick={() => {
-                          // Close sidebar on mobile after navigation
-                          if (window.innerWidth < 768 && open) {
-                            toggleSidebar();
-                          }
-                        }}
-                      >
-                        <item.icon className="h-5 w-5 flex-shrink-0" />
-                        <span className="text-sm truncate">{item.title}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-                
-                {isAuthenticated && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton 
-                      onClick={() => {
-                        setAdvertiseDialogOpen(true);
-                        // Close sidebar on mobile after opening dialog
-                        if (window.innerWidth < 768 && open) {
-                          toggleSidebar();
-                        }
-                      }} 
-                      className="px-3 py-3 gap-3 min-h-[44px]"
-                    >
-                      <Megaphone className="h-5 w-5 flex-shrink-0" />
-                      <span className="text-sm truncate">Advertise</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )}
-              </SidebarMenu>
+              {menuContent}
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
