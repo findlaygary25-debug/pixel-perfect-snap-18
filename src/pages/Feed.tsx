@@ -2081,16 +2081,16 @@ export default function Feed() {
                     <img 
                       src={video.avatar_url} 
                       alt={video.username}
-                      className="h-12 w-12 rounded-full object-cover"
+                      className="h-16 w-16 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-sm font-semibold text-foreground">{video.username[0].toUpperCase()}</span>
+                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-lg font-semibold text-foreground">{video.username[0].toUpperCase()}</span>
                     </div>
                   )}
                   {currentUser && video.user_id !== currentUser && !followedUsers.has(video.user_id) && (
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-primary rounded-full h-5 w-5 flex items-center justify-center border-2 border-background">
-                      <UserPlus className="h-3 w-3 text-primary-foreground" />
+                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-primary rounded-full h-6 w-6 flex items-center justify-center border-2 border-background">
+                      <UserPlus className="h-3.5 w-3.5 text-primary-foreground" />
                     </div>
                   )}
                 </div>
