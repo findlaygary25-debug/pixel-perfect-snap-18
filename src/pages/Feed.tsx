@@ -5,7 +5,7 @@ import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 import CommentsDrawer from "@/components/CommentsDrawer";
 import { PromotePostDialog } from "@/components/PromotePostDialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -98,10 +98,38 @@ export default function Feed() {
   const [bufferHealth, setBufferHealth] = useState<Record<string, number>>({});
   const abrCheckInterval = useRef<NodeJS.Timeout | null>(null);
 
-  // Helper function to trigger haptic feedback safely
-  const triggerHaptic = async (style: ImpactStyle = ImpactStyle.Light) => {
+  // Enhanced haptic feedback helper with custom patterns
+  const triggerHaptic = async (pattern: 'light' | 'medium' | 'heavy' | 'success' | 'notification' | 'achievement' = 'light') => {
     try {
-      await Haptics.impact({ style });
+      switch (pattern) {
+        case 'light':
+          await Haptics.impact({ style: ImpactStyle.Light });
+          break;
+        case 'medium':
+          await Haptics.impact({ style: ImpactStyle.Medium });
+          break;
+        case 'heavy':
+          await Haptics.impact({ style: ImpactStyle.Heavy });
+          break;
+        case 'success':
+          // Success notification for achievements
+          await Haptics.notification({ type: NotificationType.Success });
+          break;
+        case 'achievement':
+          // Strong pattern for achievements: heavy impact + success
+          await Haptics.impact({ style: ImpactStyle.Heavy });
+          setTimeout(async () => {
+            await Haptics.notification({ type: NotificationType.Success });
+          }, 100);
+          break;
+        case 'notification':
+          // Subtle pulse pattern for notifications
+          await Haptics.vibrate({ duration: 50 });
+          setTimeout(async () => {
+            await Haptics.vibrate({ duration: 30 });
+          }, 100);
+          break;
+      }
     } catch (error) {
       // Haptics not supported on this device/browser, fail silently
       console.debug('Haptics not available');
@@ -519,7 +547,7 @@ export default function Feed() {
       switch (e.code) {
         case 'Space':
           e.preventDefault();
-          triggerHaptic(ImpactStyle.Light);
+          triggerHaptic('light');
           if (videoElement.paused) {
             videoElement.play();
             setPlayingVideos((prev) => new Set(prev).add(currentVisibleVideoId));
@@ -683,7 +711,7 @@ export default function Feed() {
       lastTapRef.current = null;
       
       // Trigger haptic feedback
-      await triggerHaptic(ImpactStyle.Medium);
+      await triggerHaptic('medium');
       
       // Show heart animation
       setDoubleTapHearts(prev => new Set(prev).add(videoId));
@@ -1036,14 +1064,21 @@ export default function Feed() {
 
   const handleLike = async (videoId: string) => {
     try {
-      await triggerHaptic(ImpactStyle.Light);
-      
       const video = videos.find((v) => v.id === videoId) || followingVideos.find((v) => v.id === videoId);
       if (!video) return;
 
+      const newLikeCount = video.likes + 1;
+      
+      // Achievement haptic for milestone likes (1st, 10th, 50th, 100th, etc.)
+      if (newLikeCount === 1 || newLikeCount % 10 === 0 || newLikeCount % 50 === 0 || newLikeCount % 100 === 0) {
+        await triggerHaptic('achievement');
+      } else {
+        await triggerHaptic('medium');
+      }
+
       const { error } = await supabase
         .from("videos")
-        .update({ likes: video.likes + 1 })
+        .update({ likes: newLikeCount })
         .eq("id", videoId);
 
       if (error) throw error;
@@ -1069,7 +1104,7 @@ export default function Feed() {
     }
 
     try {
-      await triggerHaptic(ImpactStyle.Medium);
+      await triggerHaptic('success');
       
       const isBookmarked = bookmarkedVideos.has(videoId);
 
@@ -1105,7 +1140,7 @@ export default function Feed() {
   };
 
   const handleShare = async (videoId: string) => {
-    await triggerHaptic(ImpactStyle.Light);
+    await triggerHaptic('light');
     
     const video = videos.find((v) => v.id === videoId) || followingVideos.find((v) => v.id === videoId);
     if (video) {
@@ -1121,7 +1156,7 @@ export default function Feed() {
     }
 
     try {
-      await triggerHaptic(ImpactStyle.Medium);
+      await triggerHaptic('success');
       
       const isFollowing = followedUsers.has(userId);
 
@@ -1265,7 +1300,7 @@ export default function Feed() {
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                triggerHaptic(ImpactStyle.Light);
+                triggerHaptic('light');
                 const videoElement = videoRefs.current.get(video.id);
                 if (!videoElement) return;
                 
