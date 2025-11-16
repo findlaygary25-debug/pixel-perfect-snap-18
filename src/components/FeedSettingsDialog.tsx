@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { Settings, Layers, LayoutPanelTop, Volume2, Gauge, Vibrate, RotateCcw, Download, Upload } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Settings, Layers, LayoutPanelTop, Volume2, Gauge, Vibrate, RotateCcw, Download, Upload, Save, Trash2, Check } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,8 +13,20 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { useHapticSettings } from "@/hooks/useHapticSettings";
+import { cn } from "@/lib/utils";
+
+type SettingsProfile = {
+  name: string;
+  desktopLayoutMode: 'side-panel' | 'overlay';
+  autoPlay: boolean;
+  videoQuality: 'auto' | '360p' | '480p' | '720p' | '1080p';
+  haptics: any;
+};
 
 type FeedSettingsProps = {
   desktopLayoutMode: 'side-panel' | 'overlay';
@@ -25,6 +37,9 @@ type FeedSettingsProps = {
   onVideoQualityChange: (quality: 'auto' | '360p' | '480p' | '720p' | '1080p') => void;
   triggerHaptic?: (style: string, category: string) => void;
 };
+
+const STORAGE_KEY_PROFILES = 'feed-settings-profiles';
+const STORAGE_KEY_CURRENT_PROFILE = 'feed-settings-current-profile';
 
 export function FeedSettingsDialog({
   desktopLayoutMode,
@@ -38,6 +53,31 @@ export function FeedSettingsDialog({
   const [open, setOpen] = useState(false);
   const { settings: hapticSettings, updateSettings: updateHapticSettings, resetSettings } = useHapticSettings();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Profiles state
+  const [profiles, setProfiles] = useState<SettingsProfile[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY_PROFILES);
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [currentProfile, setCurrentProfile] = useState<string | null>(() => {
+    return localStorage.getItem(STORAGE_KEY_CURRENT_PROFILE);
+  });
+  const [newProfileName, setNewProfileName] = useState('');
+  const [showProfileForm, setShowProfileForm] = useState(false);
+
+  // Save profiles to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_PROFILES, JSON.stringify(profiles));
+  }, [profiles]);
+
+  // Save current profile to localStorage
+  useEffect(() => {
+    if (currentProfile) {
+      localStorage.setItem(STORAGE_KEY_CURRENT_PROFILE, currentProfile);
+    } else {
+      localStorage.removeItem(STORAGE_KEY_CURRENT_PROFILE);
+    }
+  }, [currentProfile]);
 
   const handleLayoutChange = (newMode: 'side-panel' | 'overlay') => {
     onLayoutModeChange(newMode);
@@ -157,6 +197,72 @@ export function FeedSettingsDialog({
     event.target.value = '';
   };
 
+  const handleSaveProfile = () => {
+    if (!newProfileName.trim()) {
+      toast.error('Please enter a profile name');
+      return;
+    }
+
+    if (profiles.some(p => p.name === newProfileName.trim())) {
+      toast.error('A profile with this name already exists');
+      return;
+    }
+
+    const newProfile: SettingsProfile = {
+      name: newProfileName.trim(),
+      desktopLayoutMode,
+      autoPlay,
+      videoQuality,
+      haptics: hapticSettings,
+    };
+
+    setProfiles([...profiles, newProfile]);
+    setCurrentProfile(newProfile.name);
+    setNewProfileName('');
+    setShowProfileForm(false);
+    toast.success(`Profile "${newProfile.name}" saved`);
+    triggerHaptic?.('medium', 'interactions');
+  };
+
+  const handleLoadProfile = (profile: SettingsProfile) => {
+    onLayoutModeChange(profile.desktopLayoutMode);
+    onAutoPlayChange(profile.autoPlay);
+    onVideoQualityChange(profile.videoQuality);
+    updateHapticSettings(profile.haptics);
+    setCurrentProfile(profile.name);
+    toast.success(`Profile "${profile.name}" loaded`);
+    triggerHaptic?.('medium', 'interactions');
+  };
+
+  const handleDeleteProfile = (profileName: string) => {
+    setProfiles(profiles.filter(p => p.name !== profileName));
+    if (currentProfile === profileName) {
+      setCurrentProfile(null);
+    }
+    toast.success(`Profile "${profileName}" deleted`);
+    triggerHaptic?.('light', 'interactions');
+  };
+
+  const handleUpdateCurrentProfile = () => {
+    if (!currentProfile) return;
+
+    const updatedProfiles = profiles.map(p => 
+      p.name === currentProfile
+        ? {
+            ...p,
+            desktopLayoutMode,
+            autoPlay,
+            videoQuality,
+            haptics: hapticSettings,
+          }
+        : p
+    );
+
+    setProfiles(updatedProfiles);
+    toast.success(`Profile "${currentProfile}" updated`);
+    triggerHaptic?.('light', 'interactions');
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -221,6 +327,118 @@ export function FeedSettingsDialog({
         />
 
         <div className="space-y-6 py-4">
+          {/* Profiles Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Save className="h-4 w-4 text-muted-foreground" />
+                <h3 className="text-sm font-semibold">Profiles</h3>
+                {currentProfile && (
+                  <Badge variant="secondary" className="text-xs">
+                    {currentProfile}
+                  </Badge>
+                )}
+              </div>
+              {currentProfile && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleUpdateCurrentProfile}
+                  className="h-7 text-xs gap-1"
+                >
+                  <Check className="h-3 w-3" />
+                  Update
+                </Button>
+              )}
+            </div>
+
+            {profiles.length > 0 && (
+              <ScrollArea className="h-[120px] rounded-md border bg-muted/30 p-3">
+                <div className="space-y-2">
+                  {profiles.map((profile) => (
+                    <div
+                      key={profile.name}
+                      className={cn(
+                        "flex items-center justify-between p-2 rounded-md transition-colors",
+                        currentProfile === profile.name
+                          ? "bg-primary/10 border border-primary/20"
+                          : "hover:bg-muted/50"
+                      )}
+                    >
+                      <button
+                        onClick={() => handleLoadProfile(profile)}
+                        className="flex-1 text-left text-sm font-medium hover:text-primary transition-colors"
+                      >
+                        {profile.name}
+                        {currentProfile === profile.name && (
+                          <Check className="inline-block ml-2 h-3 w-3 text-primary" />
+                        )}
+                      </button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteProfile(profile.name)}
+                        className="h-7 w-7 p-0 hover:text-destructive"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+
+            {showProfileForm ? (
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Profile name (e.g., High Quality)"
+                  value={newProfileName}
+                  onChange={(e) => setNewProfileName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSaveProfile();
+                    } else if (e.key === 'Escape') {
+                      setShowProfileForm(false);
+                      setNewProfileName('');
+                    }
+                  }}
+                  className="flex-1"
+                  autoFocus
+                />
+                <Button
+                  size="sm"
+                  onClick={handleSaveProfile}
+                  className="gap-1"
+                >
+                  <Save className="h-3 w-3" />
+                  Save
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowProfileForm(false);
+                    setNewProfileName('');
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowProfileForm(true)}
+                className="w-full gap-2"
+              >
+                <Save className="h-3 w-3" />
+                Save Current as New Profile
+              </Button>
+            )}
+          </div>
+
+          <Separator />
+
           {/* Desktop Layout Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
