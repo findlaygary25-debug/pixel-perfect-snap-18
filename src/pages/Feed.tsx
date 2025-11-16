@@ -81,6 +81,9 @@ export default function Feed() {
   const [captionBackground, setCaptionBackground] = useState<'none' | 'semi' | 'solid'>('semi');
   const [videoErrors, setVideoErrors] = useState<Set<string>>(new Set());
   const [bufferingVideos, setBufferingVideos] = useState<Set<string>>(new Set());
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const longPressProgress = useRef<NodeJS.Timeout[]>([]);
+  const [longPressActive, setLongPressActive] = useState<string | null>(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [miniPlayerVideo, setMiniPlayerVideo] = useState<{ video: VideoPost; wasPlaying: boolean } | null>(null);
   const videoContainerRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -1253,6 +1256,54 @@ export default function Feed() {
     }
   };
 
+  // Long-press handlers with progressive haptic feedback
+  const handleLongPressStart = (videoId: string, action: () => void) => {
+    // Clear any existing timers
+    clearLongPress();
+    
+    setLongPressActive(videoId);
+    
+    // Progressive haptic feedback at intervals
+    const hapticProgression = [
+      { delay: 0, intensity: 'light' as const },
+      { delay: 200, intensity: 'light' as const },
+      { delay: 400, intensity: 'medium' as const },
+      { delay: 600, intensity: 'medium' as const },
+      { delay: 800, intensity: 'heavy' as const },
+    ];
+    
+    // Schedule progressive haptic feedback
+    hapticProgression.forEach(({ delay, intensity }) => {
+      const timer = setTimeout(() => {
+        triggerHaptic(intensity);
+      }, delay);
+      longPressProgress.current.push(timer);
+    });
+    
+    // Trigger action after threshold (1 second)
+    longPressTimer.current = setTimeout(() => {
+      triggerHaptic('achievement'); // Strong haptic when threshold reached
+      setLongPressActive(null);
+      action();
+    }, 1000);
+  };
+
+  const clearLongPress = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    
+    longPressProgress.current.forEach(timer => clearTimeout(timer));
+    longPressProgress.current = [];
+    
+    setLongPressActive(null);
+  };
+
+  const handleLongPressEnd = () => {
+    clearLongPress();
+  };
+
   const handleShare = async (videoId: string) => {
     await triggerHaptic('light');
     
@@ -1852,9 +1903,37 @@ export default function Feed() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => handleFollow(video.user_id)}
-              className="bg-background/80 backdrop-blur-sm rounded-full h-14 w-14 p-0 relative"
+              onClick={(e) => {
+                if (!longPressActive) {
+                  handleFollow(video.user_id);
+                }
+              }}
+              onMouseDown={() => handleLongPressStart(`follow-${video.user_id}`, () => handleFollow(video.user_id))}
+              onMouseUp={handleLongPressEnd}
+              onMouseLeave={handleLongPressEnd}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                handleLongPressStart(`follow-${video.user_id}`, () => handleFollow(video.user_id));
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                handleLongPressEnd();
+              }}
+              onTouchCancel={handleLongPressEnd}
+              className={cn(
+                "bg-background/80 backdrop-blur-sm rounded-full h-14 w-14 p-0 relative overflow-visible transition-transform",
+                longPressActive === `follow-${video.user_id}` && "scale-110"
+              )}
             >
+              {/* Long-press progress indicator */}
+              {longPressActive === `follow-${video.user_id}` && (
+                <motion.div
+                  className="absolute inset-0 rounded-full border-4 border-primary"
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1.2, opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 1, ease: "easeInOut" }}
+                />
+              )}
               <div className="flex flex-col items-center">
                 <div className="relative">
                   {video.avatar_url ? (
@@ -1913,9 +1992,38 @@ export default function Feed() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => handleBookmark(video.id)}
-            className="bg-background/80 backdrop-blur-sm rounded-full h-14 w-14 p-0"
+            onClick={(e) => {
+              // Only trigger on click if not a long press
+              if (!longPressActive) {
+                handleBookmark(video.id);
+              }
+            }}
+            onMouseDown={() => handleLongPressStart(video.id, () => handleBookmark(video.id))}
+            onMouseUp={handleLongPressEnd}
+            onMouseLeave={handleLongPressEnd}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              handleLongPressStart(video.id, () => handleBookmark(video.id));
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              handleLongPressEnd();
+            }}
+            onTouchCancel={handleLongPressEnd}
+            className={cn(
+              "bg-background/80 backdrop-blur-sm rounded-full h-14 w-14 p-0 relative overflow-visible transition-transform",
+              longPressActive === video.id && "scale-110"
+            )}
           >
+            {/* Long-press progress indicator */}
+            {longPressActive === video.id && (
+              <motion.div
+                className="absolute inset-0 rounded-full border-4 border-primary"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1.2, opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 1, ease: "easeInOut" }}
+              />
+            )}
             <div className="flex flex-col items-center gap-1">
               <Bookmark
                 className={`h-7 w-7 ${bookmarkedVideos.has(video.id) ? "fill-yellow-400 text-yellow-400" : "text-white"}`}
