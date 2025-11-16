@@ -62,6 +62,38 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        button: "var(--button-radius)",
+        loop: "var(--loop-radius)",
+      },
+      spacing: {
+        'navbar': 'var(--navbar-height)',
+        'side': 'var(--side-width)',
+        'side-folded': 'var(--side-folded-width)',
+        'sidebar': 'var(--sidebar-width)',
+        'x-gap': 'var(--x-gap)',
+        'y-gap': 'var(--y-gap)',
+        'header-x-gap': 'var(--header-x-gap)',
+        'header-y-gap': 'var(--header-y-gap)',
+        'loop-gap': 'var(--loop-grid-gap)',
+      },
+      width: {
+        'content': 'var(--content-width)',
+        'sidebar': 'var(--sidebar-width)',
+        'header-image': 'var(--header-image-size)',
+      },
+      height: {
+        'navbar': 'var(--navbar-height)',
+        'header-image': 'var(--header-image-size)',
+        'side-icon': 'var(--side-icon-height)',
+      },
+      minWidth: {
+        'loop': 'var(--loop-min-width)',
+      },
+      gap: {
+        'loop': 'var(--loop-grid-gap)',
+        'loop-header': 'var(--loop-header-gap)',
+        'x': 'var(--x-gap)',
+        'y': 'var(--y-gap)',
       },
       keyframes: {
         "accordion-down": {

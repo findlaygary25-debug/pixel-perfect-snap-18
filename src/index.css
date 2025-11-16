@@ -38,6 +38,25 @@ All colors MUST be HSL.
 
     --radius: 0.5rem;
 
+    /* Layout Variables */
+    --navbar-height: 3.5rem;
+    --side-width: 15rem;
+    --side-folded-width: 4.5rem;
+    --side-icon-height: 20px;
+    --content-width: 100%;
+    --x-gap: 2rem;
+    --y-gap: 1.5rem;
+    --button-radius: 2rem;
+    --header-title-size: 1.25rem;
+    --header-image-size: 17rem;
+    --header-x-gap: 2rem;
+    --header-y-gap: 1rem;
+    --loop-header-gap: 0.75rem;
+    --sidebar-width: 25rem;
+    --loop-grid-gap: 1rem;
+    --loop-radius: 1rem;
+    --loop-min-width: 10rem;
+
     --sidebar-background: 0 0% 98%;
 
     --sidebar-foreground: 240 5.3% 26.1%;
