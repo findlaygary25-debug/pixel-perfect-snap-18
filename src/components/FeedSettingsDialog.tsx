@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Settings, Layers, LayoutPanelTop, Volume2, Gauge, Vibrate, RotateCcw, Download, Upload, Save, Trash2, Check, Share2, Tag, X, Search } from "lucide-react";
+import { Settings, Layers, LayoutPanelTop, Volume2, Gauge, Vibrate, RotateCcw, Download, Upload, Save, Trash2, Check, Share2, Tag, X, Search, ArrowUpDown } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -79,6 +79,7 @@ export function FeedSettingsDialog({
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [filterTag, setFilterTag] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'alphabetical' | 'recent' | 'used'>('alphabetical');
 
   // Save profiles to localStorage whenever they change
   useEffect(() => {
@@ -328,17 +329,34 @@ export function FeedSettingsDialog({
     );
   };
 
-  const filteredProfiles = profiles.filter(profile => {
-    // Filter by tag if selected
-    const matchesTag = filterTag ? profile.tags?.includes(filterTag) : true;
-    
-    // Filter by search query
-    const matchesSearch = searchQuery.trim() === '' 
-      ? true 
-      : profile.name.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    return matchesTag && matchesSearch;
-  });
+  const filteredProfiles = profiles
+    .filter(profile => {
+      // Filter by tag if selected
+      const matchesTag = filterTag ? profile.tags?.includes(filterTag) : true;
+      
+      // Filter by search query
+      const matchesSearch = searchQuery.trim() === '' 
+        ? true 
+        : profile.name.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      return matchesTag && matchesSearch;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'alphabetical') {
+        return a.name.localeCompare(b.name);
+      } else if (sortBy === 'recent') {
+        // Most recently created profiles first (assuming profiles array order represents creation order)
+        const aIndex = profiles.indexOf(a);
+        const bIndex = profiles.indexOf(b);
+        return bIndex - aIndex;
+      } else if (sortBy === 'used') {
+        // Show current profile first, then alphabetically
+        if (a.name === currentProfile) return -1;
+        if (b.name === currentProfile) return 1;
+        return a.name.localeCompare(b.name);
+      }
+      return 0;
+    });
 
   const handleShareProfile = (profile: SettingsProfile) => {
     try {
@@ -502,6 +520,24 @@ export function FeedSettingsDialog({
                       </Button>
                     ))}
                   </div>
+                </div>
+
+                {/* Sort Options */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">Sort by:</span>
+                  </div>
+                  <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="alphabetical">Alphabetical</SelectItem>
+                      <SelectItem value="recent">Most Recent</SelectItem>
+                      <SelectItem value="used">Most Used</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             )}
