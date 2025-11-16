@@ -635,6 +635,16 @@ export default function Feed() {
           }
           break;
         
+        case 'KeyP':
+          e.preventDefault();
+          handlePiPToggle(currentVisibleVideoId);
+          if (pipVideo === currentVisibleVideoId) {
+            toast.success('Exited Picture-in-Picture', { duration: 1000 });
+          } else {
+            toast.success('Picture-in-Picture mode', { duration: 1000 });
+          }
+          break;
+        
         case 'ArrowLeft':
           e.preventDefault();
           videoElement.currentTime = Math.max(0, videoElement.currentTime - 5);
@@ -2579,6 +2589,10 @@ export default function Feed() {
                   <div className="flex items-center justify-between py-2 border-b border-border">
                     <span className="text-muted-foreground">Toggle fullscreen</span>
                     <kbd className="px-3 py-1.5 text-sm font-semibold bg-muted rounded">F</kbd>
+                  </div>
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-muted-foreground">Toggle Picture-in-Picture</span>
+                    <kbd className="px-3 py-1.5 text-sm font-semibold bg-muted rounded">P</kbd>
                   </div>
                 </div>
               </div>
