@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp, Play, Pause, Volume2, VolumeX, Maximize, Minimize, Subtitles, Settings, X, PictureInPicture, ListVideo, Plus, Edit, Trash2, AlertCircle, Loader2, MoreHorizontal } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp, Play, Pause, Volume2, VolumeX, Maximize, Minimize, Subtitles, Settings, X, PictureInPicture, ListVideo, Plus, Edit, Trash2, AlertCircle, Loader2, MoreHorizontal, Layers, LayoutPanelTop } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -77,6 +77,10 @@ export default function Feed() {
   const [hoveredProgress, setHoveredProgress] = useState<{ videoId: string; percentage: number; x: number; thumbnail: string } | null>(null);
   const [justFollowed, setJustFollowed] = useState<string | null>(null);
   const [followerCounts, setFollowerCounts] = useState<Record<string, number>>({});
+  const [desktopLayoutMode, setDesktopLayoutMode] = useState<'side-panel' | 'overlay'>(() => {
+    const saved = localStorage.getItem('feed-desktop-layout');
+    return (saved === 'side-panel' || saved === 'overlay') ? saved : 'side-panel';
+  });
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const videoMilestones = useRef<Map<string, Set<number>>>(new Map()); // Track triggered milestones per video
   const [currentVisibleVideoId, setCurrentVisibleVideoId] = useState<string | null>(null);
@@ -1545,7 +1549,10 @@ export default function Feed() {
       key={video.id}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="relative h-[calc(100vh-8rem)] w-full max-w-[min(100vw-2rem,calc((100vh-8rem)*9/16))] mx-auto snap-start snap-always md:flex md:items-center md:justify-center md:gap-8 md:max-w-none"
+      className={cn(
+        "relative h-[calc(100vh-8rem)] w-full max-w-[min(100vw-2rem,calc((100vh-8rem)*9/16))] mx-auto snap-start snap-always",
+        desktopLayoutMode === 'side-panel' && "md:flex md:items-center md:justify-center md:gap-8 md:max-w-none"
+      )}
     >
       <VideoSchema
         videoId={video.id}
@@ -1567,7 +1574,10 @@ export default function Feed() {
       />
 
       {/* Video container - Responsive with TikTok aspect ratio */}
-      <div className="relative h-full w-full bg-black rounded-lg overflow-hidden md:max-w-[calc((100vh-8rem)*9/16)]">
+      <div className={cn(
+        "relative h-full w-full bg-black rounded-lg overflow-hidden",
+        desktopLayoutMode === 'side-panel' && "md:max-w-[calc((100vh-8rem)*9/16)]"
+      )}>
         <div className="relative h-full w-full">
           <div
             className="relative h-full w-full flex items-center justify-center"
@@ -2078,7 +2088,10 @@ export default function Feed() {
         </div>
         
         {/* Action buttons - positioned on right side */}
-        <div className="absolute right-4 bottom-24 flex flex-col gap-4 z-10 md:relative md:right-auto md:bottom-auto md:flex md:justify-center">
+        <div className={cn(
+          "absolute right-4 bottom-24 flex flex-col gap-4 z-10",
+          desktopLayoutMode === 'side-panel' && "md:relative md:right-auto md:bottom-auto md:flex md:justify-center"
+        )}>
           {/* Profile/Follow button - Always shown with profile image */}
           <div className="flex flex-col items-center gap-2">
             <Button
@@ -2431,12 +2444,37 @@ export default function Feed() {
         triggerHaptic('light', 'navigation');
         setActiveTab(value);
       }}>
-        {/* Tab switcher - floating at top */}
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40">
+        {/* Tab switcher and layout toggle - floating at top */}
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2">
           <TabsList className="bg-background/80 backdrop-blur-sm">
             <TabsTrigger value="forYou">For You</TabsTrigger>
             <TabsTrigger value="following">Following</TabsTrigger>
           </TabsList>
+          
+          {/* Desktop Layout Toggle - only visible on desktop */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              const newMode = desktopLayoutMode === 'side-panel' ? 'overlay' : 'side-panel';
+              setDesktopLayoutMode(newMode);
+              localStorage.setItem('feed-desktop-layout', newMode);
+              triggerHaptic('light', 'interactions');
+              toast.success(
+                newMode === 'side-panel' 
+                  ? 'Side panel layout enabled' 
+                  : 'Overlay layout enabled'
+              );
+            }}
+            className="hidden md:flex bg-background/80 backdrop-blur-sm hover:bg-background/90"
+            title={desktopLayoutMode === 'side-panel' ? 'Switch to overlay mode' : 'Switch to side panel mode'}
+          >
+            {desktopLayoutMode === 'side-panel' ? (
+              <LayoutPanelTop className="h-4 w-4" />
+            ) : (
+              <Layers className="h-4 w-4" />
+            )}
+          </Button>
         </div>
 
         {/* Video feed */}
