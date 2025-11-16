@@ -40,11 +40,16 @@ const App = () => (
       <BrowserRouter>
         <SidebarProvider defaultOpen={false}>
           <div className="flex min-h-screen w-full">
-            <AppSidebar />
+            <div className="hidden md:block">
+              <AppSidebar />
+            </div>
+            <div className="md:hidden">
+              <AppSidebar />
+            </div>
             <div className="flex-1 flex flex-col">
               <header className="h-12 flex items-center justify-between border-b bg-background px-4">
                 <div className="flex items-center gap-3">
-                  <SidebarTrigger className="md:block" />
+                  <SidebarTrigger className="hidden md:block" />
                   <img 
                     src="/voice2fire-logo.png" 
                     alt="Voice2Fire" 
@@ -53,7 +58,7 @@ const App = () => (
                 </div>
                 <NotificationBell />
               </header>
-              <main className="flex-1 pb-28 md:pb-0">
+              <main className="flex-1 pb-16 md:pb-0">
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/feed" element={<Feed />} />
