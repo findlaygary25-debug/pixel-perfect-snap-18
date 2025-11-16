@@ -3,11 +3,15 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { ArrowLeft, GripVertical, Trash2, Play } from "lucide-react";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { BulkActionBar } from "@/components/BulkActionBar";
+import { BulkAddToCollectionDialog } from "@/components/BulkAddToCollectionDialog";
+import { MoveToCollectionDialog } from "@/components/MoveToCollectionDialog";
 
 type CollectionVideo = {
   id: string;
@@ -23,7 +27,17 @@ type CollectionVideo = {
   };
 };
 
-function SortableVideoCard({ item, onRemove }: { item: CollectionVideo; onRemove: () => void }) {
+function SortableVideoCard({ 
+  item, 
+  onRemove, 
+  isSelected, 
+  onSelect 
+}: { 
+  item: CollectionVideo; 
+  onRemove: () => void;
+  isSelected: boolean;
+  onSelect: (selected: boolean) => void;
+}) {
   const {
     attributes,
     listeners,
@@ -41,9 +55,13 @@ function SortableVideoCard({ item, onRemove }: { item: CollectionVideo; onRemove
 
   return (
     <div ref={setNodeRef} style={style}>
-      <Card className={isDragging ? 'shadow-2xl' : ''}>
+      <Card className={isDragging ? 'shadow-2xl' : isSelected ? 'ring-2 ring-primary' : ''}>
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={onSelect}
+            />
             <button
               className="cursor-grab active:cursor-grabbing touch-none"
               {...attributes}
@@ -93,6 +111,9 @@ export default function CollectionDetail() {
   const [collection, setCollection] = useState<any>(null);
   const [videos, setVideos] = useState<CollectionVideo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedVideos, setSelectedVideos] = useState<Set<string>>(new Set());
+  const [bulkAddDialogOpen, setBulkAddDialogOpen] = useState(false);
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -188,6 +209,51 @@ export default function CollectionDetail() {
     }
   };
 
+  const toggleVideoSelection = (videoId: string) => {
+    setSelectedVideos((prev) => {
+      const next = new Set(prev);
+      if (next.has(videoId)) {
+        next.delete(videoId);
+      } else {
+        next.add(videoId);
+      }
+      return next;
+    });
+  };
+
+  const clearSelection = () => {
+    setSelectedVideos(new Set());
+  };
+
+  const handleBulkRemove = async () => {
+    if (selectedVideos.size === 0) return;
+
+    if (!confirm(`Remove ${selectedVideos.size} video${selectedVideos.size > 1 ? "s" : ""} from this collection?`)) {
+      return;
+    }
+
+    try {
+      // Get the item IDs for the selected videos
+      const itemIds = videos
+        .filter(v => selectedVideos.has(v.video_id))
+        .map(v => v.id);
+
+      const { error } = await supabase
+        .from("collection_items")
+        .delete()
+        .in("id", itemIds);
+
+      if (error) throw error;
+
+      toast.success(`Removed ${selectedVideos.size} video${selectedVideos.size > 1 ? "s" : ""}!`);
+      clearSelection();
+      fetchVideos();
+    } catch (error) {
+      console.error("Error removing videos:", error);
+      toast.error("Failed to remove videos");
+    }
+  };
+
   const handleRemoveVideo = async (itemId: string) => {
     try {
       const { error } = await supabase
@@ -218,20 +284,37 @@ export default function CollectionDetail() {
 
   return (
     <div className="container max-w-4xl mx-auto p-6 space-y-6">
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate("/collections")}
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold">{collection?.name}</h1>
-          {collection?.description && (
-            <p className="text-muted-foreground mt-1">{collection.description}</p>
-          )}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/collections")}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">{collection?.name}</h1>
+            {collection?.description && (
+              <p className="text-muted-foreground mt-1">{collection.description}</p>
+            )}
+          </div>
         </div>
+        {videos.length > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (selectedVideos.size === videos.length) {
+                clearSelection();
+              } else {
+                setSelectedVideos(new Set(videos.map(v => v.video_id)));
+              }
+            }}
+          >
+            {selectedVideos.size === videos.length ? "Deselect All" : "Select All"}
+          </Button>
+        )}
       </div>
 
       {videos.length === 0 ? (
@@ -261,17 +344,60 @@ export default function CollectionDetail() {
               items={videos.map((v) => v.id)}
               strategy={verticalListSortingStrategy}
             >
-              {videos.map((item) => (
-                <SortableVideoCard
-                  key={item.id}
-                  item={item}
-                  onRemove={() => handleRemoveVideo(item.id)}
-                />
-              ))}
+            {videos.map((item) => (
+              <SortableVideoCard
+                key={item.id}
+                item={item}
+                onRemove={() => handleRemoveVideo(item.id)}
+                isSelected={selectedVideos.has(item.video_id)}
+                onSelect={(selected) => {
+                  if (selected) {
+                    setSelectedVideos(prev => new Set([...prev, item.video_id]));
+                  } else {
+                    setSelectedVideos(prev => {
+                      const next = new Set(prev);
+                      next.delete(item.video_id);
+                      return next;
+                    });
+                  }
+                }}
+              />
+            ))}
             </SortableContext>
           </DndContext>
         </div>
       )}
+
+      <BulkActionBar
+        selectedCount={selectedVideos.size}
+        onClearSelection={clearSelection}
+        onAddToCollection={() => setBulkAddDialogOpen(true)}
+        onMoveToCollection={() => setMoveDialogOpen(true)}
+        onRemove={handleBulkRemove}
+        showMove={true}
+        showRemove={true}
+      />
+
+      <BulkAddToCollectionDialog
+        open={bulkAddDialogOpen}
+        onOpenChange={setBulkAddDialogOpen}
+        videoIds={Array.from(selectedVideos)}
+        onComplete={() => {
+          clearSelection();
+          fetchVideos();
+        }}
+      />
+
+      <MoveToCollectionDialog
+        open={moveDialogOpen}
+        onOpenChange={setMoveDialogOpen}
+        videoIds={Array.from(selectedVideos)}
+        currentCollectionId={id || ""}
+        onComplete={() => {
+          clearSelection();
+          fetchVideos();
+        }}
+      />
     </div>
   );
 }
