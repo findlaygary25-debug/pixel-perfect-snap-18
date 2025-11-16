@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp, Play, Pause, Volume2, VolumeX, Maximize, Minimize, Subtitles, Settings, X, PictureInPicture, ListVideo, Plus, Edit, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp, Play, Pause, Volume2, VolumeX, Maximize, Minimize, Subtitles, Settings, X, PictureInPicture, ListVideo, Plus, Edit, Trash2, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -79,6 +79,8 @@ export default function Feed() {
   const [captionsEnabled, setCaptionsEnabled] = useState<Set<string>>(new Set());
   const [captionTextSize, setCaptionTextSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [captionBackground, setCaptionBackground] = useState<'none' | 'semi' | 'solid'>('semi');
+  const [videoErrors, setVideoErrors] = useState<Set<string>>(new Set());
+  const [bufferingVideos, setBufferingVideos] = useState<Set<string>>(new Set());
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [miniPlayerVideo, setMiniPlayerVideo] = useState<{ video: VideoPost; wasPlaying: boolean } | null>(null);
   const videoContainerRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -725,16 +727,29 @@ export default function Feed() {
       // Error handling with haptic feedback
       const handleError = () => {
         triggerHaptic('error');
+        setVideoErrors(prev => new Set(prev).add(videoId));
         toast.error('Video playback failed', {
           description: 'Unable to play this video. Please try again.'
         });
+        
+        // Clear error after 5 seconds
+        setTimeout(() => {
+          setVideoErrors(prev => {
+            const next = new Set(prev);
+            next.delete(videoId);
+            return next;
+          });
+        }, 5000);
       };
       
       const handleStalled = () => {
         triggerHaptic('warning');
+        setBufferingVideos(prev => new Set(prev).add(videoId));
       };
       
       const handleWaiting = () => {
+        setBufferingVideos(prev => new Set(prev).add(videoId));
+        
         // Trigger warning haptic for buffering (with debouncing to avoid too many triggers)
         const lastWarning = (element as any)._lastBufferingWarning || 0;
         const now = Date.now();
@@ -744,12 +759,32 @@ export default function Feed() {
         }
       };
       
+      const handlePlaying = () => {
+        // Clear buffering state when video starts playing
+        setBufferingVideos(prev => {
+          const next = new Set(prev);
+          next.delete(videoId);
+          return next;
+        });
+      };
+      
+      const handleCanPlay = () => {
+        // Clear buffering state when video is ready to play
+        setBufferingVideos(prev => {
+          const next = new Set(prev);
+          next.delete(videoId);
+          return next;
+        });
+      };
+      
       element.addEventListener('timeupdate', handleTimeUpdate);
       element.addEventListener('progress', handleProgress);
       element.addEventListener('loadedmetadata', handleLoadedMetadata);
       element.addEventListener('error', handleError);
       element.addEventListener('stalled', handleStalled);
       element.addEventListener('waiting', handleWaiting);
+      element.addEventListener('playing', handlePlaying);
+      element.addEventListener('canplay', handleCanPlay);
       
       // Store cleanup function
       (element as any)._cleanup = () => {
@@ -759,6 +794,8 @@ export default function Feed() {
         element.removeEventListener('error', handleError);
         element.removeEventListener('stalled', handleStalled);
         element.removeEventListener('waiting', handleWaiting);
+        element.removeEventListener('playing', handlePlaying);
+        element.removeEventListener('canplay', handleCanPlay);
       };
     } else {
       const video = videoRefs.current.get(videoId);
@@ -1359,6 +1396,30 @@ export default function Feed() {
               muted={mutedVideos.has(video.id)}
               loop
             />
+            
+            {/* Error Indicator */}
+            {videoErrors.has(video.id) && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in pointer-events-none">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="bg-destructive/20 backdrop-blur-md rounded-full p-4 animate-scale-in">
+                    <AlertCircle className="h-12 w-12 text-destructive" />
+                  </div>
+                  <div className="text-center px-6">
+                    <p className="text-destructive font-semibold text-lg">Playback Error</p>
+                    <p className="text-destructive-foreground/80 text-sm mt-1">Unable to load video</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Buffering Indicator */}
+            {bufferingVideos.has(video.id) && !videoErrors.has(video.id) && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none animate-fade-in">
+                <div className="bg-background/20 backdrop-blur-md rounded-full p-4">
+                  <Loader2 className="h-10 w-10 text-primary animate-spin" />
+                </div>
+              </div>
+            )}
           
           {/* Play/Pause and Mute controls */}
           <div className="absolute top-4 left-4 flex gap-2">
@@ -2340,6 +2401,27 @@ export default function Feed() {
               autoPlay={miniPlayerVideo.wasPlaying}
               muted={mutedVideos.has(miniPlayerVideo.video.id)}
             />
+            
+            {/* Error Indicator - Mini Player */}
+            {videoErrors.has(miniPlayerVideo.video.id) && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in">
+                <div className="flex flex-col items-center gap-2 scale-75">
+                  <div className="bg-destructive/20 backdrop-blur-md rounded-full p-3">
+                    <AlertCircle className="h-8 w-8 text-destructive" />
+                  </div>
+                  <p className="text-destructive text-xs font-semibold">Error</p>
+                </div>
+              </div>
+            )}
+            
+            {/* Buffering Indicator - Mini Player */}
+            {bufferingVideos.has(miniPlayerVideo.video.id) && !videoErrors.has(miniPlayerVideo.video.id) && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none animate-fade-in">
+                <div className="bg-background/20 backdrop-blur-md rounded-full p-3">
+                  <Loader2 className="h-6 w-6 text-primary animate-spin" />
+                </div>
+              </div>
+            )}
             
             {/* Play/Pause overlay */}
             <div className="absolute inset-0 flex items-center justify-center bg-black/20">
