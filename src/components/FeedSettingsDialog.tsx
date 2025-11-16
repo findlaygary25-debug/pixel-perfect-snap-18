@@ -66,6 +66,7 @@ export function FeedSettingsDialog({
   const [open, setOpen] = useState(false);
   const { settings: hapticSettings, updateSettings: updateHapticSettings, resetSettings } = useHapticSettings();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const profileImportRef = useRef<HTMLInputElement>(null);
   
   // Profiles state
   const [profiles, setProfiles] = useState<SettingsProfile[]>(() => {
@@ -369,6 +370,70 @@ export function FeedSettingsDialog({
       }
       return 0;
     });
+
+  const handleExportProfiles = () => {
+    const dataStr = JSON.stringify(profiles, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `feed-profiles-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('Profiles exported successfully');
+    triggerHaptic?.('light', 'interactions');
+  };
+
+  const handleImportProfiles = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const importedProfiles = JSON.parse(e.target?.result as string) as SettingsProfile[];
+        
+        // Validate imported data
+        if (!Array.isArray(importedProfiles)) {
+          throw new Error('Invalid file format');
+        }
+
+        // Merge profiles, avoiding duplicates by name
+        const mergedProfiles = [...profiles];
+        let importedCount = 0;
+        let updatedCount = 0;
+
+        importedProfiles.forEach(imported => {
+          const existingIndex = mergedProfiles.findIndex(p => p.name === imported.name);
+          if (existingIndex >= 0) {
+            // Update existing profile and add usage counts
+            mergedProfiles[existingIndex] = {
+              ...imported,
+              usageCount: (mergedProfiles[existingIndex].usageCount || 0) + (imported.usageCount || 0)
+            };
+            updatedCount++;
+          } else {
+            // Add new profile
+            mergedProfiles.push(imported);
+            importedCount++;
+          }
+        });
+
+        setProfiles(mergedProfiles);
+        toast.success(`Imported ${importedCount} new profile(s), updated ${updatedCount} existing profile(s)`);
+        triggerHaptic?.('medium', 'interactions');
+      } catch (error) {
+        toast.error('Failed to import profiles. Please check the file format.');
+        triggerHaptic?.('heavy', 'errors');
+      }
+    };
+    reader.readAsText(file);
+    
+    // Reset input so same file can be imported again
+    if (event.target) {
+      event.target.value = '';
+    }
+  };
 
   const handleShareProfile = (profile: SettingsProfile) => {
     try {
@@ -696,15 +761,48 @@ export function FeedSettingsDialog({
                 </div>
               </div>
             ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowProfileForm(true)}
-                className="w-full gap-2"
-              >
-                <Save className="h-3 w-3" />
-                Save Current as New Profile
-              </Button>
+              <div className="space-y-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowProfileForm(true)}
+                  className="w-full gap-2"
+                >
+                  <Save className="h-3 w-3" />
+                  Save Current as New Profile
+                </Button>
+                
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleExportProfiles}
+                    disabled={profiles.length === 0}
+                    className="flex-1 gap-2"
+                  >
+                    <Download className="h-3 w-3" />
+                    Export
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => profileImportRef.current?.click()}
+                    className="flex-1 gap-2"
+                  >
+                    <Upload className="h-3 w-3" />
+                    Import
+                  </Button>
+                </div>
+                
+                {/* Hidden file input for profile import */}
+                <input
+                  ref={profileImportRef}
+                  type="file"
+                  accept=".json"
+                  onChange={handleImportProfiles}
+                  className="hidden"
+                />
+              </div>
             )}
           </div>
 
