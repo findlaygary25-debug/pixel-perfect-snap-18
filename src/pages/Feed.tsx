@@ -2035,24 +2035,26 @@ export default function Feed() {
           )}
         </div>
         
-        {/* Action buttons - Mobile: bottom-right, Desktop: centered right side */}
-        <div className="absolute right-4 bottom-24 flex flex-col gap-6 z-10 md:right-8 md:top-1/2 md:-translate-y-1/2 md:bottom-auto">
-          {/* Follow button with heart */}
-          {currentUser && video.user_id !== currentUser && (
+        {/* Action buttons - positioned on right side */}
+        <div className="absolute right-4 bottom-24 flex flex-col gap-4 z-10 md:right-8 md:top-1/2 md:-translate-y-1/2 md:bottom-auto">
+          {/* Profile/Follow button - Always shown with profile image */}
+          <div className="flex flex-col items-center gap-2">
             <Button
               variant="ghost"
               size="rounded-sm"
               onClick={(e) => {
-                if (!longPressActive) {
+                if (!longPressActive && currentUser && video.user_id !== currentUser) {
                   handleFollow(video.user_id);
                 }
               }}
-              onMouseDown={() => handleLongPressStart(`follow-${video.user_id}`, () => handleFollow(video.user_id))}
+              onMouseDown={() => currentUser && video.user_id !== currentUser && handleLongPressStart(`follow-${video.user_id}`, () => handleFollow(video.user_id))}
               onMouseUp={handleLongPressEnd}
               onMouseLeave={handleLongPressEnd}
               onTouchStart={(e) => {
-                e.preventDefault();
-                handleLongPressStart(`follow-${video.user_id}`, () => handleFollow(video.user_id));
+                if (currentUser && video.user_id !== currentUser) {
+                  e.preventDefault();
+                  handleLongPressStart(`follow-${video.user_id}`, () => handleFollow(video.user_id));
+                }
               }}
               onTouchEnd={(e) => {
                 e.preventDefault();
@@ -2073,28 +2075,26 @@ export default function Feed() {
                   transition={{ duration: 1, ease: "easeInOut" }}
                 />
               )}
-              <div className="flex flex-col items-center">
-                <div className="relative">
-                  {video.avatar_url ? (
-                    <img 
-                      src={video.avatar_url} 
-                      alt={video.username}
-                      className="h-12 w-12 rounded-full object-cover border-2 border-background"
-                    />
-                  ) : (
-                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center border-2 border-background">
-                      <span className="text-sm font-semibold text-foreground">{video.username[0].toUpperCase()}</span>
-                    </div>
-                  )}
-                  {!followedUsers.has(video.user_id) && (
-                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-primary rounded-full h-6 w-6 flex items-center justify-center">
-                      <UserPlus className="h-3.5 w-3.5 text-primary-foreground" />
-                    </div>
-                  )}
-                </div>
+              <div className="relative h-full w-full flex items-center justify-center">
+                {video.avatar_url ? (
+                  <img 
+                    src={video.avatar_url} 
+                    alt={video.username}
+                    className="h-12 w-12 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-sm font-semibold text-foreground">{video.username[0].toUpperCase()}</span>
+                  </div>
+                )}
+                {currentUser && video.user_id !== currentUser && !followedUsers.has(video.user_id) && (
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-primary rounded-full h-5 w-5 flex items-center justify-center border-2 border-background">
+                    <UserPlus className="h-3 w-3 text-primary-foreground" />
+                  </div>
+                )}
               </div>
             </Button>
-          )}
+          </div>
           
           {/* Like button */}
           <Button
