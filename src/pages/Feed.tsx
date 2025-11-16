@@ -84,6 +84,7 @@ export default function Feed() {
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const longPressProgress = useRef<NodeJS.Timeout[]>([]);
   const [longPressActive, setLongPressActive] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ videoId: string; x: number; y: number } | null>(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [miniPlayerVideo, setMiniPlayerVideo] = useState<{ video: VideoPost; wasPlaying: boolean } | null>(null);
   const videoContainerRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -1257,7 +1258,7 @@ export default function Feed() {
   };
 
   // Long-press handlers with progressive haptic feedback
-  const handleLongPressStart = (videoId: string, action: () => void) => {
+  const handleLongPressStart = (videoId: string, action: () => void, x?: number, y?: number) => {
     // Clear any existing timers
     clearLongPress();
     
@@ -1288,6 +1289,41 @@ export default function Feed() {
     }, 1000);
   };
 
+  const handleLongPressStartContextMenu = (videoId: string, e: React.MouseEvent | React.TouchEvent) => {
+    // Clear any existing timers
+    clearLongPress();
+    
+    setLongPressActive(`context-${videoId}`);
+    
+    // Get position for context menu
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    
+    // Progressive haptic feedback at intervals
+    const hapticProgression = [
+      { delay: 0, intensity: 'light' as const },
+      { delay: 200, intensity: 'light' as const },
+      { delay: 400, intensity: 'medium' as const },
+      { delay: 600, intensity: 'medium' as const },
+      { delay: 800, intensity: 'heavy' as const },
+    ];
+    
+    // Schedule progressive haptic feedback
+    hapticProgression.forEach(({ delay, intensity }) => {
+      const timer = setTimeout(() => {
+        triggerHaptic(intensity);
+      }, delay);
+      longPressProgress.current.push(timer);
+    });
+    
+    // Show context menu after threshold (1 second)
+    longPressTimer.current = setTimeout(() => {
+      triggerHaptic('achievement'); // Strong haptic when menu appears
+      setLongPressActive(null);
+      setContextMenu({ videoId, x: clientX, y: clientY });
+    }, 1000);
+  };
+
   const clearLongPress = () => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
@@ -1302,6 +1338,24 @@ export default function Feed() {
 
   const handleLongPressEnd = () => {
     clearLongPress();
+  };
+
+  const handleContextMenuAction = async (action: string, videoId: string) => {
+    triggerHaptic('medium');
+    setContextMenu(null);
+    
+    switch (action) {
+      case 'save':
+        await handleBookmark(videoId);
+        break;
+      case 'report':
+        toast.info('Report functionality coming soon');
+        break;
+      case 'notInterested':
+        toast.success('Marked as not interested');
+        // Could implement hiding video from feed here
+        break;
+    }
   };
 
   const handleShare = async (videoId: string) => {
@@ -1447,7 +1501,38 @@ export default function Feed() {
             className="relative h-full w-full flex items-center justify-center"
             onClick={() => handleDoubleTap(video.id)}
             onTouchEnd={() => handleDoubleTap(video.id)}
+            onMouseDown={(e) => {
+              handleLongPressStartContextMenu(video.id, e);
+            }}
+            onMouseUp={handleLongPressEnd}
+            onMouseLeave={handleLongPressEnd}
+            onTouchStart={(e) => {
+              handleLongPressStartContextMenu(video.id, e);
+            }}
+            onTouchCancel={handleLongPressEnd}
+            onContextMenu={(e) => e.preventDefault()} // Prevent default context menu
           >
+            {/* Long-press progress indicator */}
+            {longPressActive === `context-${video.id}` && (
+              <motion.div
+                className="absolute inset-0 pointer-events-none z-10"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <div className="absolute inset-0 bg-primary/10 backdrop-blur-sm" />
+                <motion.div
+                  className="absolute inset-0 border-4 border-primary"
+                  initial={{ scale: 0.95 }}
+                  animate={{ scale: [0.95, 1.05, 0.95] }}
+                  transition={{ duration: 1, ease: "easeInOut" }}
+                />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+                  <div className="bg-background/90 backdrop-blur-md rounded-full px-6 py-3 shadow-lg">
+                    <p className="text-foreground font-semibold">Hold for menu...</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
             <video
               ref={(el) => setVideoRef(video.id, el)}
               data-video-id={video.id}
@@ -2572,6 +2657,63 @@ export default function Feed() {
             </div>
           </div>
         </motion.div>
+      )}
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <>
+          {/* Backdrop to close menu */}
+          <div 
+            className="fixed inset-0 z-50" 
+            onClick={() => {
+              triggerHaptic('light');
+              setContextMenu(null);
+            }}
+          />
+          
+          {/* Context menu */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="fixed z-50 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden min-w-[200px]"
+            style={{
+              left: Math.min(contextMenu.x, window.innerWidth - 220),
+              top: Math.min(contextMenu.y, window.innerHeight - 200),
+            }}
+          >
+            <div className="py-2">
+              {/* Save to Collection */}
+              <button
+                onClick={() => handleContextMenuAction('save', contextMenu.videoId)}
+                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-muted/50 transition-colors"
+              >
+                <Bookmark className="h-5 w-5 text-foreground" />
+                <span className="text-sm font-medium text-foreground">
+                  {bookmarkedVideos.has(contextMenu.videoId) ? 'Remove Bookmark' : 'Save to Collection'}
+                </span>
+              </button>
+
+              {/* Report */}
+              <button
+                onClick={() => handleContextMenuAction('report', contextMenu.videoId)}
+                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-muted/50 transition-colors"
+              >
+                <AlertCircle className="h-5 w-5 text-destructive" />
+                <span className="text-sm font-medium text-foreground">Report</span>
+              </button>
+
+              {/* Not Interested */}
+              <button
+                onClick={() => handleContextMenuAction('notInterested', contextMenu.videoId)}
+                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-muted/50 transition-colors"
+              >
+                <X className="h-5 w-5 text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground">Not Interested</span>
+              </button>
+            </div>
+          </motion.div>
+        </>
       )}
     </div>
   );
