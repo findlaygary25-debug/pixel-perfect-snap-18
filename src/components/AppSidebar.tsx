@@ -116,12 +116,16 @@ export function AppSidebar() {
       <>
         <Drawer open={open} onOpenChange={setOpen}>
           <DrawerContent className="h-[85vh]">
-            <DrawerHeader className="border-b">
+            <div className="mx-auto mt-4 mb-2 relative">
+              <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30 animate-pulse" />
+              <div className="absolute inset-0 h-1.5 w-12 rounded-full bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20 animate-[pulse_2s_ease-in-out_infinite]" />
+            </div>
+            <DrawerHeader className="border-b pt-2">
               <DrawerTitle className="flex items-center justify-between">
                 <span>Voice2Fire</span>
                 <button 
                   onClick={() => setOpen(false)}
-                  className="p-1 hover:bg-muted rounded"
+                  className="p-1 hover:bg-muted rounded transition-colors"
                   aria-label="Close menu"
                 >
                   <X className="h-4 w-4" />
