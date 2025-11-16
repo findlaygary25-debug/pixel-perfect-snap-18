@@ -800,6 +800,54 @@ export type Database = {
         }
         Relationships: []
       }
+      user_achievement_stats: {
+        Row: {
+          bronze_achievements: number | null
+          created_at: string | null
+          current_streak_days: number | null
+          gold_achievements: number | null
+          id: string
+          last_updated: string | null
+          longest_streak_days: number | null
+          platinum_achievements: number | null
+          profiles_created: number | null
+          silver_achievements: number | null
+          total_achievements_unlocked: number | null
+          total_profile_switches: number | null
+          user_id: string
+        }
+        Insert: {
+          bronze_achievements?: number | null
+          created_at?: string | null
+          current_streak_days?: number | null
+          gold_achievements?: number | null
+          id?: string
+          last_updated?: string | null
+          longest_streak_days?: number | null
+          platinum_achievements?: number | null
+          profiles_created?: number | null
+          silver_achievements?: number | null
+          total_achievements_unlocked?: number | null
+          total_profile_switches?: number | null
+          user_id: string
+        }
+        Update: {
+          bronze_achievements?: number | null
+          created_at?: string | null
+          current_streak_days?: number | null
+          gold_achievements?: number | null
+          id?: string
+          last_updated?: string | null
+          longest_streak_days?: number | null
+          platinum_achievements?: number | null
+          profiles_created?: number | null
+          silver_achievements?: number | null
+          total_achievements_unlocked?: number | null
+          total_profile_switches?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       video_chapters: {
         Row: {
           created_at: string
@@ -1032,12 +1080,36 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_achievement_leaderboard: {
+        Args: { limit_count?: number }
+        Returns: {
+          anonymous_id: string
+          bronze_count: number
+          gold_count: number
+          longest_streak: number
+          platinum_count: number
+          rank: number
+          silver_count: number
+          total_achievements: number
+          total_switches: number
+        }[]
+      }
       get_affiliate_chain: {
         Args: { user_id: string }
         Returns: {
           affiliate_id: string
           affiliate_username: string
           level: number
+        }[]
+      }
+      get_global_achievement_stats: {
+        Args: never
+        Returns: {
+          avg_achievements_per_user: number
+          top_streak: number
+          total_achievements_unlocked: number
+          total_profile_switches: number
+          total_users: number
         }[]
       }
       increment_wallet_balance: {
