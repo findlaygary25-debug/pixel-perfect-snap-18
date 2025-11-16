@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { FolderPlus, Trash2, Edit, Play, GripVertical } from "lucide-react";
+import { FolderPlus, Trash2, Edit, Play, GripVertical, Image } from "lucide-react";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { CollectionCover } from "@/components/CollectionCover";
+import { UploadCoverImageDialog } from "@/components/UploadCoverImageDialog";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useNavigate } from "react-router-dom";
@@ -21,10 +23,17 @@ type Collection = {
   order_index: number;
   created_at: string;
   video_count?: number;
+  cover_image_url?: string | null;
 };
 
-function SortableCollectionCard({ collection, onEdit, onDelete }: { collection: Collection; onEdit: () => void; onDelete: () => void }) {
+function SortableCollectionCard({ collection, onEdit, onDelete, onCoverUpdate }: { 
+  collection: Collection; 
+  onEdit: () => void; 
+  onDelete: () => void;
+  onCoverUpdate: () => void;
+}) {
   const navigate = useNavigate();
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const {
     attributes,
     listeners,
@@ -41,65 +50,96 @@ function SortableCollectionCard({ collection, onEdit, onDelete }: { collection: 
   };
 
   return (
-    <div ref={setNodeRef} style={style}>
-      <Card className={isDragging ? 'shadow-2xl' : ''}>
-        <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-          <div className="flex items-start gap-3 flex-1">
-            <button
-              className="cursor-grab active:cursor-grabbing touch-none mt-1"
-              {...attributes}
-              {...listeners}
+    <>
+      <div ref={setNodeRef} style={style}>
+        <Card className={isDragging ? 'shadow-2xl' : ''}>
+          <div className="flex gap-4 p-4">
+            <div className="flex-shrink-0">
+              <button
+                className="cursor-grab active:cursor-grabbing touch-none"
+                {...attributes}
+                {...listeners}
+              >
+                <GripVertical className="h-5 w-5 text-muted-foreground" />
+              </button>
+            </div>
+            
+            <div 
+              className="flex-shrink-0 cursor-pointer group relative"
+              onClick={() => setUploadDialogOpen(true)}
             >
-              <GripVertical className="h-5 w-5 text-muted-foreground" />
-            </button>
+              <CollectionCover
+                collectionId={collection.id}
+                customCoverUrl={collection.cover_image_url}
+                className="w-32 h-32"
+              />
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                <Image className="h-6 w-6 text-white" />
+              </div>
+            </div>
+
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-lg flex items-center gap-2">
-                {collection.name}
-                {collection.is_default && (
-                  <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">Default</span>
-                )}
-              </CardTitle>
-              {collection.description && (
-                <CardDescription className="mt-1">{collection.description}</CardDescription>
-              )}
+              <CardHeader className="p-0">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      {collection.name}
+                      {collection.is_default && (
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">Default</span>
+                      )}
+                    </CardTitle>
+                    {collection.description && (
+                      <CardDescription className="mt-1">{collection.description}</CardDescription>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={onEdit}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    {!collection.is_default && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={onDelete}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0 mt-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    {collection.video_count || 0} videos
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate(`/collections/${collection.id}`)}
+                  >
+                    <Play className="h-4 w-4 mr-2" />
+                    View
+                  </Button>
+                </div>
+              </CardContent>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onEdit}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            {!collection.is_default && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onDelete}
-              >
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              {collection.video_count || 0} videos
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate(`/collections/${collection.id}`)}
-            >
-              <Play className="h-4 w-4 mr-2" />
-              View
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+        </Card>
+      </div>
+
+      <UploadCoverImageDialog
+        open={uploadDialogOpen}
+        onOpenChange={setUploadDialogOpen}
+        collectionId={collection.id}
+        currentCoverUrl={collection.cover_image_url}
+        onUploadComplete={onCoverUpdate}
+      />
+    </>
   );
 }
 
@@ -136,7 +176,7 @@ export default function Collections() {
       // Fetch collections with video counts
       const { data: collectionsData, error } = await supabase
         .from("collections")
-        .select("*")
+        .select("*, cover_image_url")
         .order("order_index", { ascending: true });
 
       if (error) throw error;
@@ -338,6 +378,7 @@ export default function Collections() {
                   collection={collection}
                   onEdit={() => openEditDialog(collection)}
                   onDelete={() => handleDeleteCollection(collection.id)}
+                  onCoverUpdate={fetchCollections}
                 />
               ))}
             </SortableContext>
