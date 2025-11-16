@@ -645,6 +645,25 @@ export default function Feed() {
           }
           break;
         
+        // Number keys for quick progress jumps
+        case 'Digit0':
+        case 'Digit1':
+        case 'Digit2':
+        case 'Digit3':
+        case 'Digit4':
+        case 'Digit5':
+        case 'Digit6':
+        case 'Digit7':
+        case 'Digit8':
+        case 'Digit9':
+          e.preventDefault();
+          const digit = parseInt(e.code.replace('Digit', ''));
+          const percentage = digit * 10;
+          const targetTime = (videoElement.duration * percentage) / 100;
+          videoElement.currentTime = targetTime;
+          toast.success(`Jumped to ${percentage}%`, { duration: 1000 });
+          break;
+        
         case 'ArrowLeft':
           e.preventDefault();
           videoElement.currentTime = Math.max(0, videoElement.currentTime - 5);
@@ -2575,6 +2594,12 @@ export default function Feed() {
                   <div className="flex items-center justify-between py-2 border-b border-border">
                     <span className="text-muted-foreground">Seek forward 5 seconds</span>
                     <kbd className="px-3 py-1.5 text-sm font-semibold bg-muted rounded">→</kbd>
+                  </div>
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-muted-foreground">Jump to specific % (0-9)</span>
+                    <div className="flex gap-1">
+                      <kbd className="px-2 py-1 text-xs font-semibold bg-muted rounded">0-9</kbd>
+                    </div>
                   </div>
                 </div>
               </div>
