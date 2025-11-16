@@ -71,6 +71,7 @@ export default function Feed() {
   const [videoProgress, setVideoProgress] = useState<Record<string, { current: number; duration: number; buffered: number }>>({});
   const [hoveredProgress, setHoveredProgress] = useState<{ videoId: string; percentage: number; x: number; thumbnail: string } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const videoMilestones = useRef<Map<string, Set<number>>>(new Map()); // Track triggered milestones per video
   const [currentVisibleVideoId, setCurrentVisibleVideoId] = useState<string | null>(null);
   const [playingVideos, setPlayingVideos] = useState<Set<string>>(new Set());
   const [mutedVideos, setMutedVideos] = useState<Set<string>>(new Set());
@@ -650,14 +651,38 @@ export default function Feed() {
       
       // Add event listeners for progress tracking
       const handleTimeUpdate = () => {
+        const currentTime = element.currentTime;
+        const duration = element.duration;
+        
         setVideoProgress(prev => ({
           ...prev,
           [videoId]: {
-            current: element.currentTime,
-            duration: element.duration,
+            current: currentTime,
+            duration: duration,
             buffered: element.buffered.length > 0 ? element.buffered.end(element.buffered.length - 1) : 0
           }
         }));
+
+        // Track and trigger haptics for playback milestones
+        if (duration > 0) {
+          const percentage = (currentTime / duration) * 100;
+          const milestones = [25, 50, 75, 100];
+          
+          // Get or initialize milestone tracking for this video
+          if (!videoMilestones.current.has(videoId)) {
+            videoMilestones.current.set(videoId, new Set());
+          }
+          const triggeredMilestones = videoMilestones.current.get(videoId)!;
+          
+          // Check each milestone
+          for (const milestone of milestones) {
+            if (percentage >= milestone && !triggeredMilestones.has(milestone)) {
+              triggeredMilestones.add(milestone);
+              triggerHaptic('notification'); // Subtle pulse for progress feedback
+              break; // Only trigger one milestone at a time
+            }
+          }
+        }
       };
       
       const handleProgress = () => {
@@ -673,6 +698,9 @@ export default function Feed() {
       };
       
       const handleLoadedMetadata = () => {
+        // Reset milestone tracking when video metadata loads
+        videoMilestones.current.set(videoId, new Set());
+        
         setVideoProgress(prev => ({
           ...prev,
           [videoId]: {
