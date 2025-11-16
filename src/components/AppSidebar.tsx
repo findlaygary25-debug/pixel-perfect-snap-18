@@ -63,23 +63,23 @@ export function AppSidebar() {
 
   return (
     <>
-      <Sidebar className={state === "collapsed" ? "w-14" : "w-32 md:w-48"} collapsible="icon">
+      <Sidebar className={state === "collapsed" ? "w-14" : "w-56 md:w-48"} collapsible="icon" variant="sidebar">
         <SidebarContent className="pb-20">
           <SidebarGroup>
-            <SidebarGroupLabel className="text-[10px] md:text-sm px-1">Voice2Fire</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-xs md:text-sm px-2">Voice2Fire</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {items.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild className="px-2 py-3 gap-2 md:gap-2 min-h-[44px]">
+                    <SidebarMenuButton asChild className="px-3 py-3 gap-3 min-h-[44px]">
                       <NavLink
                         to={item.url}
                         end
                         className="hover:bg-muted/50"
                         activeClassName="bg-muted text-primary font-medium"
                       >
-                        <item.icon className="h-4 w-4 md:h-4 md:w-4 flex-shrink-0" />
-                        {state !== "collapsed" && <span className="text-[11px] md:text-sm truncate">{item.title}</span>}
+                        <item.icon className="h-4 w-4 flex-shrink-0" />
+                        {state !== "collapsed" && <span className="text-sm truncate">{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -87,9 +87,9 @@ export function AppSidebar() {
                 
                 {isAuthenticated && (
                   <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => setAdvertiseDialogOpen(true)} className="px-2 py-3 gap-2 md:gap-2 min-h-[44px]">
-                      <Megaphone className="h-4 w-4 md:h-4 md:w-4 flex-shrink-0" />
-                      {state !== "collapsed" && <span className="text-[11px] md:text-sm truncate">Advertise</span>}
+                    <SidebarMenuButton onClick={() => setAdvertiseDialogOpen(true)} className="px-3 py-3 gap-3 min-h-[44px]">
+                      <Megaphone className="h-4 w-4 flex-shrink-0" />
+                      {state !== "collapsed" && <span className="text-sm truncate">Advertise</span>}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
