@@ -1609,7 +1609,7 @@ export default function Feed() {
           <div className="absolute top-4 left-4 flex gap-2">
             <Button
               variant="ghost"
-              size="sm"
+              size="rounded-sm"
               onClick={(e) => {
                 e.stopPropagation();
                 triggerHaptic('light', 'interactions');
@@ -1654,9 +1654,9 @@ export default function Feed() {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="rounded-sm"
                   onClick={(e) => e.stopPropagation()}
-                  className="bg-background/80 backdrop-blur-sm rounded-full h-10 w-10 p-0 hover:bg-background/90"
+                  className="bg-background/80 backdrop-blur-sm h-10 w-10 p-0 hover:bg-background/90"
                 >
                   <MoreHorizontal className="h-5 w-5" />
                 </Button>
@@ -1802,7 +1802,7 @@ export default function Feed() {
                 <Button
                   id={`settings-trigger-${video.id}`}
                   variant="ghost"
-                  size="sm"
+                  size="rounded-sm"
                   onClick={(e) => e.stopPropagation()}
                   className="hidden"
                 >
@@ -2041,7 +2041,7 @@ export default function Feed() {
           {currentUser && video.user_id !== currentUser && (
             <Button
               variant="ghost"
-              size="sm"
+              size="rounded-sm"
               onClick={(e) => {
                 if (!longPressActive) {
                   handleFollow(video.user_id);
@@ -2099,9 +2099,9 @@ export default function Feed() {
           {/* Like button */}
           <Button
             variant="ghost"
-            size="sm"
+            size="rounded-sm"
             onClick={() => handleLike(video.id)}
-            className="bg-background/80 backdrop-blur-sm rounded-full h-14 w-14 p-0"
+            className="bg-background/80 backdrop-blur-sm h-14 w-14 p-0"
           >
             <div className="flex flex-col items-center gap-1">
               <Heart
@@ -2114,12 +2114,12 @@ export default function Feed() {
           {/* Comments button */}
           <Button
             variant="ghost"
-            size="sm"
+            size="rounded-sm"
             onClick={() => {
               triggerHaptic('medium', 'interactions');
               setSelectedVideoId(video.id);
             }}
-            className="bg-background/80 backdrop-blur-sm rounded-full h-14 w-14 p-0"
+            className="bg-background/80 backdrop-blur-sm h-14 w-14 p-0"
           >
             <div className="flex flex-col items-center gap-1">
               <MessageCircle className="h-7 w-7 text-white" />
@@ -2130,7 +2130,7 @@ export default function Feed() {
           {/* Bookmark button */}
           <Button
             variant="ghost"
-            size="sm"
+            size="rounded-sm"
             onClick={(e) => {
               // Only trigger on click if not a long press
               if (!longPressActive) {
@@ -2173,9 +2173,9 @@ export default function Feed() {
           {/* Share button */}
           <Button
             variant="ghost"
-            size="sm"
+            size="rounded-sm"
             onClick={() => handleShare(video.id)}
-            className="bg-background/80 backdrop-blur-sm rounded-full h-14 w-14 p-0"
+            className="bg-background/80 backdrop-blur-sm h-14 w-14 p-0"
           >
             <div className="flex flex-col items-center gap-1">
               <Share2 className="h-7 w-7 text-white" />
@@ -2186,12 +2186,12 @@ export default function Feed() {
           {currentUser && video.user_id === currentUser && (
             <Button
               variant="ghost"
-              size="sm"
+              size="rounded-sm"
               onClick={() => {
                 setSelectedPromoteVideo(video);
                 setPromoteDialogOpen(true);
               }}
-              className="bg-background/80 backdrop-blur-sm rounded-full h-14 w-14 p-0"
+              className="bg-background/80 backdrop-blur-sm h-14 w-14 p-0"
             >
               <div className="flex flex-col items-center gap-1">
                 <TrendingUp className="h-7 w-7 text-primary" />
@@ -2237,7 +2237,7 @@ export default function Feed() {
         <div className="px-4 pb-4">
           <Button
             variant="ghost"
-            size="sm"
+            size="rounded-sm"
             onClick={() => {
               setShowChaptersList(prev => {
                 const next = new Set(prev);
@@ -2471,7 +2471,7 @@ export default function Feed() {
                     }
                   }}
                 />
-                <Button onClick={addChapter} disabled={!newChapterLabel.trim()}>
+                <Button size="rounded-sm" onClick={addChapter} disabled={!newChapterLabel.trim()}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
@@ -2521,7 +2521,7 @@ export default function Feed() {
                         <div className="flex gap-1">
                           {editingChapter?.id === chapter.id ? (
                             <Button
-                              size="sm"
+                              size="rounded-sm"
                               variant="ghost"
                               onClick={() => updateChapterLabel(chapter.id, editingChapter.label)}
                             >
@@ -2529,7 +2529,7 @@ export default function Feed() {
                             </Button>
                           ) : (
                             <Button
-                              size="sm"
+                              size="rounded-sm"
                               variant="ghost"
                               onClick={() => setEditingChapter(chapter)}
                             >
@@ -2537,7 +2537,7 @@ export default function Feed() {
                             </Button>
                           )}
                           <Button
-                            size="sm"
+                            size="rounded-sm"
                             variant="ghost"
                             onClick={() => deleteChapter(chapter.id, selectedChapterVideo.id)}
                           >
@@ -2553,7 +2553,7 @@ export default function Feed() {
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => setChaptersDialogOpen(false)}>
+            <Button size="rounded" variant="outline" onClick={() => setChaptersDialogOpen(false)}>
               Close
             </Button>
           </DialogFooter>
@@ -2577,7 +2577,7 @@ export default function Feed() {
               <h2 className="text-2xl font-bold">Keyboard Shortcuts</h2>
               <Button
                 variant="ghost"
-                size="sm"
+                size="rounded-sm"
                 onClick={() => setShowShortcuts(false)}
                 className="h-8 w-8 p-0"
               >
