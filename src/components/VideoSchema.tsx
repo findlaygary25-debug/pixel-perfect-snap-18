@@ -18,6 +18,10 @@ type VideoSchemaProps = {
     name: string;
     url: string;
   };
+  genre?: string[];
+  keywords?: string[];
+  isFamilyFriendly?: boolean;
+  inLanguage?: string;
 };
 
 export const VideoSchema = ({
@@ -31,6 +35,10 @@ export const VideoSchema = ({
   embedUrl,
   interactionStatistic,
   author,
+  genre = ["Entertainment"],
+  keywords = [],
+  isFamilyFriendly = true,
+  inLanguage = "en-US",
 }: VideoSchemaProps) => {
   useEffect(() => {
     const schema = {
@@ -43,7 +51,11 @@ export const VideoSchema = ({
       uploadDate,
       contentUrl,
       embedUrl,
+      inLanguage,
+      isFamilyFriendly,
       ...(duration && { duration }),
+      ...(genre.length > 0 && { genre }),
+      ...(keywords.length > 0 && { keywords: keywords.join(", ") }),
       interactionStatistic: [
         {
           "@type": "InteractionCounter",
@@ -74,6 +86,19 @@ export const VideoSchema = ({
           "@type": "ImageObject",
           "url": "https://voice2fire.com/favicon.png"
         }
+      },
+      potentialAction: {
+        "@type": "WatchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": embedUrl,
+          "actionPlatform": [
+            "https://schema.org/DesktopWebPlatform",
+            "https://schema.org/MobileWebPlatform",
+            "https://schema.org/IOSPlatform",
+            "https://schema.org/AndroidPlatform"
+          ]
+        }
       }
     };
 
@@ -95,7 +120,7 @@ export const VideoSchema = ({
         element.remove();
       }
     };
-  }, [videoId, name, description, thumbnailUrl, uploadDate, duration, contentUrl, embedUrl, interactionStatistic, author]);
+  }, [videoId, name, description, thumbnailUrl, uploadDate, duration, contentUrl, embedUrl, interactionStatistic, author, genre, keywords, isFamilyFriendly, inLanguage]);
 
   return null;
 };
