@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Settings, Layers, LayoutPanelTop, Volume2, Gauge, Vibrate, RotateCcw, Download, Upload, Save, Trash2, Check, Share2 } from "lucide-react";
+import { Settings, Layers, LayoutPanelTop, Volume2, Gauge, Vibrate, RotateCcw, Download, Upload, Save, Trash2, Check, Share2, Tag, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -26,7 +26,19 @@ type SettingsProfile = {
   autoPlay: boolean;
   videoQuality: 'auto' | '360p' | '480p' | '720p' | '1080p';
   haptics: any;
+  tags: string[];
 };
+
+const AVAILABLE_TAGS = [
+  'Gaming',
+  'Work',
+  'Travel',
+  'Cinema',
+  'Data Saver',
+  'High Quality',
+  'Mobile',
+  'Desktop',
+] as const;
 
 type FeedSettingsProps = {
   desktopLayoutMode: 'side-panel' | 'overlay';
@@ -64,6 +76,8 @@ export function FeedSettingsDialog({
   });
   const [newProfileName, setNewProfileName] = useState('');
   const [showProfileForm, setShowProfileForm] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [filterTag, setFilterTag] = useState<string | null>(null);
 
   // Save profiles to localStorage whenever they change
   useEffect(() => {
@@ -252,11 +266,13 @@ export function FeedSettingsDialog({
       autoPlay,
       videoQuality,
       haptics: hapticSettings,
+      tags: selectedTags,
     };
 
     setProfiles([...profiles, newProfile]);
     setCurrentProfile(newProfile.name);
     setNewProfileName('');
+    setSelectedTags([]);
     setShowProfileForm(false);
     toast.success(`Profile "${newProfile.name}" saved`);
     triggerHaptic?.('medium', 'interactions');
@@ -284,6 +300,7 @@ export function FeedSettingsDialog({
   const handleUpdateCurrentProfile = () => {
     if (!currentProfile) return;
 
+    const currentProfileData = profiles.find(p => p.name === currentProfile);
     const updatedProfiles = profiles.map(p => 
       p.name === currentProfile
         ? {
@@ -292,6 +309,7 @@ export function FeedSettingsDialog({
             autoPlay,
             videoQuality,
             haptics: hapticSettings,
+            tags: currentProfileData?.tags || [],
           }
         : p
     );
@@ -300,6 +318,18 @@ export function FeedSettingsDialog({
     toast.success(`Profile "${currentProfile}" updated`);
     triggerHaptic?.('light', 'interactions');
   };
+
+  const handleToggleTag = (tag: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  };
+
+  const filteredProfiles = filterTag 
+    ? profiles.filter(p => p.tags?.includes(filterTag))
+    : profiles;
 
   const handleShareProfile = (profile: SettingsProfile) => {
     try {
@@ -412,88 +442,167 @@ export function FeedSettingsDialog({
               )}
             </div>
 
+            {/* Tag Filter */}
             {profiles.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Tag className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Filter by tag:</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <Button
+                    variant={filterTag === null ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => setFilterTag(null)}
+                    className="h-6 text-xs px-2"
+                  >
+                    All
+                  </Button>
+                  {Array.from(new Set(profiles.flatMap(p => p.tags || []))).map(tag => (
+                    <Button
+                      key={tag}
+                      variant={filterTag === tag ? "secondary" : "ghost"}
+                      size="sm"
+                      onClick={() => setFilterTag(tag)}
+                      className="h-6 text-xs px-2"
+                    >
+                      {tag}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {filteredProfiles.length > 0 && (
               <ScrollArea className="h-[120px] rounded-md border bg-muted/30 p-3">
                 <div className="space-y-2">
-                  {profiles.map((profile) => (
+                  {filteredProfiles.map((profile) => (
                     <div
                       key={profile.name}
                       className={cn(
-                        "flex items-center justify-between p-2 rounded-md transition-colors",
+                        "flex flex-col gap-2 p-2 rounded-md transition-colors",
                         currentProfile === profile.name
                           ? "bg-primary/10 border border-primary/20"
                           : "hover:bg-muted/50"
                       )}
                     >
-                      <button
-                        onClick={() => handleLoadProfile(profile)}
-                        className="flex-1 text-left text-sm font-medium hover:text-primary transition-colors"
-                      >
-                        {profile.name}
-                        {currentProfile === profile.name && (
-                          <Check className="inline-block ml-2 h-3 w-3 text-primary" />
-                        )}
-                      </button>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleShareProfile(profile)}
-                          className="h-7 w-7 p-0 hover:text-primary"
-                          title="Copy share link"
+                      <div className="flex items-center justify-between">
+                        <button
+                          onClick={() => handleLoadProfile(profile)}
+                          className="flex-1 text-left text-sm font-medium hover:text-primary transition-colors"
                         >
-                          <Share2 className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteProfile(profile.name)}
-                          className="h-7 w-7 p-0 hover:text-destructive"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                          {profile.name}
+                          {currentProfile === profile.name && (
+                            <Check className="inline-block ml-2 h-3 w-3 text-primary" />
+                          )}
+                        </button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleShareProfile(profile)}
+                            className="h-7 w-7 p-0 hover:text-primary"
+                            title="Copy share link"
+                          >
+                            <Share2 className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteProfile(profile.name)}
+                            className="h-7 w-7 p-0 hover:text-destructive"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
+                      {profile.tags && profile.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {profile.tags.map(tag => (
+                            <Badge 
+                              key={tag} 
+                              variant="outline" 
+                              className="text-[10px] h-4 px-1.5"
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
               </ScrollArea>
             )}
 
+            {profiles.length > 0 && filteredProfiles.length === 0 && (
+              <div className="text-center py-6 text-sm text-muted-foreground">
+                No profiles with "{filterTag}" tag
+              </div>
+            )}
+
             {showProfileForm ? (
-              <div className="flex gap-2">
+              <div className="space-y-3 p-3 border rounded-md bg-muted/20">
                 <Input
                   placeholder="Profile name (e.g., High Quality)"
                   value={newProfileName}
                   onChange={(e) => setNewProfileName(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === 'Enter' && newProfileName.trim()) {
                       handleSaveProfile();
                     } else if (e.key === 'Escape') {
                       setShowProfileForm(false);
                       setNewProfileName('');
+                      setSelectedTags([]);
                     }
                   }}
-                  className="flex-1"
                   autoFocus
                 />
-                <Button
-                  size="sm"
-                  onClick={handleSaveProfile}
-                  className="gap-1"
-                >
-                  <Save className="h-3 w-3" />
-                  Save
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setShowProfileForm(false);
-                    setNewProfileName('');
-                  }}
-                >
-                  Cancel
-                </Button>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Tag className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">Tags (optional):</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {AVAILABLE_TAGS.map(tag => (
+                      <Button
+                        key={tag}
+                        variant={selectedTags.includes(tag) ? "secondary" : "outline"}
+                        size="sm"
+                        onClick={() => handleToggleTag(tag)}
+                        className="h-6 text-xs px-2"
+                      >
+                        {tag}
+                        {selectedTags.includes(tag) && (
+                          <X className="ml-1 h-2.5 w-2.5" />
+                        )}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={handleSaveProfile}
+                    className="flex-1 gap-1"
+                  >
+                    <Save className="h-3 w-3" />
+                    Save Profile
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setShowProfileForm(false);
+                      setNewProfileName('');
+                      setSelectedTags([]);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </div>
             ) : (
               <Button
