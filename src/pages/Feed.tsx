@@ -1503,7 +1503,7 @@ export default function Feed() {
       key={video.id}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="relative h-[619px] w-[348px] mx-auto snap-start snap-always"
+      className="relative h-[calc(100vh-8rem)] w-full max-w-[min(100vw-2rem,calc((100vh-8rem)*9/16))] mx-auto snap-start snap-always"
     >
       <VideoSchema
         videoId={video.id}
@@ -1524,11 +1524,11 @@ export default function Feed() {
         }}
       />
 
-      {/* Video container - TikTok dimensions 348x619px */}
-      <div className="relative h-[619px] w-[348px] bg-black">
-        <div className="relative h-[619px] w-[348px]">
+      {/* Video container - Responsive with TikTok aspect ratio */}
+      <div className="relative h-full w-full bg-black rounded-lg overflow-hidden">
+        <div className="relative h-full w-full">
           <div
-            className="relative h-[619px] w-[348px] flex items-center justify-center"
+            className="relative h-full w-full flex items-center justify-center"
             onClick={() => handleDoubleTap(video.id)}
             onTouchEnd={() => handleDoubleTap(video.id)}
             onMouseDown={(e) => {
@@ -1567,7 +1567,7 @@ export default function Feed() {
               ref={(el) => setVideoRef(video.id, el)}
               data-video-id={video.id}
               src={video.video_url}
-              className="h-[619px] w-[348px] object-cover"
+              className="h-full w-full object-cover"
               preload="metadata"
               playsInline
               muted={mutedVideos.has(video.id)}
