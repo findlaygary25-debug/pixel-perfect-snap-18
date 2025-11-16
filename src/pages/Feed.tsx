@@ -1523,10 +1523,10 @@ export default function Feed() {
         }}
       />
 
-      {/* Full-screen video container - Mobile: full screen, Desktop: centered with 9:16 */}
+      {/* Full-screen video container - Mobile: full screen, Desktop: centered with 2:3 (640x960) */}
       <div className="relative h-full w-full bg-black md:flex md:items-center md:justify-center">
-        {/* Desktop: centered container, Mobile: full width */}
-        <div className="relative h-full w-full md:h-auto md:max-h-screen md:w-auto md:aspect-[9/16]">
+        {/* Desktop: centered container (640x960), Mobile: full width */}
+        <div className="relative h-full w-full md:h-[960px] md:w-[640px]">
           <div
             className="relative h-full w-full flex items-center justify-center"
             onClick={() => handleDoubleTap(video.id)}
@@ -1568,7 +1568,7 @@ export default function Feed() {
               data-video-id={video.id}
               src={video.video_url}
               className="h-full w-full object-contain"
-              style={{ aspectRatio: '9/16' }}
+              style={{ aspectRatio: '2/3' }}
               preload="metadata"
               playsInline
               muted={mutedVideos.has(video.id)}
@@ -2674,7 +2674,7 @@ export default function Feed() {
 
           {/* Video */}
           <div 
-            className="relative aspect-[9/16] cursor-pointer"
+            className="relative aspect-[2/3] cursor-pointer"
             onClick={handleMiniPlayerClick}
           >
             <video
