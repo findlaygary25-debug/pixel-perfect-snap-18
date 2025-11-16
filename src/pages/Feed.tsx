@@ -511,6 +511,7 @@ export default function Feed() {
           if (videoElement.paused) {
             videoElement.play();
             setPlayingVideos((prev) => new Set(prev).add(currentVisibleVideoId));
+            toast.success('Playing', { duration: 1000 });
           } else {
             videoElement.pause();
             setPlayingVideos((prev) => {
@@ -518,6 +519,7 @@ export default function Feed() {
               next.delete(currentVisibleVideoId);
               return next;
             });
+            toast.success('Paused', { duration: 1000 });
           }
           break;
         
@@ -528,9 +530,11 @@ export default function Feed() {
             if (next.has(currentVisibleVideoId)) {
               next.delete(currentVisibleVideoId);
               videoElement.muted = false;
+              toast.success('Unmuted', { duration: 1000 });
             } else {
               next.add(currentVisibleVideoId);
               videoElement.muted = true;
+              toast.success('Muted', { duration: 1000 });
             }
             return next;
           });
@@ -546,22 +550,26 @@ export default function Feed() {
               document.exitFullscreen();
             }
             setFullscreenVideoId(null);
+            toast.success('Exited fullscreen', { duration: 1000 });
           } else {
             if (videoContainer.requestFullscreen) {
               videoContainer.requestFullscreen();
             }
             setFullscreenVideoId(currentVisibleVideoId);
+            toast.success('Fullscreen mode', { duration: 1000 });
           }
           break;
         
         case 'ArrowLeft':
           e.preventDefault();
           videoElement.currentTime = Math.max(0, videoElement.currentTime - 5);
+          toast.success('Rewind 5s', { duration: 1000 });
           break;
         
         case 'ArrowRight':
           e.preventDefault();
           videoElement.currentTime = Math.min(videoElement.duration, videoElement.currentTime + 5);
+          toast.success('Forward 5s', { duration: 1000 });
           break;
         
         case 'ArrowUp':
@@ -572,6 +580,7 @@ export default function Feed() {
             const prevContainer = videoContainerRefs.current.get(prevVideo.id);
             if (prevContainer) {
               prevContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              toast.success('Previous video', { duration: 1000 });
             }
           }
           break;
@@ -584,6 +593,7 @@ export default function Feed() {
             const nextContainer = videoContainerRefs.current.get(nextVideo.id);
             if (nextContainer) {
               nextContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              toast.success('Next video', { duration: 1000 });
             }
           }
           break;
