@@ -629,6 +629,7 @@ export default function Feed() {
         case 'ArrowUp':
           e.preventDefault();
           // Navigate to previous video
+          triggerHaptic('light'); // Haptic feedback for swipe navigation
           if (currentIndex > 0) {
             const prevVideo = currentVideos[currentIndex - 1];
             const prevContainer = videoContainerRefs.current.get(prevVideo.id);
@@ -642,6 +643,7 @@ export default function Feed() {
         case 'ArrowDown':
           e.preventDefault();
           // Navigate to next video
+          triggerHaptic('light'); // Haptic feedback for swipe navigation
           if (currentIndex < currentVideos.length - 1) {
             const nextVideo = currentVideos[currentIndex + 1];
             const nextContainer = videoContainerRefs.current.get(nextVideo.id);
@@ -841,6 +843,7 @@ export default function Feed() {
     if (container && container.scrollTop === 0) {
       touchStartY.current = e.touches[0].clientY;
       setIsPulling(true);
+      triggerHaptic('light'); // Light haptic when starting to pull
     }
   };
 
@@ -852,11 +855,17 @@ export default function Feed() {
     
     if (distance > 0 && distance < 150) {
       setPullDistance(distance);
+      
+      // Trigger medium haptic when reaching refresh threshold
+      if (distance > 80 && distance < 85) {
+        triggerHaptic('medium');
+      }
     }
   };
 
   const handleTouchEnd = async () => {
     if (isPulling && pullDistance > 80) {
+      triggerHaptic('success'); // Success haptic when refresh triggers
       setIsRefreshing(true);
       await fetchVideos();
       if (activeTab === "following") {
@@ -866,6 +875,7 @@ export default function Feed() {
         setIsRefreshing(false);
         setPullDistance(0);
         setIsPulling(false);
+        triggerHaptic('notification'); // Subtle confirmation when refresh completes
       }, 500);
     } else {
       setPullDistance(0);
@@ -1303,6 +1313,7 @@ export default function Feed() {
 
   const handleMiniPlayerClick = () => {
     if (miniPlayerVideo) {
+      triggerHaptic('medium'); // Haptic feedback when expanding mini player
       const container = videoContainerRefs.current.get(miniPlayerVideo.video.id);
       if (container) {
         container.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1312,6 +1323,7 @@ export default function Feed() {
   };
 
   const handleCloseMiniPlayer = () => {
+    triggerHaptic('light'); // Haptic feedback when closing mini player
     if (miniPlayerVideo) {
       const video = videoRefs.current.get(miniPlayerVideo.video.id);
       if (video) {
@@ -1885,7 +1897,10 @@ export default function Feed() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setSelectedVideoId(video.id)}
+            onClick={() => {
+              triggerHaptic('medium'); // Haptic feedback when opening drawer
+              setSelectedVideoId(video.id);
+            }}
             className="bg-background/80 backdrop-blur-sm rounded-full h-14 w-14 p-0"
           >
             <div className="flex flex-col items-center gap-1">
@@ -2089,7 +2104,10 @@ export default function Feed() {
       </div>
 
       {/* Tab switcher and content */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={(value) => {
+        triggerHaptic('light'); // Haptic feedback when switching tabs
+        setActiveTab(value);
+      }}>
         {/* Tab switcher - floating at top */}
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40">
           <TabsList className="bg-background/80 backdrop-blur-sm">
@@ -2134,7 +2152,10 @@ export default function Feed() {
       <CommentsDrawer
         videoId={selectedVideoId || ""}
         isOpen={!!selectedVideoId}
-        onClose={() => setSelectedVideoId(null)}
+        onClose={() => {
+          triggerHaptic('light'); // Haptic feedback when closing drawer
+          setSelectedVideoId(null);
+        }}
         commentCount={selectedVideoId ? commentCounts[selectedVideoId] || 0 : 0}
         onCommentAdded={() => {
           if (selectedVideoId) {
