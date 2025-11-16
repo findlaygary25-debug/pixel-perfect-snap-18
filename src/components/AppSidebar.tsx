@@ -1,4 +1,4 @@
-import { Home, Video, Upload as UploadIcon, Store, Wallet, Users, Mail, Info, Palette, LogIn, User, Activity, BarChart3, Megaphone, HelpCircle, Share2, Youtube, CalendarClock, Radio } from "lucide-react";
+import { Home, Video, Upload as UploadIcon, Store, Wallet, Users, Mail, Info, Palette, LogIn, User, Activity, BarChart3, Megaphone, HelpCircle, Share2, Youtube, CalendarClock, Radio, X } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,7 +36,7 @@ const baseItems = [
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, toggleSidebar, open } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -63,10 +63,23 @@ export function AppSidebar() {
 
   return (
     <>
-      <Sidebar className={state === "collapsed" ? "w-14" : "w-56 md:w-48"} collapsible="icon" variant="sidebar">
+      <Sidebar 
+        className="w-64 md:w-48" 
+        collapsible="offcanvas"
+        side="left"
+      >
         <SidebarContent className="pb-20">
           <SidebarGroup>
-            <SidebarGroupLabel className="text-xs md:text-sm px-2">Voice2Fire</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-sm px-3 flex items-center justify-between">
+              <span>Voice2Fire</span>
+              <button 
+                onClick={() => toggleSidebar()}
+                className="md:hidden p-1 hover:bg-muted rounded"
+                aria-label="Close menu"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {items.map((item) => (
@@ -77,9 +90,15 @@ export function AppSidebar() {
                         end
                         className="hover:bg-muted/50"
                         activeClassName="bg-muted text-primary font-medium"
+                        onClick={() => {
+                          // Close sidebar on mobile after navigation
+                          if (window.innerWidth < 768 && open) {
+                            toggleSidebar();
+                          }
+                        }}
                       >
-                        <item.icon className="h-4 w-4 flex-shrink-0" />
-                        {state !== "collapsed" && <span className="text-sm truncate">{item.title}</span>}
+                        <item.icon className="h-5 w-5 flex-shrink-0" />
+                        <span className="text-sm truncate">{item.title}</span>
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -87,9 +106,18 @@ export function AppSidebar() {
                 
                 {isAuthenticated && (
                   <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => setAdvertiseDialogOpen(true)} className="px-3 py-3 gap-3 min-h-[44px]">
-                      <Megaphone className="h-4 w-4 flex-shrink-0" />
-                      {state !== "collapsed" && <span className="text-sm truncate">Advertise</span>}
+                    <SidebarMenuButton 
+                      onClick={() => {
+                        setAdvertiseDialogOpen(true);
+                        // Close sidebar on mobile after opening dialog
+                        if (window.innerWidth < 768 && open) {
+                          toggleSidebar();
+                        }
+                      }} 
+                      className="px-3 py-3 gap-3 min-h-[44px]"
+                    >
+                      <Megaphone className="h-5 w-5 flex-shrink-0" />
+                      <span className="text-sm truncate">Advertise</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
