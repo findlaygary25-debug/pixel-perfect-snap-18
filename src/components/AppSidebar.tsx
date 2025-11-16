@@ -155,7 +155,7 @@ export function AppSidebar() {
   return (
     <>
       <Sidebar 
-        className="w-48" 
+        className="[--sidebar-width:var(--side-width)] [--sidebar-width-icon:var(--side-folded-width)]" 
         collapsible="icon"
         side="left"
       >
