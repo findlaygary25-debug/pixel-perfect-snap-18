@@ -115,7 +115,7 @@ export function AppSidebar() {
     return (
       <>
         <Drawer open={open} onOpenChange={setOpen}>
-          <DrawerContent className="h-[85vh]">
+          <DrawerContent className="h-[85vh] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]">
             <div className="mx-auto mt-4 mb-2 relative">
               <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30 animate-pulse" />
               <div className="absolute inset-0 h-1.5 w-12 rounded-full bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20 animate-[pulse_2s_ease-in-out_infinite]" />
