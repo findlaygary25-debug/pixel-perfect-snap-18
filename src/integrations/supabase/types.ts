@@ -848,6 +848,50 @@ export type Database = {
         }
         Relationships: []
       }
+      user_weekly_progress: {
+        Row: {
+          challenge_id: string
+          completed_at: string | null
+          created_at: string | null
+          current_progress: number | null
+          id: string
+          is_completed: boolean | null
+          reward_claimed: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          completed_at?: string | null
+          created_at?: string | null
+          current_progress?: number | null
+          id?: string
+          is_completed?: boolean | null
+          reward_claimed?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          completed_at?: string | null
+          created_at?: string | null
+          current_progress?: number | null
+          id?: string
+          is_completed?: boolean | null
+          reward_claimed?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_weekly_progress_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       video_chapters: {
         Row: {
           created_at: string
@@ -1075,6 +1119,51 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_challenges: {
+        Row: {
+          challenge_description: string
+          challenge_title: string
+          challenge_type: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          reward_type: string
+          reward_value: string
+          target_value: number
+          tier: string
+          week_end: string
+          week_start: string
+        }
+        Insert: {
+          challenge_description: string
+          challenge_title: string
+          challenge_type: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          reward_type: string
+          reward_value: string
+          target_value: number
+          tier: string
+          week_end: string
+          week_start: string
+        }
+        Update: {
+          challenge_description?: string
+          challenge_title?: string
+          challenge_type?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          reward_type?: string
+          reward_value?: string
+          target_value?: number
+          tier?: string
+          week_end?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1100,6 +1189,24 @@ export type Database = {
           affiliate_id: string
           affiliate_username: string
           level: number
+        }[]
+      }
+      get_current_weekly_challenges: {
+        Args: never
+        Returns: {
+          challenge_description: string
+          challenge_title: string
+          challenge_type: string
+          id: string
+          is_completed: boolean
+          reward_claimed: boolean
+          reward_type: string
+          reward_value: string
+          target_value: number
+          tier: string
+          user_progress: number
+          week_end: string
+          week_start: string
         }[]
       }
       get_global_achievement_stats: {
