@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Settings, Layers, LayoutPanelTop, Volume2, Gauge, Vibrate, RotateCcw, Download, Upload, Save, Trash2, Check, Share2, Tag, X } from "lucide-react";
+import { Settings, Layers, LayoutPanelTop, Volume2, Gauge, Vibrate, RotateCcw, Download, Upload, Save, Trash2, Check, Share2, Tag, X, Search } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -78,6 +78,7 @@ export function FeedSettingsDialog({
   const [showProfileForm, setShowProfileForm] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [filterTag, setFilterTag] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Save profiles to localStorage whenever they change
   useEffect(() => {
@@ -327,9 +328,17 @@ export function FeedSettingsDialog({
     );
   };
 
-  const filteredProfiles = filterTag 
-    ? profiles.filter(p => p.tags?.includes(filterTag))
-    : profiles;
+  const filteredProfiles = profiles.filter(profile => {
+    // Filter by tag if selected
+    const matchesTag = filterTag ? profile.tags?.includes(filterTag) : true;
+    
+    // Filter by search query
+    const matchesSearch = searchQuery.trim() === '' 
+      ? true 
+      : profile.name.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return matchesTag && matchesSearch;
+  });
 
   const handleShareProfile = (profile: SettingsProfile) => {
     try {
@@ -442,33 +451,57 @@ export function FeedSettingsDialog({
               )}
             </div>
 
-            {/* Tag Filter */}
+            {/* Search and Filter */}
             {profiles.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Tag className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">Filter by tag:</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  <Button
-                    variant={filterTag === null ? "secondary" : "ghost"}
-                    size="sm"
-                    onClick={() => setFilterTag(null)}
-                    className="h-6 text-xs px-2"
-                  >
-                    All
-                  </Button>
-                  {Array.from(new Set(profiles.flatMap(p => p.tags || []))).map(tag => (
+              <div className="space-y-3">
+                {/* Search Input */}
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Search profiles..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-8 pl-8 text-sm"
+                  />
+                  {searchQuery && (
                     <Button
-                      key={tag}
-                      variant={filterTag === tag ? "secondary" : "ghost"}
+                      variant="ghost"
                       size="sm"
-                      onClick={() => setFilterTag(tag)}
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-transparent"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+
+                {/* Tag Filter */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Tag className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">Filter by tag:</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    <Button
+                      variant={filterTag === null ? "secondary" : "ghost"}
+                      size="sm"
+                      onClick={() => setFilterTag(null)}
                       className="h-6 text-xs px-2"
                     >
-                      {tag}
+                      All
                     </Button>
-                  ))}
+                    {Array.from(new Set(profiles.flatMap(p => p.tags || []))).map(tag => (
+                      <Button
+                        key={tag}
+                        variant={filterTag === tag ? "secondary" : "ghost"}
+                        size="sm"
+                        onClick={() => setFilterTag(tag)}
+                        className="h-6 text-xs px-2"
+                      >
+                        {tag}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -537,7 +570,12 @@ export function FeedSettingsDialog({
 
             {profiles.length > 0 && filteredProfiles.length === 0 && (
               <div className="text-center py-6 text-sm text-muted-foreground">
-                No profiles with "{filterTag}" tag
+                {searchQuery && filterTag 
+                  ? `No profiles matching "${searchQuery}" with "${filterTag}" tag`
+                  : searchQuery 
+                    ? `No profiles matching "${searchQuery}"`
+                    : `No profiles with "${filterTag}" tag`
+                }
               </div>
             )}
 
