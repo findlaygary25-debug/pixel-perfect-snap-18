@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { FolderPlus, Trash2, Edit, Play, GripVertical, Image } from "lucide-react";
+import { FolderPlus, Trash2, Edit, Play, GripVertical, Image, Copy } from "lucide-react";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { CollectionCover } from "@/components/CollectionCover";
 import { UploadCoverImageDialog } from "@/components/UploadCoverImageDialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useNavigate } from "react-router-dom";
@@ -26,11 +27,12 @@ type Collection = {
   cover_image_url?: string | null;
 };
 
-function SortableCollectionCard({ collection, onEdit, onDelete, onCoverUpdate }: { 
+function SortableCollectionCard({ collection, onEdit, onDelete, onCoverUpdate, onDuplicate }: { 
   collection: Collection; 
   onEdit: () => void; 
   onDelete: () => void;
   onCoverUpdate: () => void;
+  onDuplicate: () => void;
 }) {
   const navigate = useNavigate();
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -96,6 +98,14 @@ function SortableCollectionCard({ collection, onEdit, onDelete, onCoverUpdate }:
                     <Button
                       variant="ghost"
                       size="icon"
+                      onClick={onDuplicate}
+                      title="Duplicate collection"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={onEdit}
                     >
                       <Edit className="h-4 w-4" />
@@ -151,6 +161,7 @@ export default function Collections() {
   const [newCollectionName, setNewCollectionName] = useState("");
   const [newCollectionDescription, setNewCollectionDescription] = useState("");
   const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [duplicatingCollection, setDuplicatingCollection] = useState<Collection | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -313,6 +324,58 @@ export default function Collections() {
     setNewCollectionDescription(collection.description || "");
   };
 
+  const handleDuplicateCollection = async (collection: Collection) => {
+    if (!currentUser) return;
+
+    try {
+      // Create new collection with copied name
+      const { data: newCollection, error: createError } = await supabase
+        .from("collections")
+        .insert({
+          user_id: currentUser,
+          name: `${collection.name} (Copy)`,
+          description: collection.description,
+          order_index: collections.length,
+          cover_image_url: collection.cover_image_url,
+        })
+        .select()
+        .single();
+
+      if (createError) throw createError;
+
+      // Get all items from the original collection
+      const { data: items, error: itemsError } = await supabase
+        .from("collection_items")
+        .select("video_id, order_index")
+        .eq("collection_id", collection.id)
+        .order("order_index", { ascending: true });
+
+      if (itemsError) throw itemsError;
+
+      // Copy items to new collection
+      if (items && items.length > 0) {
+        const newItems = items.map((item) => ({
+          collection_id: newCollection.id,
+          video_id: item.video_id,
+          user_id: currentUser,
+          order_index: item.order_index,
+        }));
+
+        const { error: insertError } = await supabase
+          .from("collection_items")
+          .insert(newItems);
+
+        if (insertError) throw insertError;
+      }
+
+      toast.success(`Collection duplicated! ${items?.length || 0} videos copied.`);
+      fetchCollections();
+    } catch (error) {
+      console.error("Error duplicating collection:", error);
+      toast.error("Failed to duplicate collection");
+    }
+  };
+
   if (!currentUser) {
     return (
       <div className="container max-w-4xl mx-auto p-6 flex items-center justify-center min-h-[60vh]">
@@ -379,12 +442,36 @@ export default function Collections() {
                   onEdit={() => openEditDialog(collection)}
                   onDelete={() => handleDeleteCollection(collection.id)}
                   onCoverUpdate={fetchCollections}
+                  onDuplicate={() => setDuplicatingCollection(collection)}
                 />
               ))}
             </SortableContext>
           </DndContext>
         </div>
       )}
+
+      {/* Duplicate Confirmation Dialog */}
+      <AlertDialog open={!!duplicatingCollection} onOpenChange={(open) => !open && setDuplicatingCollection(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Duplicate Collection?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will create a copy of "{duplicatingCollection?.name}" with all its videos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (duplicatingCollection) {
+                handleDuplicateCollection(duplicatingCollection);
+                setDuplicatingCollection(null);
+              }
+            }}>
+              Duplicate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Create/Edit Collection Dialog */}
       <Dialog open={createDialogOpen || !!editingCollection} onOpenChange={(open) => {
