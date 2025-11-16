@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, subDays, isAfter } from "date-fns";
 import { ProfileAchievements } from "@/components/ProfileAchievements";
 import { AchievementLeaderboard } from "@/components/AchievementLeaderboard";
+import { WeeklyChallenges } from "@/components/WeeklyChallenges";
 
 type ProfileUsageHistory = {
   timestamp: string;
@@ -93,8 +94,9 @@ export function ProfileAnalytics({ profiles, usageHistory }: ProfileAnalyticsPro
 
   return (
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="challenges">Challenges</TabsTrigger>
             <TabsTrigger value="achievements">Achievements</TabsTrigger>
             <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
           </TabsList>
@@ -269,6 +271,10 @@ export function ProfileAnalytics({ profiles, usageHistory }: ProfileAnalyticsPro
           </CardContent>
         </Card>
       )}
+      </TabsContent>
+
+      <TabsContent value="challenges" className="mt-4">
+        <WeeklyChallenges profiles={profiles} usageHistory={usageHistory} />
       </TabsContent>
 
       <TabsContent value="achievements" className="mt-4">
