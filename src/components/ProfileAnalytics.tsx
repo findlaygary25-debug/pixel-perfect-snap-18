@@ -3,7 +3,9 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { TrendingUp, Award, Calendar, Lightbulb } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { format, subDays, startOfDay, isAfter } from "date-fns";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { format, subDays, isAfter } from "date-fns";
+import { ProfileAchievements } from "@/components/ProfileAchievements";
 
 type ProfileUsageHistory = {
   timestamp: string;
@@ -89,9 +91,15 @@ export function ProfileAnalytics({ profiles, usageHistory }: ProfileAnalyticsPro
   }, [profiles, usageHistory]);
 
   return (
-    <div className="space-y-4">
-      {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <Tabs defaultValue="overview" className="w-full">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="overview">Overview</TabsTrigger>
+        <TabsTrigger value="achievements">Achievements</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="overview" className="space-y-4 mt-4">
+        {/* Overview Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -259,7 +267,12 @@ export function ProfileAnalytics({ profiles, usageHistory }: ProfileAnalyticsPro
           </CardContent>
         </Card>
       )}
-    </div>
+      </TabsContent>
+
+      <TabsContent value="achievements" className="mt-4">
+        <ProfileAchievements profiles={profiles} usageHistory={usageHistory} />
+      </TabsContent>
+    </Tabs>
   );
 }
 
