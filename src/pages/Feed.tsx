@@ -2094,7 +2094,7 @@ export default function Feed() {
                     </div>
                   )}
                 </div>
-                <span className="text-xs text-foreground/80 font-medium max-w-[60px] truncate">{video.username}</span>
+                <span className="text-xs text-foreground font-medium max-w-[60px] truncate bg-background/80 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-lg">{video.username}</span>
               </div>
             </Button>
           </div>
