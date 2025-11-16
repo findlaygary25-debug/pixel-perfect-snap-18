@@ -19,6 +19,7 @@ import { VideoSchema } from "@/components/VideoSchema";
 import { BreadcrumbSchema } from "@/components/BreadcrumbSchema";
 import { SocialShareDialog } from "@/components/SocialShareDialog";
 import { OpenGraphTags } from "@/components/OpenGraphTags";
+import { useHapticSettings } from "@/hooks/useHapticSettings";
 
 type VideoPost = {
   id: string;
@@ -46,6 +47,7 @@ type VideoChapter = {
 };
 
 export default function Feed() {
+  const { settings: hapticSettings } = useHapticSettings();
   const [videos, setVideos] = useState<VideoPost[]>([]);
   const [followingVideos, setFollowingVideos] = useState<VideoPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,51 +107,62 @@ export default function Feed() {
   const [bufferHealth, setBufferHealth] = useState<Record<string, number>>({});
   const abrCheckInterval = useRef<NodeJS.Timeout | null>(null);
 
-  // Enhanced haptic feedback helper with custom patterns
-  const triggerHaptic = async (pattern: 'light' | 'medium' | 'heavy' | 'success' | 'notification' | 'achievement' | 'warning' | 'error' = 'light') => {
+  // Enhanced haptic feedback helper with custom patterns and settings
+  const triggerHaptic = async (pattern: 'light' | 'medium' | 'heavy' | 'success' | 'notification' | 'achievement' | 'warning' | 'error' = 'light', type?: 'interactions' | 'milestones' | 'achievements' | 'errors' | 'navigation' | 'longPress') => {
+    // Check if haptics are globally enabled
+    if (!hapticSettings.enabled) return;
+    
+    // Check if this specific type is enabled
+    if (type && !hapticSettings.enabledTypes[type]) return;
+    
     try {
+      // Adjust intensity based on user settings
+      const getAdjustedStyle = (base: ImpactStyle) => {
+        if (hapticSettings.intensity === 'light') {
+          return ImpactStyle.Light;
+        } else if (hapticSettings.intensity === 'strong') {
+          return base === ImpactStyle.Light ? ImpactStyle.Medium : ImpactStyle.Heavy;
+        }
+        return base;
+      };
+      
       switch (pattern) {
         case 'light':
-          await Haptics.impact({ style: ImpactStyle.Light });
+          await Haptics.impact({ style: getAdjustedStyle(ImpactStyle.Light) });
           break;
         case 'medium':
-          await Haptics.impact({ style: ImpactStyle.Medium });
+          await Haptics.impact({ style: getAdjustedStyle(ImpactStyle.Medium) });
           break;
         case 'heavy':
-          await Haptics.impact({ style: ImpactStyle.Heavy });
+          await Haptics.impact({ style: getAdjustedStyle(ImpactStyle.Heavy) });
           break;
         case 'success':
-          // Success notification for achievements
           await Haptics.notification({ type: NotificationType.Success });
           break;
         case 'achievement':
-          // Strong pattern for achievements: heavy impact + success
-          await Haptics.impact({ style: ImpactStyle.Heavy });
+          await Haptics.impact({ style: getAdjustedStyle(ImpactStyle.Heavy) });
           setTimeout(async () => {
             await Haptics.notification({ type: NotificationType.Success });
           }, 100);
           break;
         case 'notification':
-          // Subtle pulse pattern for notifications
-          await Haptics.vibrate({ duration: 50 });
+          const duration = hapticSettings.intensity === 'light' ? 30 : hapticSettings.intensity === 'strong' ? 70 : 50;
+          await Haptics.vibrate({ duration });
           setTimeout(async () => {
-            await Haptics.vibrate({ duration: 30 });
+            await Haptics.vibrate({ duration: duration * 0.6 });
           }, 100);
           break;
         case 'warning':
-          // Warning pattern: double tap with warning notification
           await Haptics.notification({ type: NotificationType.Warning });
           break;
         case 'error':
-          // Error pattern: triple pulse with error notification
           await Haptics.notification({ type: NotificationType.Error });
           setTimeout(async () => {
-            await Haptics.impact({ style: ImpactStyle.Medium });
+            await Haptics.impact({ style: getAdjustedStyle(ImpactStyle.Medium) });
           }, 150);
           break;
       }
     } catch (error) {
-      // Haptics not supported on this device/browser, fail silently
       console.debug('Haptics not available');
     }
   };
@@ -565,7 +578,7 @@ export default function Feed() {
       switch (e.code) {
         case 'Space':
           e.preventDefault();
-          triggerHaptic('light');
+          triggerHaptic('light', 'interactions');
           if (videoElement.paused) {
             videoElement.play();
             setPlayingVideos((prev) => new Set(prev).add(currentVisibleVideoId));
@@ -633,7 +646,7 @@ export default function Feed() {
         case 'ArrowUp':
           e.preventDefault();
           // Navigate to previous video
-          triggerHaptic('light'); // Haptic feedback for swipe navigation
+          triggerHaptic('light', 'navigation');
           if (currentIndex > 0) {
             const prevVideo = currentVideos[currentIndex - 1];
             const prevContainer = videoContainerRefs.current.get(prevVideo.id);
@@ -647,7 +660,7 @@ export default function Feed() {
         case 'ArrowDown':
           e.preventDefault();
           // Navigate to next video
-          triggerHaptic('light'); // Haptic feedback for swipe navigation
+          triggerHaptic('light', 'navigation');
           if (currentIndex < currentVideos.length - 1) {
             const nextVideo = currentVideos[currentIndex + 1];
             const nextContainer = videoContainerRefs.current.get(nextVideo.id);
@@ -821,7 +834,7 @@ export default function Feed() {
       lastTapRef.current = null;
       
       // Trigger haptic feedback
-      await triggerHaptic('medium');
+      await triggerHaptic('medium', 'interactions');
       
       // Show heart animation
       setDoubleTapHearts(prev => new Set(prev).add(videoId));
@@ -847,7 +860,7 @@ export default function Feed() {
     if (container && container.scrollTop === 0) {
       touchStartY.current = e.touches[0].clientY;
       setIsPulling(true);
-      triggerHaptic('light'); // Light haptic when starting to pull
+      triggerHaptic('light', 'navigation');
     }
   };
 
@@ -862,7 +875,7 @@ export default function Feed() {
       
       // Trigger medium haptic when reaching refresh threshold
       if (distance > 80 && distance < 85) {
-        triggerHaptic('medium');
+        triggerHaptic('medium', 'navigation');
       }
     }
   };
@@ -1189,9 +1202,9 @@ export default function Feed() {
       
       // Achievement haptic for milestone likes (1st, 10th, 50th, 100th, etc.)
       if (newLikeCount === 1 || newLikeCount % 10 === 0 || newLikeCount % 50 === 0 || newLikeCount % 100 === 0) {
-        await triggerHaptic('achievement');
+        await triggerHaptic('achievement', 'achievements');
       } else {
-        await triggerHaptic('medium');
+        await triggerHaptic('medium', 'interactions');
       }
 
       const { error } = await supabase
@@ -1259,37 +1272,49 @@ export default function Feed() {
 
   // Long-press handlers with progressive haptic feedback
   const handleLongPressStart = (videoId: string, action: () => void, x?: number, y?: number) => {
+    // Check if long-press haptics are enabled
+    if (!hapticSettings.enabled || !hapticSettings.enabledTypes.longPress) {
+      return;
+    }
+    
     // Clear any existing timers
     clearLongPress();
     
     setLongPressActive(videoId);
     
-    // Progressive haptic feedback at intervals
+    const duration = hapticSettings.longPressDuration;
+    
+    // Progressive haptic feedback at intervals scaled to duration
     const hapticProgression = [
       { delay: 0, intensity: 'light' as const },
-      { delay: 200, intensity: 'light' as const },
-      { delay: 400, intensity: 'medium' as const },
-      { delay: 600, intensity: 'medium' as const },
-      { delay: 800, intensity: 'heavy' as const },
+      { delay: duration * 0.2, intensity: 'light' as const },
+      { delay: duration * 0.4, intensity: 'medium' as const },
+      { delay: duration * 0.6, intensity: 'medium' as const },
+      { delay: duration * 0.8, intensity: 'heavy' as const },
     ];
     
     // Schedule progressive haptic feedback
     hapticProgression.forEach(({ delay, intensity }) => {
       const timer = setTimeout(() => {
-        triggerHaptic(intensity);
+        triggerHaptic(intensity, 'longPress');
       }, delay);
       longPressProgress.current.push(timer);
     });
     
-    // Trigger action after threshold (1 second)
+    // Trigger action after threshold
     longPressTimer.current = setTimeout(() => {
-      triggerHaptic('achievement'); // Strong haptic when threshold reached
+      triggerHaptic('achievement', 'longPress');
       setLongPressActive(null);
       action();
-    }, 1000);
+    }, duration);
   };
 
   const handleLongPressStartContextMenu = (videoId: string, e: React.MouseEvent | React.TouchEvent) => {
+    // Check if long-press haptics are enabled
+    if (!hapticSettings.enabled || !hapticSettings.enabledTypes.longPress) {
+      return;
+    }
+    
     // Clear any existing timers
     clearLongPress();
     
@@ -1299,29 +1324,31 @@ export default function Feed() {
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
     
-    // Progressive haptic feedback at intervals
+    const duration = hapticSettings.longPressDuration;
+    
+    // Progressive haptic feedback at intervals scaled to duration
     const hapticProgression = [
       { delay: 0, intensity: 'light' as const },
-      { delay: 200, intensity: 'light' as const },
-      { delay: 400, intensity: 'medium' as const },
-      { delay: 600, intensity: 'medium' as const },
-      { delay: 800, intensity: 'heavy' as const },
+      { delay: duration * 0.2, intensity: 'light' as const },
+      { delay: duration * 0.4, intensity: 'medium' as const },
+      { delay: duration * 0.6, intensity: 'medium' as const },
+      { delay: duration * 0.8, intensity: 'heavy' as const },
     ];
     
     // Schedule progressive haptic feedback
     hapticProgression.forEach(({ delay, intensity }) => {
       const timer = setTimeout(() => {
-        triggerHaptic(intensity);
+        triggerHaptic(intensity, 'longPress');
       }, delay);
       longPressProgress.current.push(timer);
     });
     
-    // Show context menu after threshold (1 second)
+    // Show context menu after threshold
     longPressTimer.current = setTimeout(() => {
-      triggerHaptic('achievement'); // Strong haptic when menu appears
+      triggerHaptic('achievement', 'longPress');
       setLongPressActive(null);
       setContextMenu({ videoId, x: clientX, y: clientY });
-    }, 1000);
+    }, duration);
   };
 
   const clearLongPress = () => {
@@ -1341,7 +1368,7 @@ export default function Feed() {
   };
 
   const handleContextMenuAction = async (action: string, videoId: string) => {
-    triggerHaptic('medium');
+    triggerHaptic('medium', 'interactions');
     setContextMenu(null);
     
     switch (action) {
@@ -1359,7 +1386,7 @@ export default function Feed() {
   };
 
   const handleShare = async (videoId: string) => {
-    await triggerHaptic('light');
+    await triggerHaptic('light', 'interactions');
     
     const video = videos.find((v) => v.id === videoId) || followingVideos.find((v) => v.id === videoId);
     if (video) {
@@ -1418,7 +1445,7 @@ export default function Feed() {
 
   const handleMiniPlayerClick = () => {
     if (miniPlayerVideo) {
-      triggerHaptic('medium'); // Haptic feedback when expanding mini player
+      triggerHaptic('medium', 'navigation');
       const container = videoContainerRefs.current.get(miniPlayerVideo.video.id);
       if (container) {
         container.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1428,7 +1455,7 @@ export default function Feed() {
   };
 
   const handleCloseMiniPlayer = () => {
-    triggerHaptic('light'); // Haptic feedback when closing mini player
+    triggerHaptic('light', 'navigation');
     if (miniPlayerVideo) {
       const video = videoRefs.current.get(miniPlayerVideo.video.id);
       if (video) {
@@ -1576,7 +1603,7 @@ export default function Feed() {
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
-                triggerHaptic('light');
+                triggerHaptic('light', 'interactions');
                 const videoElement = videoRefs.current.get(video.id);
                 if (!videoElement) return;
                 
@@ -2062,7 +2089,7 @@ export default function Feed() {
             variant="ghost"
             size="sm"
             onClick={() => {
-              triggerHaptic('medium'); // Haptic feedback when opening drawer
+              triggerHaptic('medium', 'interactions');
               setSelectedVideoId(video.id);
             }}
             className="bg-background/80 backdrop-blur-sm rounded-full h-14 w-14 p-0"
@@ -2298,7 +2325,7 @@ export default function Feed() {
 
       {/* Tab switcher and content */}
       <Tabs value={activeTab} onValueChange={(value) => {
-        triggerHaptic('light'); // Haptic feedback when switching tabs
+        triggerHaptic('light', 'navigation');
         setActiveTab(value);
       }}>
         {/* Tab switcher - floating at top */}
@@ -2346,7 +2373,7 @@ export default function Feed() {
         videoId={selectedVideoId || ""}
         isOpen={!!selectedVideoId}
         onClose={() => {
-          triggerHaptic('light'); // Haptic feedback when closing drawer
+          triggerHaptic('light', 'navigation');
           setSelectedVideoId(null);
         }}
         commentCount={selectedVideoId ? commentCounts[selectedVideoId] || 0 : 0}
@@ -2666,7 +2693,7 @@ export default function Feed() {
           <div 
             className="fixed inset-0 z-50" 
             onClick={() => {
-              triggerHaptic('light');
+              triggerHaptic('light', 'navigation');
               setContextMenu(null);
             }}
           />
