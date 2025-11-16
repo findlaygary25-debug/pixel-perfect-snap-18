@@ -27,6 +27,7 @@ import Shares from "./pages/Shares";
 import ImportVideos from "./pages/ImportVideos";
 import ScheduledVideos from "./pages/ScheduledVideos";
 import Live from "./pages/Live";
+import HapticSettings from "./pages/HapticSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -74,6 +75,7 @@ const App = () => (
           <Route path="/import" element={<ImportVideos />} />
           <Route path="/scheduled" element={<ScheduledVideos />} />
           <Route path="/live" element={<Live />} />
+          <Route path="/haptic-settings" element={<HapticSettings />} />
           <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>
