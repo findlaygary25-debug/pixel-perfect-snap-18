@@ -1204,24 +1204,26 @@ export default function Feed() {
         }}
       />
 
-      {/* Full-screen video container */}
-      <div className="relative h-full w-full bg-black">
-        <div
-          className="relative h-full w-full flex items-center justify-center"
-          onClick={() => handleDoubleTap(video.id)}
-          onTouchEnd={() => handleDoubleTap(video.id)}
-        >
-          <video
-            ref={(el) => setVideoRef(video.id, el)}
-            data-video-id={video.id}
-            src={video.video_url}
-            className="h-full w-full object-contain"
-            style={{ aspectRatio: '9/16' }}
-            preload="metadata"
-            playsInline
-            muted={mutedVideos.has(video.id)}
-            loop
-          />
+      {/* Full-screen video container - Mobile: full screen, Desktop: centered with 9:16 */}
+      <div className="relative h-full w-full bg-black md:flex md:items-center md:justify-center">
+        {/* Desktop: centered container, Mobile: full width */}
+        <div className="relative h-full w-full md:h-auto md:max-h-screen md:w-auto md:aspect-[9/16]">
+          <div
+            className="relative h-full w-full flex items-center justify-center"
+            onClick={() => handleDoubleTap(video.id)}
+            onTouchEnd={() => handleDoubleTap(video.id)}
+          >
+            <video
+              ref={(el) => setVideoRef(video.id, el)}
+              data-video-id={video.id}
+              src={video.video_url}
+              className="h-full w-full object-contain"
+              style={{ aspectRatio: '9/16' }}
+              preload="metadata"
+              playsInline
+              muted={mutedVideos.has(video.id)}
+              loop
+            />
           
           {/* Play/Pause and Mute controls */}
           <div className="absolute top-4 left-4 flex gap-2">
@@ -1634,8 +1636,8 @@ export default function Feed() {
           )}
         </div>
         
-        {/* Action buttons - TikTok/Shorts style (right side) */}
-        <div className="absolute right-4 bottom-24 flex flex-col gap-6 z-10">
+        {/* Action buttons - Mobile: bottom-right, Desktop: centered right side */}
+        <div className="absolute right-4 bottom-24 flex flex-col gap-6 z-10 md:right-8 md:top-1/2 md:-translate-y-1/2 md:bottom-auto">
           {/* Follow button with heart */}
           {currentUser && video.user_id !== currentUser && (
             <Button
@@ -1737,6 +1739,7 @@ export default function Feed() {
               </div>
             </Button>
           )}
+        </div>
         </div>
 
         {/* User info and caption - bottom left */}
