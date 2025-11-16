@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Settings, Layers, LayoutPanelTop, Volume2, Gauge, Vibrate, RotateCcw, Download, Upload, Save, Trash2, Check, Share2, Tag, X, Search, ArrowUpDown } from "lucide-react";
+import { Settings, Layers, LayoutPanelTop, Volume2, Gauge, Vibrate, RotateCcw, Download, Upload, Save, Trash2, Check, Share2, Tag, X, Search, ArrowUpDown, BarChart3 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -16,9 +16,16 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useHapticSettings } from "@/hooks/useHapticSettings";
 import { cn } from "@/lib/utils";
+import { ProfileAnalytics } from "@/components/ProfileAnalytics";
+
+type ProfileUsageHistory = {
+  timestamp: string;
+  profileName: string;
+};
 
 type SettingsProfile = {
   name: string;
@@ -28,6 +35,7 @@ type SettingsProfile = {
   haptics: any;
   tags: string[];
   usageCount: number;
+  usageHistory?: ProfileUsageHistory[];
 };
 
 const AVAILABLE_TAGS = [
@@ -53,6 +61,7 @@ type FeedSettingsProps = {
 
 const STORAGE_KEY_PROFILES = 'feed-settings-profiles';
 const STORAGE_KEY_CURRENT_PROFILE = 'feed-settings-current-profile';
+const STORAGE_KEY_USAGE_HISTORY = 'feed-settings-usage-history';
 
 export function FeedSettingsDialog({
   desktopLayoutMode,
@@ -82,6 +91,13 @@ export function FeedSettingsDialog({
   const [filterTag, setFilterTag] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'alphabetical' | 'recent' | 'used'>('alphabetical');
+  const [activeTab, setActiveTab] = useState('settings');
+  
+  // Usage history state
+  const [usageHistory, setUsageHistory] = useState<ProfileUsageHistory[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY_USAGE_HISTORY);
+    return saved ? JSON.parse(saved) : [];
+  });
 
   // Save profiles to localStorage whenever they change
   useEffect(() => {
@@ -96,6 +112,11 @@ export function FeedSettingsDialog({
       localStorage.removeItem(STORAGE_KEY_CURRENT_PROFILE);
     }
   }, [currentProfile]);
+
+  // Save usage history to localStorage
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_USAGE_HISTORY, JSON.stringify(usageHistory));
+  }, [usageHistory]);
 
   // Check for shared profile in URL on mount
   useEffect(() => {
@@ -289,6 +310,13 @@ export function FeedSettingsDialog({
     onVideoQualityChange(profile.videoQuality);
     updateHapticSettings(profile.haptics);
     setCurrentProfile(profile.name);
+    
+    // Record usage in history
+    const usageEntry: ProfileUsageHistory = {
+      timestamp: new Date().toISOString(),
+      profileName: profile.name
+    };
+    setUsageHistory(prev => [...prev, usageEntry]);
     
     // Increment usage count
     setProfiles(profiles.map(p => 
@@ -520,7 +548,19 @@ export function FeedSettingsDialog({
           className="hidden"
         />
 
-        <div className="space-y-6 py-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="settings" className="gap-2">
+              <Settings className="h-3 w-3" />
+              Settings
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-2">
+              <BarChart3 className="h-3 w-3" />
+              Analytics
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="settings" className="space-y-6 py-4">
           {/* Profiles Section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -982,7 +1022,14 @@ export function FeedSettingsDialog({
               )}
             </div>
           </div>
-        </div>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="py-4">
+            <ScrollArea className="h-[calc(80vh-180px)]">
+              <ProfileAnalytics profiles={profiles} usageHistory={usageHistory} />
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
