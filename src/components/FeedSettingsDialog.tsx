@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Settings, Layers, LayoutPanelTop, Volume2, Gauge, Vibrate, RotateCcw, Download, Upload, Save, Trash2, Check } from "lucide-react";
+import { Settings, Layers, LayoutPanelTop, Volume2, Gauge, Vibrate, RotateCcw, Download, Upload, Save, Trash2, Check, Share2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -78,6 +78,44 @@ export function FeedSettingsDialog({
       localStorage.removeItem(STORAGE_KEY_CURRENT_PROFILE);
     }
   }, [currentProfile]);
+
+  // Check for shared profile in URL on mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sharedProfile = urlParams.get('profile');
+    
+    if (sharedProfile) {
+      try {
+        const decodedData = atob(sharedProfile);
+        const profileData = JSON.parse(decodedData);
+        
+        // Apply the shared settings
+        if (profileData.desktopLayoutMode) {
+          onLayoutModeChange(profileData.desktopLayoutMode);
+        }
+        if (profileData.autoPlay !== undefined) {
+          onAutoPlayChange(profileData.autoPlay);
+        }
+        if (profileData.videoQuality) {
+          onVideoQualityChange(profileData.videoQuality);
+        }
+        if (profileData.haptics) {
+          updateHapticSettings(profileData.haptics);
+        }
+        
+        toast.success('Shared profile loaded successfully');
+        triggerHaptic?.('medium', 'interactions');
+        
+        // Remove the profile parameter from URL
+        urlParams.delete('profile');
+        const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+        window.history.replaceState({}, '', newUrl);
+      } catch (error) {
+        console.error('Error loading shared profile:', error);
+        toast.error('Failed to load shared profile');
+      }
+    }
+  }, []);
 
   const handleLayoutChange = (newMode: 'side-panel' | 'overlay') => {
     onLayoutModeChange(newMode);
@@ -263,6 +301,28 @@ export function FeedSettingsDialog({
     triggerHaptic?.('light', 'interactions');
   };
 
+  const handleShareProfile = (profile: SettingsProfile) => {
+    try {
+      const profileData = {
+        desktopLayoutMode: profile.desktopLayoutMode,
+        autoPlay: profile.autoPlay,
+        videoQuality: profile.videoQuality,
+        haptics: profile.haptics,
+      };
+      
+      const encodedData = btoa(JSON.stringify(profileData));
+      const shareUrl = `${window.location.origin}${window.location.pathname}?profile=${encodedData}`;
+      
+      navigator.clipboard.writeText(shareUrl);
+      toast.success('Share link copied to clipboard!');
+      triggerHaptic?.('light', 'interactions');
+    } catch (error) {
+      console.error('Error sharing profile:', error);
+      toast.error('Failed to generate share link');
+      triggerHaptic?.('heavy', 'errors');
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -374,14 +434,25 @@ export function FeedSettingsDialog({
                           <Check className="inline-block ml-2 h-3 w-3 text-primary" />
                         )}
                       </button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteProfile(profile.name)}
-                        className="h-7 w-7 p-0 hover:text-destructive"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleShareProfile(profile)}
+                          className="h-7 w-7 p-0 hover:text-primary"
+                          title="Copy share link"
+                        >
+                          <Share2 className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteProfile(profile.name)}
+                          className="h-7 w-7 p-0 hover:text-destructive"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
