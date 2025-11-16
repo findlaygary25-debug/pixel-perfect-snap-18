@@ -100,7 +100,7 @@ export default function Feed() {
   const abrCheckInterval = useRef<NodeJS.Timeout | null>(null);
 
   // Enhanced haptic feedback helper with custom patterns
-  const triggerHaptic = async (pattern: 'light' | 'medium' | 'heavy' | 'success' | 'notification' | 'achievement' = 'light') => {
+  const triggerHaptic = async (pattern: 'light' | 'medium' | 'heavy' | 'success' | 'notification' | 'achievement' | 'warning' | 'error' = 'light') => {
     try {
       switch (pattern) {
         case 'light':
@@ -129,6 +129,17 @@ export default function Feed() {
           setTimeout(async () => {
             await Haptics.vibrate({ duration: 30 });
           }, 100);
+          break;
+        case 'warning':
+          // Warning pattern: double tap with warning notification
+          await Haptics.notification({ type: NotificationType.Warning });
+          break;
+        case 'error':
+          // Error pattern: triple pulse with error notification
+          await Haptics.notification({ type: NotificationType.Error });
+          setTimeout(async () => {
+            await Haptics.impact({ style: ImpactStyle.Medium });
+          }, 150);
           break;
       }
     } catch (error) {
@@ -711,15 +722,43 @@ export default function Feed() {
         }));
       };
       
+      // Error handling with haptic feedback
+      const handleError = () => {
+        triggerHaptic('error');
+        toast.error('Video playback failed', {
+          description: 'Unable to play this video. Please try again.'
+        });
+      };
+      
+      const handleStalled = () => {
+        triggerHaptic('warning');
+      };
+      
+      const handleWaiting = () => {
+        // Trigger warning haptic for buffering (with debouncing to avoid too many triggers)
+        const lastWarning = (element as any)._lastBufferingWarning || 0;
+        const now = Date.now();
+        if (now - lastWarning > 2000) { // Only trigger once every 2 seconds
+          triggerHaptic('warning');
+          (element as any)._lastBufferingWarning = now;
+        }
+      };
+      
       element.addEventListener('timeupdate', handleTimeUpdate);
       element.addEventListener('progress', handleProgress);
       element.addEventListener('loadedmetadata', handleLoadedMetadata);
+      element.addEventListener('error', handleError);
+      element.addEventListener('stalled', handleStalled);
+      element.addEventListener('waiting', handleWaiting);
       
       // Store cleanup function
       (element as any)._cleanup = () => {
         element.removeEventListener('timeupdate', handleTimeUpdate);
         element.removeEventListener('progress', handleProgress);
         element.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        element.removeEventListener('error', handleError);
+        element.removeEventListener('stalled', handleStalled);
+        element.removeEventListener('waiting', handleWaiting);
       };
     } else {
       const video = videoRefs.current.get(videoId);
