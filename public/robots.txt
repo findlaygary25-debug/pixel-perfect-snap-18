@@ -12,3 +12,6 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+Sitemap: https://voice2fire.com/sitemap.xml
+Sitemap: https://konbogydmhjhrlaskbgv.supabase.co/functions/v1/generate-video-sitemap
