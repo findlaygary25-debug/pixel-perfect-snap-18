@@ -5,6 +5,7 @@ import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import CommentsDrawer from "@/components/CommentsDrawer";
 import { PromotePostDialog } from "@/components/PromotePostDialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -96,6 +97,16 @@ export default function Feed() {
   const [activeQuality, setActiveQuality] = useState<Record<string, '360p' | '480p' | '720p' | '1080p'>>({});
   const [bufferHealth, setBufferHealth] = useState<Record<string, number>>({});
   const abrCheckInterval = useRef<NodeJS.Timeout | null>(null);
+
+  // Helper function to trigger haptic feedback safely
+  const triggerHaptic = async (style: ImpactStyle = ImpactStyle.Light) => {
+    try {
+      await Haptics.impact({ style });
+    } catch (error) {
+      // Haptics not supported on this device/browser, fail silently
+      console.debug('Haptics not available');
+    }
+  };
 
   // Network speed detection
   useEffect(() => {
@@ -508,6 +519,7 @@ export default function Feed() {
       switch (e.code) {
         case 'Space':
           e.preventDefault();
+          triggerHaptic(ImpactStyle.Light);
           if (videoElement.paused) {
             videoElement.play();
             setPlayingVideos((prev) => new Set(prev).add(currentVisibleVideoId));
@@ -669,6 +681,9 @@ export default function Feed() {
     if (lastTap && lastTap.videoId === videoId && now - lastTap.time < 300) {
       // Double tap detected
       lastTapRef.current = null;
+      
+      // Trigger haptic feedback
+      await triggerHaptic(ImpactStyle.Medium);
       
       // Show heart animation
       setDoubleTapHearts(prev => new Set(prev).add(videoId));
@@ -1021,6 +1036,8 @@ export default function Feed() {
 
   const handleLike = async (videoId: string) => {
     try {
+      await triggerHaptic(ImpactStyle.Light);
+      
       const video = videos.find((v) => v.id === videoId) || followingVideos.find((v) => v.id === videoId);
       if (!video) return;
 
@@ -1052,6 +1069,8 @@ export default function Feed() {
     }
 
     try {
+      await triggerHaptic(ImpactStyle.Medium);
+      
       const isBookmarked = bookmarkedVideos.has(videoId);
 
       if (isBookmarked) {
@@ -1086,6 +1105,8 @@ export default function Feed() {
   };
 
   const handleShare = async (videoId: string) => {
+    await triggerHaptic(ImpactStyle.Light);
+    
     const video = videos.find((v) => v.id === videoId) || followingVideos.find((v) => v.id === videoId);
     if (video) {
       setSelectedShareVideo(video);
@@ -1100,6 +1121,8 @@ export default function Feed() {
     }
 
     try {
+      await triggerHaptic(ImpactStyle.Medium);
+      
       const isFollowing = followedUsers.has(userId);
 
       if (isFollowing) {
@@ -1242,6 +1265,7 @@ export default function Feed() {
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
+                triggerHaptic(ImpactStyle.Light);
                 const videoElement = videoRefs.current.get(video.id);
                 if (!videoElement) return;
                 
