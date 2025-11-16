@@ -63,10 +63,10 @@ export function AppSidebar() {
 
   return (
     <>
-      <Sidebar className={state === "collapsed" ? "w-14" : "w-48"} collapsible="icon">
+      <Sidebar className={state === "collapsed" ? "w-14" : "w-40 md:w-48"} collapsible="icon">
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupLabel>Voice2Fire</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-xs md:text-sm">Voice2Fire</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {items.map((item) => (
@@ -78,8 +78,8 @@ export function AppSidebar() {
                         className="hover:bg-muted/50"
                         activeClassName="bg-muted text-primary font-medium"
                       >
-                        <item.icon className="h-4 w-4" />
-                        {state !== "collapsed" && <span className="text-sm">{item.title}</span>}
+                        <item.icon className="h-4 w-4 flex-shrink-0" />
+                        {state !== "collapsed" && <span className="text-xs md:text-sm truncate">{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -88,8 +88,8 @@ export function AppSidebar() {
                 {isAuthenticated && (
                   <SidebarMenuItem>
                     <SidebarMenuButton onClick={() => setAdvertiseDialogOpen(true)}>
-                      <Megaphone className="h-4 w-4" />
-                      {state !== "collapsed" && <span className="text-sm">Advertise</span>}
+                      <Megaphone className="h-4 w-4 flex-shrink-0" />
+                      {state !== "collapsed" && <span className="text-xs md:text-sm truncate">Advertise</span>}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )}
