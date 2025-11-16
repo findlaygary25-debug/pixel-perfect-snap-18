@@ -76,6 +76,7 @@ export default function Feed() {
   const [videoProgress, setVideoProgress] = useState<Record<string, { current: number; duration: number; buffered: number }>>({});
   const [hoveredProgress, setHoveredProgress] = useState<{ videoId: string; percentage: number; x: number; thumbnail: string } | null>(null);
   const [justFollowed, setJustFollowed] = useState<string | null>(null);
+  const [followerCounts, setFollowerCounts] = useState<Record<string, number>>({});
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const videoMilestones = useRef<Map<string, Set<number>>>(new Map()); // Track triggered milestones per video
   const [currentVisibleVideoId, setCurrentVisibleVideoId] = useState<string | null>(null);
@@ -1002,6 +1003,17 @@ export default function Feed() {
           .select("user_id, avatar_url")
           .in("user_id", userIds);
         
+        // Fetch follower counts for all users
+        const followerCountsMap: Record<string, number> = {};
+        for (const userId of userIds) {
+          const { count } = await supabase
+            .from("follows")
+            .select("*", { count: 'exact', head: true })
+            .eq("followed_id", userId);
+          followerCountsMap[userId] = count || 0;
+        }
+        setFollowerCounts(followerCountsMap);
+        
         const profilesMap = new Map(profilesData?.map(p => [p.user_id, p.avatar_url]) || []);
         
         const videosWithAvatars = data.map(video => ({
@@ -1061,6 +1073,17 @@ export default function Feed() {
           .from("profiles")
           .select("user_id, avatar_url")
           .in("user_id", userIds);
+        
+        // Fetch follower counts for all users
+        const followerCountsMap: Record<string, number> = {};
+        for (const userId of userIds) {
+          const { count } = await supabase
+            .from("follows")
+            .select("*", { count: 'exact', head: true })
+            .eq("followed_id", userId);
+          followerCountsMap[userId] = count || 0;
+        }
+        setFollowerCounts(prev => ({ ...prev, ...followerCountsMap }));
         
         const profilesMap = new Map(profilesData?.map(p => [p.user_id, p.avatar_url]) || []);
         
@@ -1424,6 +1447,13 @@ export default function Feed() {
           next.delete(userId);
           return next;
         });
+        
+        // Update follower count
+        setFollowerCounts(prev => ({
+          ...prev,
+          [userId]: Math.max((prev[userId] || 1) - 1, 0)
+        }));
+        
         toast.success("Unfollowed");
       } else {
         const { error} = await supabase
@@ -1432,6 +1462,12 @@ export default function Feed() {
 
         if (error) throw error;
         setFollowedUsers(prev => new Set(prev).add(userId));
+        
+        // Update follower count
+        setFollowerCounts(prev => ({
+          ...prev,
+          [userId]: (prev[userId] || 0) + 1
+        }));
         
         // Show success animation
         setJustFollowed(userId);
@@ -2127,6 +2163,11 @@ export default function Feed() {
                   )}
                 </div>
                 <span className="text-xs text-foreground font-medium max-w-[60px] truncate bg-background/80 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-lg">{video.username}</span>
+                {followerCounts[video.user_id] !== undefined && (
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-muted/80 backdrop-blur-sm">
+                    {followerCounts[video.user_id]} {followerCounts[video.user_id] === 1 ? 'follower' : 'followers'}
+                  </Badge>
+                )}
               </div>
             </Button>
           </div>
