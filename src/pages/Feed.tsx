@@ -20,6 +20,7 @@ import { BreadcrumbSchema } from "@/components/BreadcrumbSchema";
 import { SocialShareDialog } from "@/components/SocialShareDialog";
 import { OpenGraphTags } from "@/components/OpenGraphTags";
 import { useHapticSettings } from "@/hooks/useHapticSettings";
+import { AddToCollectionDialog } from "@/components/AddToCollectionDialog";
 
 type VideoPost = {
   id: string;
@@ -87,6 +88,8 @@ export default function Feed() {
   const longPressProgress = useRef<NodeJS.Timeout[]>([]);
   const [longPressActive, setLongPressActive] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{ videoId: string; x: number; y: number } | null>(null);
+  const [addToCollectionDialogOpen, setAddToCollectionDialogOpen] = useState(false);
+  const [selectedCollectionVideo, setSelectedCollectionVideo] = useState<string | null>(null);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [miniPlayerVideo, setMiniPlayerVideo] = useState<{ video: VideoPost; wasPlaying: boolean } | null>(null);
   const videoContainerRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -936,8 +939,9 @@ export default function Feed() {
 
   const fetchBookmarks = async (userId: string) => {
     try {
+      // Check which videos are in any of the user's collections
       const { data, error } = await supabase
-        .from("bookmarks")
+        .from("collection_items")
         .select("video_id")
         .eq("user_id", userId);
 
@@ -1234,40 +1238,9 @@ export default function Feed() {
       return;
     }
 
-    try {
-      await triggerHaptic('success');
-      
-      const isBookmarked = bookmarkedVideos.has(videoId);
-
-      if (isBookmarked) {
-        const { error } = await supabase
-          .from("bookmarks")
-          .delete()
-          .eq("user_id", currentUser)
-          .eq("video_id", videoId);
-
-        if (error) throw error;
-
-        setBookmarkedVideos((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete(videoId);
-          return newSet;
-        });
-        toast.success("Bookmark removed");
-      } else {
-        const { error } = await supabase
-          .from("bookmarks")
-          .insert({ user_id: currentUser, video_id: videoId });
-
-        if (error) throw error;
-
-        setBookmarkedVideos((prev) => new Set(prev).add(videoId));
-        toast.success("Video bookmarked!");
-      }
-    } catch (error) {
-      console.error("Error toggling bookmark:", error);
-      toast.error("Failed to bookmark video");
-    }
+    // Open collection dialog instead of quick bookmark
+    setSelectedCollectionVideo(videoId);
+    setAddToCollectionDialogOpen(true);
   };
 
   // Long-press handlers with progressive haptic feedback
@@ -1373,14 +1346,14 @@ export default function Feed() {
     
     switch (action) {
       case 'save':
-        await handleBookmark(videoId);
+        setSelectedCollectionVideo(videoId);
+        setAddToCollectionDialogOpen(true);
         break;
       case 'report':
         toast.info('Report functionality coming soon');
         break;
       case 'notInterested':
         toast.success('Marked as not interested');
-        // Could implement hiding video from feed here
         break;
     }
   };
@@ -2403,6 +2376,20 @@ export default function Feed() {
           username={selectedShareVideo.username}
         />
       )}
+      
+      <AddToCollectionDialog
+        open={addToCollectionDialogOpen}
+        onClose={() => {
+          setAddToCollectionDialogOpen(false);
+          setSelectedCollectionVideo(null);
+          // Refresh bookmarked videos state
+          if (currentUser) {
+            fetchBookmarks(currentUser);
+          }
+        }}
+        videoId={selectedCollectionVideo || ""}
+        currentUser={currentUser}
+      />
       
       {/* Chapters Management Dialog */}
       <Dialog open={chaptersDialogOpen} onOpenChange={setChaptersDialogOpen}>

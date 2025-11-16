@@ -165,6 +165,81 @@ export type Database = {
           },
         ]
       }
+      collection_items: {
+        Row: {
+          collection_id: string
+          created_at: string
+          id: string
+          order_index: number
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          collection_id: string
+          created_at?: string
+          id?: string
+          order_index?: number
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          collection_id?: string
+          created_at?: string
+          id?: string
+          order_index?: number
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collection_items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_items_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collections: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_default: boolean
+          name: string
+          order_index: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean
+          name: string
+          order_index?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean
+          name?: string
+          order_index?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           comment_text: string
