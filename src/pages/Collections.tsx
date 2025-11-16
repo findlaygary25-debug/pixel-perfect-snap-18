@@ -7,11 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { FolderPlus, Trash2, Edit, Play, GripVertical, Image, Copy } from "lucide-react";
+import { FolderPlus, Trash2, Edit, Play, GripVertical, Image, Copy, Sparkles } from "lucide-react";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { CollectionCover } from "@/components/CollectionCover";
 import { UploadCoverImageDialog } from "@/components/UploadCoverImageDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { CreateSmartCollectionDialog } from "@/components/CreateSmartCollectionDialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useNavigate } from "react-router-dom";
@@ -25,6 +27,9 @@ type Collection = {
   created_at: string;
   video_count?: number;
   cover_image_url?: string | null;
+  is_smart: boolean;
+  rule_type?: string | null;
+  rule_config?: any;
 };
 
 function SortableCollectionCard({ collection, onEdit, onDelete, onCoverUpdate, onDuplicate }: { 
@@ -85,9 +90,15 @@ function SortableCollectionCard({ collection, onEdit, onDelete, onCoverUpdate, o
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-lg flex items-center gap-2">
+                      {collection.is_smart && (
+                        <Sparkles className="h-4 w-4 text-primary" />
+                      )}
                       {collection.name}
                       {collection.is_default && (
                         <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">Default</span>
+                      )}
+                      {collection.is_smart && (
+                        <span className="text-xs bg-secondary/10 text-secondary-foreground px-2 py-1 rounded-full">Smart</span>
                       )}
                     </CardTitle>
                     {collection.description && (
@@ -162,6 +173,7 @@ export default function Collections() {
   const [newCollectionDescription, setNewCollectionDescription] = useState("");
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [duplicatingCollection, setDuplicatingCollection] = useState<Collection | null>(null);
+  const [smartCollectionDialogOpen, setSmartCollectionDialogOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -405,10 +417,24 @@ export default function Collections() {
           <h1 className="text-3xl font-bold">My Collections</h1>
           <p className="text-muted-foreground mt-1">Organize your saved videos into playlists</p>
         </div>
-        <Button onClick={() => setCreateDialogOpen(true)}>
-          <FolderPlus className="h-4 w-4 mr-2" />
-          New Collection
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button>
+              <FolderPlus className="h-4 w-4 mr-2" />
+              New Collection
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setCreateDialogOpen(true)}>
+              <FolderPlus className="h-4 w-4 mr-2" />
+              Regular Collection
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setSmartCollectionDialogOpen(true)}>
+              <Sparkles className="h-4 w-4 mr-2" />
+              Smart Collection
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {collections.length === 0 ? (
@@ -450,13 +476,23 @@ export default function Collections() {
         </div>
       )}
 
+      {/* Smart Collection Dialog */}
+      <CreateSmartCollectionDialog
+        open={smartCollectionDialogOpen}
+        onOpenChange={setSmartCollectionDialogOpen}
+        onSuccess={fetchCollections}
+      />
+
       {/* Duplicate Confirmation Dialog */}
       <AlertDialog open={!!duplicatingCollection} onOpenChange={(open) => !open && setDuplicatingCollection(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Duplicate Collection?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will create a copy of "{duplicatingCollection?.name}" with all its videos.
+              {duplicatingCollection?.is_smart 
+                ? `This will create a copy of the smart collection "${duplicatingCollection?.name}" with the same rules.`
+                : `This will create a copy of "${duplicatingCollection?.name}" with all its videos.`
+              }
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
