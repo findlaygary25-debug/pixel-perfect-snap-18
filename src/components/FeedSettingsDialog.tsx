@@ -27,6 +27,7 @@ type SettingsProfile = {
   videoQuality: 'auto' | '360p' | '480p' | '720p' | '1080p';
   haptics: any;
   tags: string[];
+  usageCount: number;
 };
 
 const AVAILABLE_TAGS = [
@@ -269,6 +270,7 @@ export function FeedSettingsDialog({
       videoQuality,
       haptics: hapticSettings,
       tags: selectedTags,
+      usageCount: 0,
     };
 
     setProfiles([...profiles, newProfile]);
@@ -286,6 +288,14 @@ export function FeedSettingsDialog({
     onVideoQualityChange(profile.videoQuality);
     updateHapticSettings(profile.haptics);
     setCurrentProfile(profile.name);
+    
+    // Increment usage count
+    setProfiles(profiles.map(p => 
+      p.name === profile.name 
+        ? { ...p, usageCount: (p.usageCount || 0) + 1 }
+        : p
+    ));
+    
     toast.success(`Profile "${profile.name}" loaded`);
     triggerHaptic?.('medium', 'interactions');
   };
@@ -350,9 +360,11 @@ export function FeedSettingsDialog({
         const bIndex = profiles.indexOf(b);
         return bIndex - aIndex;
       } else if (sortBy === 'used') {
-        // Show current profile first, then alphabetically
-        if (a.name === currentProfile) return -1;
-        if (b.name === currentProfile) return 1;
+        // Sort by actual usage count (highest first)
+        const aCount = a.usageCount || 0;
+        const bCount = b.usageCount || 0;
+        if (bCount !== aCount) return bCount - aCount;
+        // If usage count is the same, sort alphabetically
         return a.name.localeCompare(b.name);
       }
       return 0;
@@ -558,11 +570,16 @@ export function FeedSettingsDialog({
                       <div className="flex items-center justify-between">
                         <button
                           onClick={() => handleLoadProfile(profile)}
-                          className="flex-1 text-left text-sm font-medium hover:text-primary transition-colors"
+                          className="flex-1 text-left text-sm font-medium hover:text-primary transition-colors flex items-center gap-2"
                         >
-                          {profile.name}
+                          <span>{profile.name}</span>
+                          {profile.usageCount > 0 && (
+                            <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
+                              {profile.usageCount} {profile.usageCount === 1 ? 'use' : 'uses'}
+                            </Badge>
+                          )}
                           {currentProfile === profile.name && (
-                            <Check className="inline-block ml-2 h-3 w-3 text-primary" />
+                            <Check className="h-3 w-3 text-primary" />
                           )}
                         </button>
                         <div className="flex items-center gap-1">
