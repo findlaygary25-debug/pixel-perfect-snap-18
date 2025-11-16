@@ -2075,23 +2075,26 @@ export default function Feed() {
                   transition={{ duration: 1, ease: "easeInOut" }}
                 />
               )}
-              <div className="relative h-full w-full flex items-center justify-center">
-                {video.avatar_url ? (
-                  <img 
-                    src={video.avatar_url} 
-                    alt={video.username}
-                    className="h-12 w-12 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-sm font-semibold text-foreground">{video.username[0].toUpperCase()}</span>
-                  </div>
-                )}
-                {currentUser && video.user_id !== currentUser && !followedUsers.has(video.user_id) && (
-                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-primary rounded-full h-5 w-5 flex items-center justify-center border-2 border-background">
-                    <UserPlus className="h-3 w-3 text-primary-foreground" />
-                  </div>
-                )}
+              <div className="flex flex-col items-center gap-1">
+                <div className="relative">
+                  {video.avatar_url ? (
+                    <img 
+                      src={video.avatar_url} 
+                      alt={video.username}
+                      className="h-12 w-12 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-sm font-semibold text-foreground">{video.username[0].toUpperCase()}</span>
+                    </div>
+                  )}
+                  {currentUser && video.user_id !== currentUser && !followedUsers.has(video.user_id) && (
+                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-primary rounded-full h-5 w-5 flex items-center justify-center border-2 border-background">
+                      <UserPlus className="h-3 w-3 text-primary-foreground" />
+                    </div>
+                  )}
+                </div>
+                <span className="text-xs text-foreground/80 font-medium max-w-[60px] truncate">{video.username}</span>
               </div>
             </Button>
           </div>
