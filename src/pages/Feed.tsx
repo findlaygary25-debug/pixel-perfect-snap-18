@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp, Play, Pause, Volume2, VolumeX, Maximize, Minimize, Subtitles, Settings, X, PictureInPicture, ListVideo, Plus, Edit, Trash2, AlertCircle, Loader2, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
@@ -1572,6 +1573,13 @@ export default function Feed() {
               muted={mutedVideos.has(video.id)}
               loop
             />
+            
+            {/* Quality Indicator Badge */}
+            <div className="absolute top-4 right-4 pointer-events-none z-10">
+              <Badge variant="secondary" className="text-xs font-semibold bg-black/60 backdrop-blur-sm text-white border-none">
+                {currentQuality}
+              </Badge>
+            </div>
             
             {/* Error Indicator */}
             {videoErrors.has(video.id) && (
