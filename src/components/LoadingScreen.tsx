@@ -32,13 +32,13 @@ export const LoadingScreen = () => {
         <div className="relative animate-scale-in">
           <div className="absolute inset-0 animate-pulse opacity-50 blur-3xl">
             <img
-              src="/favicon.png"
+              src="/voice2fire-logo.png"
               alt="Voice2Fire"
               className="w-40 h-40 object-contain"
             />
           </div>
           <img
-            src="/favicon.png"
+            src="/voice2fire-logo.png"
             alt="Voice2Fire"
             className="w-40 h-40 object-contain relative z-10 animate-[pulse_2s_ease-in-out_infinite]"
           />
