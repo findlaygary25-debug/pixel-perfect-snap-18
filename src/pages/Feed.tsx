@@ -1545,7 +1545,7 @@ export default function Feed() {
       key={video.id}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="relative h-[calc(100vh-8rem)] w-full max-w-[min(100vw-2rem,calc((100vh-8rem)*9/16))] mx-auto snap-start snap-always"
+      className="relative h-[calc(100vh-8rem)] w-full max-w-[min(100vw-2rem,calc((100vh-8rem)*9/16))] mx-auto snap-start snap-always md:flex md:items-center md:justify-center md:gap-8 md:max-w-none"
     >
       <VideoSchema
         videoId={video.id}
@@ -1567,7 +1567,7 @@ export default function Feed() {
       />
 
       {/* Video container - Responsive with TikTok aspect ratio */}
-      <div className="relative h-full w-full bg-black rounded-lg overflow-hidden">
+      <div className="relative h-full w-full bg-black rounded-lg overflow-hidden md:max-w-[calc((100vh-8rem)*9/16)]">
         <div className="relative h-full w-full">
           <div
             className="relative h-full w-full flex items-center justify-center"
@@ -2078,7 +2078,7 @@ export default function Feed() {
         </div>
         
         {/* Action buttons - positioned on right side */}
-        <div className="absolute right-4 bottom-24 flex flex-col gap-4 z-10 md:right-8 md:top-1/2 md:-translate-y-1/2 md:bottom-auto">
+        <div className="absolute right-4 bottom-24 flex flex-col gap-4 z-10 md:relative md:right-auto md:bottom-auto md:flex md:justify-center">
           {/* Profile/Follow button - Always shown with profile image */}
           <div className="flex flex-col items-center gap-2">
             <Button
