@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Settings, Layers, LayoutPanelTop, Volume2, Gauge, Vibrate, RotateCcw } from "lucide-react";
+import { useState, useRef } from "react";
+import { Settings, Layers, LayoutPanelTop, Volume2, Gauge, Vibrate, RotateCcw, Download, Upload } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -37,6 +37,7 @@ export function FeedSettingsDialog({
 }: FeedSettingsProps) {
   const [open, setOpen] = useState(false);
   const { settings: hapticSettings, updateSettings: updateHapticSettings, resetSettings } = useHapticSettings();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleLayoutChange = (newMode: 'side-panel' | 'overlay') => {
     onLayoutModeChange(newMode);
@@ -82,6 +83,80 @@ export function FeedSettingsDialog({
     triggerHaptic?.('medium', 'interactions');
   };
 
+  const handleExportSettings = () => {
+    const settingsData = {
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      settings: {
+        desktopLayoutMode,
+        autoPlay,
+        videoQuality,
+        haptics: hapticSettings,
+      },
+    };
+
+    const blob = new Blob([JSON.stringify(settingsData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `feed-settings-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast.success('Settings exported successfully');
+    triggerHaptic?.('light', 'interactions');
+  };
+
+  const handleImportSettings = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const data = JSON.parse(content);
+
+        // Validate the settings structure
+        if (!data.settings) {
+          throw new Error('Invalid settings file format');
+        }
+
+        // Apply the imported settings
+        if (data.settings.desktopLayoutMode) {
+          onLayoutModeChange(data.settings.desktopLayoutMode);
+        }
+        if (data.settings.autoPlay !== undefined) {
+          onAutoPlayChange(data.settings.autoPlay);
+        }
+        if (data.settings.videoQuality) {
+          onVideoQualityChange(data.settings.videoQuality);
+        }
+        if (data.settings.haptics) {
+          updateHapticSettings(data.settings.haptics);
+        }
+
+        toast.success('Settings imported successfully');
+        triggerHaptic?.('medium', 'interactions');
+      } catch (error) {
+        console.error('Error importing settings:', error);
+        toast.error('Failed to import settings. Please check the file format.');
+        triggerHaptic?.('heavy', 'errors');
+      }
+    };
+
+    reader.readAsText(file);
+    
+    // Reset the input so the same file can be selected again
+    event.target.value = '';
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -98,20 +173,52 @@ export function FeedSettingsDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>Feed Settings</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleResetToDefaults}
-              className="h-8 gap-2 text-muted-foreground hover:text-foreground"
-            >
-              <RotateCcw className="h-3 w-3" />
-              Reset
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleExportSettings}
+                className="h-8 gap-2 text-muted-foreground hover:text-foreground"
+                title="Export settings"
+              >
+                <Download className="h-3 w-3" />
+                Export
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleImportSettings}
+                className="h-8 gap-2 text-muted-foreground hover:text-foreground"
+                title="Import settings"
+              >
+                <Upload className="h-3 w-3" />
+                Import
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleResetToDefaults}
+                className="h-8 gap-2 text-muted-foreground hover:text-foreground"
+                title="Reset to defaults"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Reset
+              </Button>
+            </div>
           </DialogTitle>
           <DialogDescription>
             Customize your feed viewing experience
           </DialogDescription>
         </DialogHeader>
+
+        {/* Hidden file input for importing */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json"
+          onChange={handleFileChange}
+          className="hidden"
+        />
 
         <div className="space-y-6 py-4">
           {/* Desktop Layout Section */}
