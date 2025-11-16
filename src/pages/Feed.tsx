@@ -1502,7 +1502,7 @@ export default function Feed() {
       key={video.id}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="relative h-screen w-full snap-start snap-always"
+      className="relative h-[960px] w-[640px] mx-auto snap-start snap-always"
     >
       <VideoSchema
         videoId={video.id}
@@ -1523,12 +1523,11 @@ export default function Feed() {
         }}
       />
 
-      {/* Full-screen video container - Mobile: full screen, Desktop: centered with 9:16 */}
-      <div className="relative h-full w-full bg-black md:flex md:items-center md:justify-center">
-        {/* Desktop: centered container, Mobile: full width */}
-        <div className="relative h-full w-full md:h-auto md:max-h-screen md:w-auto md:aspect-[9/16]">
+      {/* Video container - fixed 960x640 dimensions */}
+      <div className="relative h-[960px] w-[640px] bg-black">
+        <div className="relative h-[960px] w-[640px]">
           <div
-            className="relative h-full w-full flex items-center justify-center"
+            className="relative h-[960px] w-[640px] flex items-center justify-center"
             onClick={() => handleDoubleTap(video.id)}
             onTouchEnd={() => handleDoubleTap(video.id)}
             onMouseDown={(e) => {
@@ -1567,8 +1566,7 @@ export default function Feed() {
               ref={(el) => setVideoRef(video.id, el)}
               data-video-id={video.id}
               src={video.video_url}
-              className="h-full w-full object-contain"
-              style={{ aspectRatio: '9/16' }}
+              className="h-[960px] w-[640px] object-cover"
               preload="metadata"
               playsInline
               muted={mutedVideos.has(video.id)}
