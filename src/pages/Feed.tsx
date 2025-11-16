@@ -75,6 +75,7 @@ export default function Feed() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [videoProgress, setVideoProgress] = useState<Record<string, { current: number; duration: number; buffered: number }>>({});
   const [hoveredProgress, setHoveredProgress] = useState<{ videoId: string; percentage: number; x: number; thumbnail: string } | null>(null);
+  const [justFollowed, setJustFollowed] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const videoMilestones = useRef<Map<string, Set<number>>>(new Map()); // Track triggered milestones per video
   const [currentVisibleVideoId, setCurrentVisibleVideoId] = useState<string | null>(null);
@@ -1431,6 +1432,11 @@ export default function Feed() {
 
         if (error) throw error;
         setFollowedUsers(prev => new Set(prev).add(userId));
+        
+        // Show success animation
+        setJustFollowed(userId);
+        setTimeout(() => setJustFollowed(null), 2000);
+        
         toast.success("Following!");
       }
     } catch (error) {
@@ -2074,6 +2080,32 @@ export default function Feed() {
                   animate={{ scale: 1.2, opacity: [0.5, 1, 0.5] }}
                   transition={{ duration: 1, ease: "easeInOut" }}
                 />
+              )}
+              {justFollowed === video.user_id && (
+                <motion.div
+                  className="absolute inset-0 flex items-center justify-center"
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                >
+                  <div className="bg-primary rounded-full h-20 w-20 flex items-center justify-center shadow-lg">
+                    <motion.svg
+                      className="h-10 w-10 text-primary-foreground"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
+                    >
+                      <motion.path d="M20 6L9 17l-5-5" />
+                    </motion.svg>
+                  </div>
+                </motion.div>
               )}
               <div className="flex flex-col items-center gap-1">
                 <div className="relative">
