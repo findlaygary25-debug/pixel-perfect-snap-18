@@ -23,6 +23,7 @@ import { OpenGraphTags } from "@/components/OpenGraphTags";
 import { useHapticSettings } from "@/hooks/useHapticSettings";
 import { AddToCollectionDialog } from "@/components/AddToCollectionDialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { FeedSettingsDialog } from "@/components/FeedSettingsDialog";
 
 type VideoPost = {
   id: string;
@@ -80,6 +81,10 @@ export default function Feed() {
   const [desktopLayoutMode, setDesktopLayoutMode] = useState<'side-panel' | 'overlay'>(() => {
     const saved = localStorage.getItem('feed-desktop-layout');
     return (saved === 'side-panel' || saved === 'overlay') ? saved : 'side-panel';
+  });
+  const [autoPlay, setAutoPlay] = useState<boolean>(() => {
+    const saved = localStorage.getItem('feed-auto-play');
+    return saved !== null ? saved === 'true' : true;
   });
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const videoMilestones = useRef<Map<string, Set<number>>>(new Map()); // Track triggered milestones per video
@@ -435,19 +440,22 @@ export default function Feed() {
             });
           }
           
-          video.play().then(() => {
-            if (videoId) {
-              setPlayingVideos((prev) => new Set(prev).add(videoId));
-            }
-          }).catch(() => {
-            if (videoId) {
-              setPlayingVideos((prev) => {
-                const newSet = new Set(prev);
-                newSet.delete(videoId);
-                return newSet;
-              });
-            }
-          });
+          // Only auto-play if enabled
+          if (autoPlay) {
+            video.play().then(() => {
+              if (videoId) {
+                setPlayingVideos((prev) => new Set(prev).add(videoId));
+              }
+            }).catch(() => {
+              if (videoId) {
+                setPlayingVideos((prev) => {
+                  const newSet = new Set(prev);
+                  newSet.delete(videoId);
+                  return newSet;
+                });
+              }
+            });
+          }
         } else {
           // Check if video was playing before pausing
           const wasPlaying = !video.paused;
@@ -482,7 +490,7 @@ export default function Feed() {
     return () => {
       observer.disconnect();
     };
-  }, [videos, followingVideos, activeTab, miniPlayerVideo]);
+  }, [videos, followingVideos, activeTab, miniPlayerVideo, autoPlay]);
 
   // Smart video preloading - preload next 2-3 videos based on current visible video
   useEffect(() => {
@@ -2444,37 +2452,29 @@ export default function Feed() {
         triggerHaptic('light', 'navigation');
         setActiveTab(value);
       }}>
-        {/* Tab switcher and layout toggle - floating at top */}
+        {/* Tab switcher and settings - floating at top */}
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2">
           <TabsList className="bg-background/80 backdrop-blur-sm">
             <TabsTrigger value="forYou">For You</TabsTrigger>
             <TabsTrigger value="following">Following</TabsTrigger>
           </TabsList>
           
-          {/* Desktop Layout Toggle - only visible on desktop */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              const newMode = desktopLayoutMode === 'side-panel' ? 'overlay' : 'side-panel';
-              setDesktopLayoutMode(newMode);
-              localStorage.setItem('feed-desktop-layout', newMode);
-              triggerHaptic('light', 'interactions');
-              toast.success(
-                newMode === 'side-panel' 
-                  ? 'Side panel layout enabled' 
-                  : 'Overlay layout enabled'
-              );
+          {/* Feed Settings Dialog */}
+          <FeedSettingsDialog
+            desktopLayoutMode={desktopLayoutMode}
+            onLayoutModeChange={(mode) => {
+              setDesktopLayoutMode(mode);
+              localStorage.setItem('feed-desktop-layout', mode);
             }}
-            className="hidden md:flex bg-background/80 backdrop-blur-sm hover:bg-background/90"
-            title={desktopLayoutMode === 'side-panel' ? 'Switch to overlay mode' : 'Switch to side panel mode'}
-          >
-            {desktopLayoutMode === 'side-panel' ? (
-              <LayoutPanelTop className="h-4 w-4" />
-            ) : (
-              <Layers className="h-4 w-4" />
-            )}
-          </Button>
+            autoPlay={autoPlay}
+            onAutoPlayChange={(enabled) => {
+              setAutoPlay(enabled);
+              localStorage.setItem('feed-auto-play', String(enabled));
+            }}
+            videoQuality={videoQuality}
+            onVideoQualityChange={setVideoQuality}
+            triggerHaptic={triggerHaptic}
+          />
         </div>
 
         {/* Video feed */}
