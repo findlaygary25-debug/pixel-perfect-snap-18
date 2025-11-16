@@ -214,8 +214,11 @@ export type Database = {
           description: string | null
           id: string
           is_default: boolean
+          is_smart: boolean | null
           name: string
           order_index: number
+          rule_config: Json | null
+          rule_type: string | null
           updated_at: string
           user_id: string
         }
@@ -225,8 +228,11 @@ export type Database = {
           description?: string | null
           id?: string
           is_default?: boolean
+          is_smart?: boolean | null
           name: string
           order_index?: number
+          rule_config?: Json | null
+          rule_type?: string | null
           updated_at?: string
           user_id: string
         }
@@ -236,8 +242,11 @@ export type Database = {
           description?: string | null
           id?: string
           is_default?: boolean
+          is_smart?: boolean | null
           name?: string
           order_index?: number
+          rule_config?: Json | null
+          rule_type?: string | null
           updated_at?: string
           user_id?: string
         }

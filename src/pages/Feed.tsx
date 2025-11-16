@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp, Play, Pause, Volume2, VolumeX, Maximize, Minimize, Subtitles, Settings, X, PictureInPicture, ListVideo, Plus, Edit, Trash2, AlertCircle, Loader2 } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp, Play, Pause, Volume2, VolumeX, Maximize, Minimize, Subtitles, Settings, X, PictureInPicture, ListVideo, Plus, Edit, Trash2, AlertCircle, Loader2, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -21,6 +21,7 @@ import { SocialShareDialog } from "@/components/SocialShareDialog";
 import { OpenGraphTags } from "@/components/OpenGraphTags";
 import { useHapticSettings } from "@/hooks/useHapticSettings";
 import { AddToCollectionDialog } from "@/components/AddToCollectionDialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 
 type VideoPost = {
   id: string;
@@ -1601,35 +1602,6 @@ export default function Feed() {
               )}
             </Button>
             
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                const videoElement = videoRefs.current.get(video.id);
-                if (!videoElement) return;
-                
-                if (mutedVideos.has(video.id)) {
-                  videoElement.muted = false;
-                  setMutedVideos((prev) => {
-                    const next = new Set(prev);
-                    next.delete(video.id);
-                    return next;
-                  });
-                } else {
-                  videoElement.muted = true;
-                  setMutedVideos((prev) => new Set(prev).add(video.id));
-                }
-              }}
-              className="bg-background/80 backdrop-blur-sm rounded-full h-10 w-10 p-0 hover:bg-background/90"
-            >
-              {mutedVideos.has(video.id) ? (
-                <VolumeX className="h-5 w-5" />
-              ) : (
-                <Volume2 className="h-5 w-5" />
-              )}
-            </Button>
-            
             {/* Quality indicator badge (ABR) */}
             {autoQualityEnabled && activeQuality[video.id] && (
               <div className="bg-background/90 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-1.5">
@@ -1642,115 +1614,162 @@ export default function Feed() {
               </div>
             )}
             
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                const videoElement = videoRefs.current.get(video.id);
-                if (!videoElement) return;
-                
-                const videoContainer = videoElement.parentElement;
-                if (!videoContainer) return;
-                
-                if (fullscreenVideoId === video.id) {
-                  // Exit fullscreen
-                  if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                  } else if ((document as any).webkitExitFullscreen) {
-                    (document as any).webkitExitFullscreen();
-                  } else if ((document as any).mozCancelFullScreen) {
-                    (document as any).mozCancelFullScreen();
-                  } else if ((document as any).msExitFullscreen) {
-                    (document as any).msExitFullscreen();
-                  }
-                  setFullscreenVideoId(null);
-                } else {
-                  // Enter fullscreen
-                  if (videoContainer.requestFullscreen) {
-                    videoContainer.requestFullscreen();
-                  } else if ((videoContainer as any).webkitRequestFullscreen) {
-                    (videoContainer as any).webkitRequestFullscreen();
-                  } else if ((videoContainer as any).mozRequestFullScreen) {
-                    (videoContainer as any).mozRequestFullScreen();
-                  } else if ((videoContainer as any).msRequestFullscreen) {
-                    (videoContainer as any).msRequestFullscreen();
-                  }
-                  setFullscreenVideoId(video.id);
-                }
-              }}
-              className="bg-background/80 backdrop-blur-sm rounded-full h-10 w-10 p-0 hover:bg-background/90"
-            >
-              {fullscreenVideoId === video.id ? (
-                <Minimize className="h-5 w-5" />
-              ) : (
-                <Maximize className="h-5 w-5" />
-              )}
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                setCaptionsEnabled(prev => {
-                  const next = new Set(prev);
-                  if (next.has(video.id)) {
-                    next.delete(video.id);
-                  } else {
-                    next.add(video.id);
-                  }
-                  return next;
-                });
-              }}
-              className={cn(
-                "bg-background/80 backdrop-blur-sm rounded-full h-10 w-10 p-0 hover:bg-background/90",
-                captionsEnabled.has(video.id) && "text-primary"
-              )}
-            >
-              <Subtitles className="h-5 w-5" />
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                handlePiPToggle(video.id);
-              }}
-              className={cn(
-                "bg-background/80 backdrop-blur-sm rounded-full h-10 w-10 p-0 hover:bg-background/90",
-                pipVideo === video.id && "text-primary"
-              )}
-            >
-              <PictureInPicture className="h-5 w-5" />
-            </Button>
-            
-            {currentUser === video.user_id && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedChapterVideo(video);
-                  setChaptersDialogOpen(true);
-                }}
-                className={cn(
-                  "bg-background/80 backdrop-blur-sm rounded-full h-10 w-10 p-0 hover:bg-background/90",
-                  videoChapters[video.id]?.length > 0 && "text-primary"
-                )}
-              >
-                <ListVideo className="h-5 w-5" />
-              </Button>
-            )}
-            
-            <Popover>
-              <PopoverTrigger asChild>
+            {/* More options dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={(e) => e.stopPropagation()}
                   className="bg-background/80 backdrop-blur-sm rounded-full h-10 w-10 p-0 hover:bg-background/90"
+                >
+                  <MoreHorizontal className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const videoElement = videoRefs.current.get(video.id);
+                    if (!videoElement) return;
+                    
+                    if (mutedVideos.has(video.id)) {
+                      videoElement.muted = false;
+                      setMutedVideos((prev) => {
+                        const next = new Set(prev);
+                        next.delete(video.id);
+                        return next;
+                      });
+                    } else {
+                      videoElement.muted = true;
+                      setMutedVideos((prev) => new Set(prev).add(video.id));
+                    }
+                  }}
+                >
+                  {mutedVideos.has(video.id) ? (
+                    <>
+                      <Volume2 className="mr-2 h-4 w-4" />
+                      Unmute
+                    </>
+                  ) : (
+                    <>
+                      <VolumeX className="mr-2 h-4 w-4" />
+                      Mute
+                    </>
+                  )}
+                </DropdownMenuItem>
+                
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const videoElement = videoRefs.current.get(video.id);
+                    if (!videoElement) return;
+                    
+                    const videoContainer = videoElement.parentElement;
+                    if (!videoContainer) return;
+                    
+                    if (fullscreenVideoId === video.id) {
+                      if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                      } else if ((document as any).webkitExitFullscreen) {
+                        (document as any).webkitExitFullscreen();
+                      } else if ((document as any).mozCancelFullScreen) {
+                        (document as any).mozCancelFullScreen();
+                      } else if ((document as any).msExitFullscreen) {
+                        (document as any).msExitFullscreen();
+                      }
+                      setFullscreenVideoId(null);
+                    } else {
+                      if (videoContainer.requestFullscreen) {
+                        videoContainer.requestFullscreen();
+                      } else if ((videoContainer as any).webkitRequestFullscreen) {
+                        (videoContainer as any).webkitRequestFullscreen();
+                      } else if ((videoContainer as any).mozRequestFullScreen) {
+                        (videoContainer as any).mozRequestFullScreen();
+                      } else if ((videoContainer as any).msRequestFullscreen) {
+                        (videoContainer as any).msRequestFullscreen();
+                      }
+                      setFullscreenVideoId(video.id);
+                    }
+                  }}
+                >
+                  {fullscreenVideoId === video.id ? (
+                    <>
+                      <Minimize className="mr-2 h-4 w-4" />
+                      Exit Fullscreen
+                    </>
+                  ) : (
+                    <>
+                      <Maximize className="mr-2 h-4 w-4" />
+                      Fullscreen
+                    </>
+                  )}
+                </DropdownMenuItem>
+                
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCaptionsEnabled(prev => {
+                      const next = new Set(prev);
+                      if (next.has(video.id)) {
+                        next.delete(video.id);
+                      } else {
+                        next.add(video.id);
+                      }
+                      return next;
+                    });
+                  }}
+                >
+                  <Subtitles className="mr-2 h-4 w-4" />
+                  {captionsEnabled.has(video.id) ? 'Hide' : 'Show'} Captions
+                </DropdownMenuItem>
+                
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePiPToggle(video.id);
+                  }}
+                >
+                  <PictureInPicture className="mr-2 h-4 w-4" />
+                  Picture-in-Picture
+                </DropdownMenuItem>
+                
+                {currentUser === video.user_id && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedChapterVideo(video);
+                      setChaptersDialogOpen(true);
+                    }}
+                  >
+                    <ListVideo className="mr-2 h-4 w-4" />
+                    Chapters {videoChapters[video.id]?.length > 0 && `(${videoChapters[video.id].length})`}
+                  </DropdownMenuItem>
+                )}
+                
+                <DropdownMenuSeparator />
+                
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    document.getElementById(`settings-trigger-${video.id}`)?.click();
+                  }}
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            {/* Settings popover (hidden trigger) */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  id={`settings-trigger-${video.id}`}
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => e.stopPropagation()}
+                  className="hidden"
                 >
                   <Settings className="h-5 w-5" />
                 </Button>
