@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, subDays, isAfter } from "date-fns";
 import { ProfileAchievements } from "@/components/ProfileAchievements";
+import { AchievementLeaderboard } from "@/components/AchievementLeaderboard";
 
 type ProfileUsageHistory = {
   timestamp: string;
@@ -91,11 +92,12 @@ export function ProfileAnalytics({ profiles, usageHistory }: ProfileAnalyticsPro
   }, [profiles, usageHistory]);
 
   return (
-    <Tabs defaultValue="overview" className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="overview">Overview</TabsTrigger>
-        <TabsTrigger value="achievements">Achievements</TabsTrigger>
-      </TabsList>
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="achievements">Achievements</TabsTrigger>
+            <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
+          </TabsList>
 
       <TabsContent value="overview" className="space-y-4 mt-4">
         {/* Overview Stats */}
@@ -271,6 +273,10 @@ export function ProfileAnalytics({ profiles, usageHistory }: ProfileAnalyticsPro
 
       <TabsContent value="achievements" className="mt-4">
         <ProfileAchievements profiles={profiles} usageHistory={usageHistory} />
+      </TabsContent>
+
+      <TabsContent value="leaderboard" className="mt-4">
+        <AchievementLeaderboard />
       </TabsContent>
     </Tabs>
   );

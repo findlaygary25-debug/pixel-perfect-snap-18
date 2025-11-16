@@ -1,8 +1,11 @@
 import { useMemo } from "react";
 import { Trophy, Star, Zap, Target, Flame, Award, CheckCircle2, Crown, Sparkles } from "lucide-react";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { subDays, isAfter, startOfDay, differenceInDays } from "date-fns";
 
@@ -199,6 +202,78 @@ export function ProfileAchievements({ profiles, usageHistory }: ProfileAchieveme
       };
     });
   }, [profiles, usageHistory]);
+
+  // Sync achievement stats to database
+  useEffect(() => {
+    const syncStatsToDatabase = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const unlockedAchievements = achievements.filter(a => a.unlocked);
+        const tierCounts = {
+          bronze: unlockedAchievements.filter(a => a.tier === 'bronze').length,
+          silver: unlockedAchievements.filter(a => a.tier === 'silver').length,
+          gold: unlockedAchievements.filter(a => a.tier === 'gold').length,
+          platinum: unlockedAchievements.filter(a => a.tier === 'platinum').length,
+        };
+
+        // Calculate streak
+        const sortedHistory = [...usageHistory].sort(
+          (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
+        let currentStreak = 0;
+        let longestStreak = 0;
+        let lastDate: Date | null = null;
+
+        sortedHistory.forEach((record) => {
+          const recordDate = new Date(record.timestamp);
+          recordDate.setHours(0, 0, 0, 0);
+
+          if (!lastDate) {
+            currentStreak = 1;
+            lastDate = recordDate;
+          } else {
+            const dayDiff = Math.floor((lastDate.getTime() - recordDate.getTime()) / (1000 * 60 * 60 * 24));
+            if (dayDiff === 1) {
+              currentStreak++;
+              lastDate = recordDate;
+            } else if (dayDiff > 1) {
+              longestStreak = Math.max(longestStreak, currentStreak);
+              currentStreak = 1;
+              lastDate = recordDate;
+            }
+          }
+        });
+        longestStreak = Math.max(longestStreak, currentStreak);
+
+        // Upsert stats
+        const { error } = await supabase
+          .from('user_achievement_stats')
+          .upsert({
+            user_id: user.id,
+            total_achievements_unlocked: unlockedAchievements.length,
+            total_profile_switches: usageHistory.length,
+            profiles_created: profiles.length,
+            current_streak_days: currentStreak,
+            longest_streak_days: longestStreak,
+            bronze_achievements: tierCounts.bronze,
+            silver_achievements: tierCounts.silver,
+            gold_achievements: tierCounts.gold,
+            platinum_achievements: tierCounts.platinum,
+            last_updated: new Date().toISOString(),
+          }, {
+            onConflict: 'user_id'
+          });
+
+        if (error) throw error;
+      } catch (error) {
+        console.error("Error syncing achievement stats:", error);
+      }
+    };
+
+    syncStatsToDatabase();
+  }, [profiles, usageHistory, achievements]);
 
   const stats = useMemo(() => {
     const unlocked = achievements.filter(a => a.unlocked).length;
