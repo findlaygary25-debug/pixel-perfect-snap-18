@@ -28,6 +28,8 @@ import ImportVideos from "./pages/ImportVideos";
 import ScheduledVideos from "./pages/ScheduledVideos";
 import Live from "./pages/Live";
 import HapticSettings from "./pages/HapticSettings";
+import Collections from "./pages/Collections";
+import CollectionDetail from "./pages/CollectionDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -76,6 +78,8 @@ const App = () => (
           <Route path="/scheduled" element={<ScheduledVideos />} />
           <Route path="/live" element={<Live />} />
           <Route path="/haptic-settings" element={<HapticSettings />} />
+          <Route path="/collections" element={<Collections />} />
+          <Route path="/collections/:id" element={<CollectionDetail />} />
           <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>
