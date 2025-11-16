@@ -30,8 +30,8 @@ export const LoadingScreen = () => {
     >
       <div className="flex flex-col items-center gap-8">
         <div className="relative animate-scale-in">
-          <div className="absolute inset-0 -m-8 animate-pulse opacity-40 blur-3xl bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500 rounded-full" />
-          <div className="absolute inset-0 animate-pulse opacity-30 blur-2xl">
+          <div className="absolute inset-0 -m-8 animate-[pulse_2s_ease-in-out_infinite] opacity-40 blur-3xl bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500 rounded-full" />
+          <div className="absolute inset-0 animate-[pulse_3s_ease-in-out_infinite] opacity-30 blur-2xl">
             <img
               src="/voice2fire-logo.png"
               alt="Voice2Fire"
