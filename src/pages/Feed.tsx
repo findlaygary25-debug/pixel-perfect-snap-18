@@ -17,6 +17,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { VideoSchema } from "@/components/VideoSchema";
 import { BreadcrumbSchema } from "@/components/BreadcrumbSchema";
 import { SocialShareDialog } from "@/components/SocialShareDialog";
+import { OpenGraphTags } from "@/components/OpenGraphTags";
 
 type VideoPost = {
   id: string;
@@ -1844,6 +1845,26 @@ export default function Feed() {
           { name: "Feed", url: "https://voice2fire.com/feed" }
         ]}
       />
+      
+      {/* Dynamic Open Graph tags for current video */}
+      {currentVisibleVideoId && (() => {
+        const currentVideo = [...videos, ...followingVideos].find(v => v.id === currentVisibleVideoId);
+        return currentVideo ? (
+          <OpenGraphTags
+            videoId={currentVideo.id}
+            title={currentVideo.caption || `Video by ${currentVideo.username}`}
+            description={currentVideo.caption || `Watch this video by ${currentVideo.username} on Voice2Fire`}
+            thumbnailUrl={currentVideo.video_url}
+            videoUrl={currentVideo.video_url}
+            author={{
+              name: currentVideo.username,
+              url: `https://voice2fire.com/profile/${currentVideo.user_id}`
+            }}
+            views={currentVideo.views}
+            likes={currentVideo.likes}
+          />
+        ) : null;
+      })()}
       
       {/* Pull to refresh indicator */}
       <div 
