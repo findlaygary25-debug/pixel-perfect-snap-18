@@ -39,6 +39,7 @@ import NotificationAnalytics from "./pages/NotificationAnalytics";
 import NotificationABTests from "./pages/NotificationABTests";
 import PIIAuditLogs from "./pages/PIIAuditLogs";
 import AdminRoles from "./pages/AdminRoles";
+import AdminBootstrap from "./pages/AdminBootstrap";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -98,6 +99,7 @@ const App = () => (
           <Route path="/notification-ab-tests" element={<NotificationABTests />} />
           <Route path="/pii-audit-logs" element={<PIIAuditLogs />} />
           <Route path="/admin/roles" element={<AdminRoles />} />
+          <Route path="/admin/bootstrap" element={<AdminBootstrap />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
               </main>

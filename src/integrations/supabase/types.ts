@@ -58,6 +58,36 @@ export type Database = {
           },
         ]
       }
+      admin_bootstrap_tokens: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          token: string
+          used: boolean | null
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          token: string
+          used?: boolean | null
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          token?: string
+          used?: boolean | null
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
       advertisements: {
         Row: {
           advertiser_id: string
@@ -1737,6 +1767,7 @@ export type Database = {
       }
     }
     Functions: {
+      claim_admin_bootstrap: { Args: { p_token: string }; Returns: Json }
       create_order_with_encrypted_pii: {
         Args: {
           p_affiliate_id?: string
