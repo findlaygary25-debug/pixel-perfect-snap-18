@@ -30,6 +30,7 @@ import Live from "./pages/Live";
 import HapticSettings from "./pages/HapticSettings";
 import Collections from "./pages/Collections";
 import CollectionDetail from "./pages/CollectionDetail";
+import ChallengeHistory from "./pages/ChallengeHistory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -80,6 +81,7 @@ const App = () => (
           <Route path="/haptic-settings" element={<HapticSettings />} />
           <Route path="/collections" element={<Collections />} />
           <Route path="/collections/:id" element={<CollectionDetail />} />
+          <Route path="/challenge-history" element={<ChallengeHistory />} />
           <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>
