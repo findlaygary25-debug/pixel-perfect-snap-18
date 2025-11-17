@@ -25,6 +25,61 @@ Deno.serve(async (req) => {
   }
 
   try {
+    console.log('Flash sale trigger function called');
+
+    // Get the authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('No authorization header provided');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create Supabase client with user's JWT for auth check
+    const supabaseUserClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    // Verify user is authenticated
+    const { data: { user }, error: userError } = await supabaseUserClient.auth.getUser();
+    if (userError || !user) {
+      console.error('User authentication failed:', userError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: Invalid authentication token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('User authenticated:', user.id);
+
+    // Check if user is admin using the is_admin function
+    const { data: isAdminData, error: adminCheckError } = await supabaseUserClient.rpc('is_admin', {
+      _user_id: user.id
+    });
+
+    if (adminCheckError) {
+      console.error('Error checking admin status:', adminCheckError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to verify admin status' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!isAdminData) {
+      console.error('User is not an admin:', user.id);
+      return new Response(
+        JSON.stringify({ error: 'Forbidden: Admin access required to trigger flash sales' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Admin verified, proceeding with flash sale creation');
+
+    // Use service role client for database operations
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);

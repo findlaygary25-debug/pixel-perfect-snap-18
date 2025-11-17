@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -71,6 +72,7 @@ type PerformanceMetrics = {
 
 export default function AdminFlashSales() {
   const navigate = useNavigate();
+  const { isAdmin, loading: adminLoading } = useAdminCheck(true);
   const [loading, setLoading] = useState(true);
   const [cronJobs, setCronJobs] = useState<CronJob[]>([]);
   const [pastSales, setPastSales] = useState<FlashSaleMetrics[]>([]);
@@ -79,29 +81,31 @@ export default function AdminFlashSales() {
   const [deleteJobId, setDeleteJobId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchData();
+    if (isAdmin) {
+      fetchData();
 
-    // Set up real-time updates for promotional banners
-    const channel = supabase
-      .channel('admin-flash-sales')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'promotional_banners',
-          filter: 'banner_type=eq.flash_sale'
-        },
-        () => {
-          fetchFlashSales();
-        }
-      )
-      .subscribe();
+      // Set up real-time updates for promotional banners
+      const channel = supabase
+        .channel('admin-flash-sales')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'promotional_banners',
+            filter: 'banner_type=eq.flash_sale'
+          },
+          () => {
+            fetchFlashSales();
+          }
+        )
+        .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [isAdmin]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -266,7 +270,7 @@ export default function AdminFlashSales() {
     return `${hours}h`;
   };
 
-  if (loading) {
+  if (adminLoading || loading) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -274,6 +278,10 @@ export default function AdminFlashSales() {
         </div>
       </div>
     );
+  }
+
+  if (!isAdmin) {
+    return null;
   }
 
   return (
