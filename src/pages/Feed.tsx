@@ -1608,12 +1608,12 @@ export default function Feed() {
               });
             }
           }}
-          className="absolute inset-0 flex items-center justify-center pointer-events-auto z-10"
+          className="absolute bottom-4 left-4 bg-black/40 px-3 py-3 rounded-full backdrop-blur-md z-10"
         >
           {playingVideos.has(video.id) ? (
-            <Pause className="h-16 w-16 text-white opacity-80 drop-shadow-xl" />
+            <Pause className="h-6 w-6 text-white" />
           ) : (
-            <Play className="h-16 w-16 text-white opacity-80 drop-shadow-xl" />
+            <Play className="h-6 w-6 text-white" />
           )}
         </button>
 
