@@ -40,6 +40,7 @@ import NotificationABTests from "./pages/NotificationABTests";
 import PIIAuditLogs from "./pages/PIIAuditLogs";
 import AdminRoles from "./pages/AdminRoles";
 import AdminBootstrap from "./pages/AdminBootstrap";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -93,6 +94,7 @@ const App = () => (
           <Route path="/collections/:id" element={<CollectionDetail />} />
           <Route path="/challenge-history" element={<ChallengeHistory />} />
           <Route path="/rewards-store" element={<RewardsStore />} />
+          <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/flash-sales" element={<AdminFlashSales />} />
           <Route path="/notification-preferences" element={<NotificationPreferences />} />
           <Route path="/notification-analytics" element={<NotificationAnalytics />} />
