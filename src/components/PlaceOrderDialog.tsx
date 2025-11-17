@@ -1,11 +1,44 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { ShoppingCart } from "lucide-react";
+
+const orderSchema = z.object({
+  quantity: z
+    .number()
+    .int("Quantity must be a whole number")
+    .min(1, "Quantity must be at least 1")
+    .max(999, "Quantity cannot exceed 999"),
+  customer_name: z
+    .string()
+    .trim()
+    .min(1, "Name is required")
+    .max(100, "Name must be less than 100 characters")
+    .regex(/^[a-zA-Z\s'-]+$/, "Name can only contain letters, spaces, hyphens, and apostrophes"),
+  customer_email: z
+    .string()
+    .trim()
+    .min(1, "Email is required")
+    .email("Invalid email address")
+    .max(255, "Email must be less than 255 characters"),
+  customer_phone: z
+    .string()
+    .trim()
+    .min(1, "Phone is required")
+    .regex(/^[\d\s\-\+\(\)]+$/, "Phone can only contain numbers, spaces, and basic formatting characters")
+    .min(10, "Phone must be at least 10 characters")
+    .max(20, "Phone must be less than 20 characters"),
+  shipping_address: z
+    .string()
+    .trim()
+    .min(10, "Address must be at least 10 characters")
+    .max(500, "Address must be less than 500 characters"),
+});
 
 type Product = {
   id: string;
@@ -34,6 +67,26 @@ export function PlaceOrderDialog({ product, open, onOpenChange, onOrderCreated }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate all inputs
+    const validation = orderSchema.safeParse({
+      quantity,
+      customer_name: customerName,
+      customer_email: customerEmail,
+      customer_phone: customerPhone,
+      shipping_address: shippingAddress,
+    });
+
+    if (!validation.success) {
+      const errorMessage = validation.error.errors[0]?.message || "Invalid input";
+      toast({
+        title: "Validation Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -54,6 +107,9 @@ export function PlaceOrderDialog({ product, open, onOpenChange, onOrderCreated }
         .eq("user_id", user.id)
         .single();
 
+      // Use validated and sanitized data
+      const validatedData = validation.data;
+
       // Create order with affiliate tracking
       const { data: order, error: orderError } = await supabase
         .from("orders")
@@ -61,10 +117,10 @@ export function PlaceOrderDialog({ product, open, onOpenChange, onOrderCreated }
           customer_id: user.id,
           store_id: product.store_id,
           total_amount: totalAmount,
-          customer_name: customerName,
-          customer_email: customerEmail,
-          customer_phone: customerPhone,
-          shipping_address: shippingAddress,
+          customer_name: validatedData.customer_name,
+          customer_email: validatedData.customer_email,
+          customer_phone: validatedData.customer_phone,
+          shipping_address: validatedData.shipping_address,
           affiliate_id: profile?.referred_by || null, // Track the affiliate
         })
         .select()

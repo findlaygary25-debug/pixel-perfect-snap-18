@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,55 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+
+const abTestSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(3, "Test name must be at least 3 characters")
+    .max(100, "Test name must be less than 100 characters"),
+  description: z
+    .string()
+    .trim()
+    .min(10, "Description must be at least 10 characters")
+    .max(500, "Description must be less than 500 characters"),
+  notification_type: z.enum(["flash_sale", "challenge", "follow", "comment", "share"]),
+  variants: z
+    .array(
+      z.object({
+        name: z.string().min(1, "Variant name is required"),
+        title: z
+          .string()
+          .trim()
+          .min(3, "Title must be at least 3 characters")
+          .max(100, "Title must be less than 100 characters"),
+        body: z
+          .string()
+          .trim()
+          .min(10, "Message body must be at least 10 characters")
+          .max(300, "Message body must be less than 300 characters"),
+        ctaText: z
+          .string()
+          .trim()
+          .max(50, "CTA text must be less than 50 characters")
+          .optional(),
+        ctaLink: z
+          .string()
+          .trim()
+          .max(500, "CTA link must be less than 500 characters")
+          .refine((val) => !val || val.startsWith("/") || val.startsWith("http://") || val.startsWith("https://"), {
+            message: "CTA link must be a valid URL or relative path",
+          })
+          .optional(),
+        allocation: z.number().int().min(0).max(100),
+      })
+    )
+    .min(2, "Must have at least 2 variants")
+    .refine((variants) => {
+      const total = variants.reduce((sum, v) => sum + v.allocation, 0);
+      return total === 100;
+    }, "Traffic allocation must total 100%"),
+});
 
 interface CreateABTestDialogProps {
   open: boolean;
@@ -63,20 +113,24 @@ export function CreateABTestDialog({ open, onOpenChange, onTestCreated }: Create
   };
 
   const handleSubmit = async () => {
-    if (!testName || !description) {
-      toast.error("Please fill in test name and description");
-      return;
-    }
+    // Validate all inputs
+    const validation = abTestSchema.safeParse({
+      name: testName,
+      description,
+      notification_type: notificationType,
+      variants: variants.map(v => ({
+        name: v.name,
+        title: v.title,
+        body: v.body,
+        ctaText: v.ctaText || "",
+        ctaLink: v.ctaLink || "",
+        allocation: v.allocation,
+      })),
+    });
 
-    const hasEmptyVariants = variants.some(v => !v.title || !v.body);
-    if (hasEmptyVariants) {
-      toast.error("Please fill in all variant details");
-      return;
-    }
-
-    const totalAllocation = variants.reduce((sum, v) => sum + v.allocation, 0);
-    if (totalAllocation !== 100) {
-      toast.error("Traffic allocation must total 100%");
+    if (!validation.success) {
+      const errorMessage = validation.error.errors[0]?.message || "Invalid input";
+      toast.error(errorMessage);
       return;
     }
 
@@ -85,13 +139,15 @@ export function CreateABTestDialog({ open, onOpenChange, onTestCreated }: Create
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
+      const validatedData = validation.data;
+
       // Create test
       const { data: test, error: testError } = await supabase
         .from('notification_ab_tests')
         .insert({
-          name: testName,
-          description,
-          notification_type: notificationType,
+          name: validatedData.name,
+          description: validatedData.description,
+          notification_type: validatedData.notification_type,
           status: 'draft',
           created_by: user.id,
         })
@@ -100,14 +156,14 @@ export function CreateABTestDialog({ open, onOpenChange, onTestCreated }: Create
 
       if (testError) throw testError;
 
-      // Create variants
-      const variantInserts = variants.map(v => ({
+      // Create variants with validated data
+      const variantInserts = validatedData.variants.map(v => ({
         test_id: test.id,
         variant_name: v.name,
         message_title: v.title,
         message_body: v.body,
-        cta_text: v.ctaText,
-        cta_link: v.ctaLink,
+        cta_text: v.ctaText || null,
+        cta_link: v.ctaLink || null,
         traffic_allocation: v.allocation,
       }));
 

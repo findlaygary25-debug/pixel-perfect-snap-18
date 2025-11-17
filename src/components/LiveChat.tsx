@@ -1,10 +1,19 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
 import { toast } from "sonner";
+
+const messageSchema = z.object({
+  message: z
+    .string()
+    .trim()
+    .min(1, "Message cannot be empty")
+    .max(300, "Message must be less than 300 characters"),
+});
 
 interface Message {
   id: string;
@@ -75,7 +84,18 @@ export default function LiveChat({ liveStreamId, currentUserId, currentUsername 
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim()) return;
+    // Validate input
+    const validation = messageSchema.safeParse({
+      message: newMessage,
+    });
+
+    if (!validation.success) {
+      const errorMessage = validation.error.errors[0]?.message || "Invalid message";
+      toast.error(errorMessage);
+      return;
+    }
+
+    const sanitizedMessage = validation.data.message;
 
     const { error } = await supabase
       .from("live_stream_messages")
@@ -83,7 +103,7 @@ export default function LiveChat({ liveStreamId, currentUserId, currentUsername 
         live_stream_id: liveStreamId,
         user_id: currentUserId,
         username: currentUsername,
-        message: newMessage.trim()
+        message: sanitizedMessage
       });
 
     if (error) {

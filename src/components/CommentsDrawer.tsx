@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { z } from "zod";
 import {
   Drawer,
   DrawerContent,
@@ -12,6 +13,15 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send } from "lucide-react";
+
+const commentSchema = z.object({
+  comment_text: z
+    .string()
+    .trim()
+    .min(1, "Comment cannot be empty")
+    .max(500, "Comment must be less than 500 characters")
+    .refine((val) => val.length > 0, "Comment cannot be empty"),
+});
 
 type Comment = {
   id: string;
@@ -78,23 +88,31 @@ export default function CommentsDrawer({
   };
 
   const handleAddComment = async () => {
-    if (!newComment.trim()) {
-      toast.error("Please enter a comment");
-      return;
-    }
-
     if (!currentUser) {
       toast.error("Please login to comment");
       return;
     }
 
+    // Validate input
+    const validation = commentSchema.safeParse({
+      comment_text: newComment,
+    });
+
+    if (!validation.success) {
+      const errorMessage = validation.error.errors[0]?.message || "Invalid comment";
+      toast.error(errorMessage);
+      return;
+    }
+
     setLoading(true);
     try {
+      const sanitizedComment = validation.data.comment_text;
+
       const { error } = await supabase.from("comments").insert({
         video_id: videoId,
         user_id: currentUser.id,
         username: currentUser.username,
-        comment_text: newComment.trim(),
+        comment_text: sanitizedComment,
       });
 
       if (error) throw error;
