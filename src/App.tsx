@@ -8,6 +8,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { NotificationBell } from "@/components/NotificationBell";
 import { BottomNav } from "@/components/BottomNav";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { FlashSaleAlert } from "@/components/FlashSaleAlert";
 import Index from "./pages/Index";
 import Feed from "./pages/Feed";
 import Activity from "./pages/Activity";
@@ -42,6 +43,7 @@ const App = () => (
       <LoadingScreen />
       <Toaster />
       <Sonner />
+      <FlashSaleAlert />
       <BrowserRouter>
         <SidebarProvider defaultOpen={false}>
           <div className="flex min-h-screen w-full">
