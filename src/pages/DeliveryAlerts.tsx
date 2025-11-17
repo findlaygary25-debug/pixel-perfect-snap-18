@@ -16,7 +16,9 @@ import {
   AlertCircle,
   RefreshCw,
   Clock,
-  Shield
+  Shield,
+  ArrowUp,
+  Users
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -37,6 +39,10 @@ interface DeliveryAlert {
   resolved: boolean;
   resolved_at: string | null;
   created_at: string;
+  escalation_level: number;
+  escalated_at: string | null;
+  escalated_to: string[];
+  escalation_history: any[];
 }
 
 export default function DeliveryAlerts() {
@@ -107,9 +113,19 @@ export default function DeliveryAlerts() {
             });
           } else if (payload.eventType === 'UPDATE') {
             const updatedAlert = payload.new as DeliveryAlert;
+            const oldAlert = payload.old as DeliveryAlert;
+            
             setAlerts(prev => prev.map(alert => 
               alert.id === updatedAlert.id ? updatedAlert : alert
             ));
+
+            // Check if this was an escalation
+            if (updatedAlert.escalation_level > (oldAlert?.escalation_level || 0)) {
+              toast.warning(`🔴 Alert Escalated to Level ${updatedAlert.escalation_level}`, {
+                description: `${updatedAlert.title} - ${updatedAlert.escalated_to.length} admin(s) notified`,
+                duration: 8000,
+              });
+            }
           }
         }
       )
@@ -269,7 +285,7 @@ export default function DeliveryAlerts() {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Alerts</CardTitle>
@@ -279,6 +295,21 @@ export default function DeliveryAlerts() {
             <div className="text-2xl font-bold">{activeAlerts.length}</div>
             <p className="text-xs text-muted-foreground">
               {criticalAlerts.length} critical
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Escalated</CardTitle>
+            <ArrowUp className="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {activeAlerts.filter(a => a.escalation_level > 0).length}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              requiring attention
             </p>
           </CardContent>
         </Card>
@@ -304,13 +335,13 @@ export default function DeliveryAlerts() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Next Check</CardTitle>
+            <CardTitle className="text-sm font-medium">Auto-Escalation</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">~{15 - (new Date().getMinutes() % 15)} min</div>
+            <div className="text-2xl font-bold">~{5 - (new Date().getMinutes() % 5)} min</div>
             <p className="text-xs text-muted-foreground">
-              Runs every 15 minutes
+              Next escalation check
             </p>
           </CardContent>
         </Card>
@@ -355,6 +386,12 @@ export default function DeliveryAlerts() {
                           <div className="flex items-center gap-2">
                             {getSeverityBadge(alert.severity)}
                             <Badge variant="outline">{getAlertTypeLabel(alert.alert_type)}</Badge>
+                            {alert.escalation_level > 0 && (
+                              <Badge className="bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 flex items-center gap-1">
+                                <ArrowUp className="h-3 w-3" />
+                                Escalated (L{alert.escalation_level})
+                              </Badge>
+                            )}
                           </div>
                         </div>
                         <Button
@@ -405,7 +442,55 @@ export default function DeliveryAlerts() {
                             <span className="text-green-500">✓ {alert.alert_sent_at && format(new Date(alert.alert_sent_at), 'PPp')}</span>
                           </div>
                         )}
+                        {alert.escalation_level > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Escalation Level:</span>
+                            <span className="font-medium text-orange-500">
+                              Level {alert.escalation_level} • {alert.escalated_to.length} admin{alert.escalated_to.length !== 1 ? 's' : ''} notified
+                            </span>
+                          </div>
+                        )}
+                        {alert.escalated_at && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Last Escalated:</span>
+                            <span>{format(new Date(alert.escalated_at), 'PPp')}</span>
+                          </div>
+                        )}
                       </div>
+
+                      {alert.escalation_history && alert.escalation_history.length > 0 && (
+                        <>
+                          <Separator />
+                          <div className="space-y-2">
+                            <h4 className="text-sm font-medium flex items-center gap-2">
+                              <Users className="h-4 w-4" />
+                              Escalation History
+                            </h4>
+                            <div className="space-y-2">
+                              {alert.escalation_history.map((entry: any, index: number) => (
+                                <div key={index} className="text-sm bg-muted/50 p-2 rounded-md">
+                                  <div className="flex justify-between items-start">
+                                    <div>
+                                      <span className="font-medium">Level {entry.level}</span>
+                                      <span className="text-muted-foreground ml-2">
+                                        • {entry.notified_admins} admin{entry.notified_admins !== 1 ? 's' : ''}
+                                      </span>
+                                    </div>
+                                    <span className="text-xs text-muted-foreground">
+                                      {format(new Date(entry.timestamp), 'PPp')}
+                                    </span>
+                                  </div>
+                                  {entry.channels && (
+                                    <div className="text-xs text-muted-foreground mt-1">
+                                      Channels: {entry.channels.join(', ')}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      )}
 
                       {alert.metadata && Object.keys(alert.metadata).length > 0 && (
                         <>
