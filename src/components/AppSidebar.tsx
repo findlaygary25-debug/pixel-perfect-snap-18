@@ -1,4 +1,4 @@
-import { Home, Video, Upload as UploadIcon, Store, Wallet, Users, Mail, Info, Palette, LogIn, User, Activity, BarChart3, Megaphone, HelpCircle, Share2, Youtube, CalendarClock, Radio, X, Settings, FolderHeart, Trophy, Gift } from "lucide-react";
+import { Home, Video, Upload as UploadIcon, Store, Wallet, Users, Mail, Info, Palette, LogIn, User, Activity, BarChart3, Megaphone, HelpCircle, Share2, Youtube, CalendarClock, Radio, X, Settings, FolderHeart, Trophy, Gift, Shield } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +36,7 @@ const baseItems = [
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "Challenge History", url: "/challenge-history", icon: Trophy },
   { title: "Rewards Store", url: "/rewards-store", icon: Gift },
+  { title: "Flash Sales Admin", url: "/admin/flash-sales", icon: Shield },
   { title: "Shares", url: "/shares", icon: Share2 },
   { title: "Wallet", url: "/wallet", icon: Wallet },
   { title: "Affiliate", url: "/affiliate", icon: Users },
