@@ -1555,7 +1555,7 @@ export default function Feed() {
     <div
       key={video.id}
       ref={(el) => setVideoContainerRef(video.id, el)}
-      className="relative h-[100vh] w-full overflow-hidden snap-start snap-always"
+      className="relative flex h-[100vh] w-full items-center justify-center bg-black snap-start snap-always"
     >
       <VideoSchema
         videoId={video.id}
@@ -1576,66 +1576,139 @@ export default function Feed() {
         }}
       />
 
-      {/* Video */}
-      <video
-        ref={(el) => setVideoRef(video.id, el as HTMLVideoElement | null)}
-        data-video-id={video.id}
-        src={video.video_url}
-        className="h-full w-full object-cover"
-        muted={mutedVideos.has(video.id)}
-        playsInline
-        loop
-        preload="metadata"
-      />
+      {/* Inner video frame - limited width on desktop */}
+      <div className="relative h-full w-full max-w-[430px] px-2 flex items-center justify-center">
+        <video
+          ref={(el) => setVideoRef(video.id, el as HTMLVideoElement | null)}
+          data-video-id={video.id}
+          src={video.video_url}
+          className="h-full max-h-[90vh] w-auto mx-auto object-contain md:rounded-2xl"
+          muted={mutedVideos.has(video.id)}
+          playsInline
+          loop
+          preload="metadata"
+        />
 
-      {/* Double-tap heart animation */}
-      {doubleTapHearts.has(video.id) && (
-        <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1.2, opacity: 1 }}
-          exit={{ scale: 1.5, opacity: 0 }}
-          transition={{ duration: 0.5 }}
-          className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
-        >
-          <Heart className="w-24 h-24 text-red-500 fill-red-500" />
-        </motion.div>
-      )}
+        {/* Double-tap heart animation */}
+        {doubleTapHearts.has(video.id) && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1.2, opacity: 1 }}
+            exit={{ scale: 1.5, opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
+          >
+            <Heart className="w-24 h-24 text-red-500 fill-red-500" />
+          </motion.div>
+        )}
 
-      {/* Success checkmark overlay for follow */}
-      {justFollowed === video.user_id && (
-        <motion.div
-          className="absolute inset-0 flex items-center justify-center pointer-events-none z-30"
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0, opacity: 0 }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-        >
-          <div className="bg-primary rounded-full h-20 w-20 flex items-center justify-center shadow-lg">
-            <motion.svg
-              className="h-10 w-10 text-primary-foreground"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
-            >
-              <motion.path d="M20 6L9 17l-5-5" />
-            </motion.svg>
+        {/* Success checkmark overlay for follow */}
+        {justFollowed === video.user_id && (
+          <motion.div
+            className="absolute inset-0 flex items-center justify-center pointer-events-none z-30"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          >
+            <div className="bg-primary rounded-full h-20 w-20 flex items-center justify-center shadow-lg">
+              <motion.svg
+                className="h-10 w-10 text-primary-foreground"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
+              >
+                <motion.path d="M20 6L9 17l-5-5" />
+              </motion.svg>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Caption overlay */}
+        <div className="absolute bottom-20 left-4 right-20 pointer-events-none z-10">
+          <div className="bg-black/40 backdrop-blur-sm rounded-lg px-4 py-3 max-w-md">
+            <p className="text-white font-semibold text-sm mb-1">@{video.username}</p>
+            {video.caption && (
+              <p className="text-white/90 text-sm line-clamp-2">{video.caption}</p>
+            )}
           </div>
-        </motion.div>
-      )}
+        </div>
 
-      {/* Caption overlay */}
-      <div className="absolute bottom-20 left-4 right-20 pointer-events-none z-10">
-        <div className="bg-black/40 backdrop-blur-sm rounded-lg px-4 py-3 max-w-md">
-          <p className="text-white font-semibold text-sm mb-1">@{video.username}</p>
-          {video.caption && (
-            <p className="text-white/90 text-sm line-clamp-2">{video.caption}</p>
-          )}
+        {/* ========================== */}
+        {/*     DESKTOP RIGHT RAIL      */}
+        {/* ========================== */}
+        <div className="hidden md:flex flex-col gap-5 absolute right-[-72px] bottom-24 z-20">
+          {/* PROFILE / FOLLOW BUTTON */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (currentUser && video.user_id !== currentUser) {
+                handleFollow(video.user_id);
+              }
+            }}
+            className="relative h-16 w-16 overflow-hidden rounded-full border border-white/30 bg-black/40 backdrop-blur-sm flex items-center justify-center hover:scale-105 transition-transform"
+          >
+            {video.avatar_url ? (
+              <img
+                src={video.avatar_url}
+                alt={video.username}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <UserPlus className="h-7 w-7 text-white opacity-80" />
+            )}
+
+            {/* PLUS BADGE (only if not following) */}
+            {currentUser && video.user_id !== currentUser && !followedUsers.has(video.user_id) && (
+              <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[12px] font-bold text-white shadow-md">
+                +
+              </span>
+            )}
+          </button>
+
+          {/* LIKE BUTTON */}
+          <button
+            onClick={() => handleLike(video.id)}
+            className="p-3 rounded-full bg-black/40 backdrop-blur-sm text-white flex flex-col items-center hover:scale-105 transition-transform"
+          >
+            <Heart className={`h-7 w-7 ${likedVideos.has(video.id) ? "fill-red-500 text-red-500" : ""}`} />
+            <span className="text-xs mt-1">{video.likes}</span>
+          </button>
+
+          {/* COMMENT BUTTON */}
+          <button
+            onClick={() => {
+              triggerHaptic('medium', 'interactions');
+              setSelectedVideoId(video.id);
+            }}
+            className="p-3 rounded-full bg-black/40 backdrop-blur-sm text-white flex flex-col items-center hover:scale-105 transition-transform"
+          >
+            <MessageCircle className="h-7 w-7" />
+            <span className="text-xs mt-1">{commentCounts[video.id] || 0}</span>
+          </button>
+
+          {/* BOOKMARK BUTTON */}
+          <button
+            onClick={() => handleBookmark(video.id)}
+            className="p-3 rounded-full bg-black/40 backdrop-blur-sm text-white hover:scale-105 transition-transform"
+          >
+            <Bookmark className={`h-7 w-7 ${bookmarkedVideos.has(video.id) ? "fill-yellow-400 text-yellow-400" : ""}`} />
+          </button>
+
+          {/* SHARE BUTTON */}
+          <button
+            onClick={() => handleShare(video.id)}
+            className="p-3 rounded-full bg-black/40 backdrop-blur-sm text-white hover:scale-105 transition-transform"
+          >
+            <Share2 className="h-7 w-7" />
+          </button>
         </div>
       </div>
 
@@ -1664,8 +1737,6 @@ export default function Feed() {
             ) : (
               <UserPlus className="h-6 w-6 text-white opacity-80" />
             )}
-
-            {/* PLUS BADGE (only if not following) */}
             {currentUser && video.user_id !== currentUser && !followedUsers.has(video.user_id) && (
               <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white shadow-md">
                 +
@@ -1710,77 +1781,6 @@ export default function Feed() {
             <Share2 className="h-6 w-6" />
           </button>
         </div>
-      </div>
-
-      {/* ========================== */}
-      {/*     DESKTOP RIGHT RAIL      */}
-      {/* ========================== */}
-      <div className="hidden md:flex flex-col gap-5 absolute right-6 bottom-32 z-20">
-        {/* PROFILE / FOLLOW BUTTON */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (currentUser && video.user_id !== currentUser) {
-              handleFollow(video.user_id);
-            }
-          }}
-          className="relative h-16 w-16 overflow-hidden rounded-full border border-white/30 bg-black/40 backdrop-blur-sm flex items-center justify-center"
-        >
-          {video.avatar_url ? (
-            <img
-              src={video.avatar_url}
-              alt={video.username}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <UserPlus className="h-7 w-7 text-white opacity-80" />
-          )}
-
-          {/* PLUS BADGE (only if not following) */}
-          {currentUser && video.user_id !== currentUser && !followedUsers.has(video.user_id) && (
-            <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[12px] font-bold text-white shadow-md">
-              +
-            </span>
-          )}
-        </button>
-
-        {/* LIKE BUTTON */}
-        <button
-          onClick={() => handleLike(video.id)}
-          className="p-3 rounded-full bg-black/40 backdrop-blur-sm text-white flex flex-col items-center"
-        >
-          <Heart className={`h-7 w-7 ${likedVideos.has(video.id) ? "fill-red-500 text-red-500" : ""}`} />
-          <span className="text-xs mt-1">{video.likes}</span>
-        </button>
-
-        {/* COMMENT BUTTON */}
-        <button
-          onClick={() => {
-            triggerHaptic('medium', 'interactions');
-            setSelectedVideoId(video.id);
-          }}
-          className="p-3 rounded-full bg-black/40 backdrop-blur-sm text-white flex flex-col items-center"
-        >
-          <MessageCircle className="h-7 w-7" />
-          <span className="text-xs mt-1">{commentCounts[video.id] || 0}</span>
-        </button>
-
-        {/* BOOKMARK BUTTON */}
-        <button
-          onClick={() => handleBookmark(video.id)}
-          className="p-3 rounded-full bg-black/40 backdrop-blur-sm text-white"
-        >
-          <Bookmark className={`h-7 w-7 ${bookmarkedVideos.has(video.id) ? "fill-yellow-400 text-yellow-400" : ""}`} />
-        </button>
-
-        {/* SHARE BUTTON */}
-        <button
-          onClick={() => handleShare(video.id)}
-          className="p-3 rounded-full bg-black/40 backdrop-blur-sm text-white"
-        >
-          <Share2 className="h-7 w-7" />
-        </button>
       </div>
     </div>
   );
