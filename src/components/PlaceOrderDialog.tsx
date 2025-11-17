@@ -110,31 +110,32 @@ export function PlaceOrderDialog({ product, open, onOpenChange, onOrderCreated }
       // Use validated and sanitized data
       const validatedData = validation.data;
 
-      // Create order with affiliate tracking
-      const { data: order, error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          customer_id: user.id,
-          store_id: product.store_id,
-          total_amount: totalAmount,
-          customer_name: validatedData.customer_name,
-          customer_email: validatedData.customer_email,
-          customer_phone: validatedData.customer_phone,
-          shipping_address: validatedData.shipping_address,
-          affiliate_id: profile?.referred_by || null, // Track the affiliate
-        })
-        .select()
-        .single();
+      // Create order with encrypted PII using the secure function
+      const { data: orderIdData, error: orderError } = await supabase.rpc(
+        "create_order_with_encrypted_pii",
+        {
+          p_customer_id: user.id,
+          p_store_id: product.store_id,
+          p_total_amount: totalAmount,
+          p_customer_name: validatedData.customer_name,
+          p_customer_email: validatedData.customer_email,
+          p_customer_phone: validatedData.customer_phone,
+          p_shipping_address: validatedData.shipping_address,
+          p_affiliate_id: profile?.referred_by || null,
+        }
+      );
 
       if (orderError) throw orderError;
+      
+      const orderId = orderIdData as string;
 
       // Create order item
       const { error: itemError } = await supabase
         .from("order_items")
         .insert({
-          order_id: order.id,
+          order_id: orderId,
           product_id: product.id,
-          quantity,
+          quantity: validatedData.quantity,
           price_at_purchase: product.price,
         });
 
@@ -143,7 +144,7 @@ export function PlaceOrderDialog({ product, open, onOpenChange, onOrderCreated }
       // Calculate commissions for the affiliate chain
       try {
         await supabase.functions.invoke("calculate-commissions", {
-          body: { orderId: order.id },
+          body: { orderId },
         });
       } catch (commissionError) {
         console.error("Commission calculation error:", commissionError);

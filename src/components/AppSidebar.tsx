@@ -1,4 +1,4 @@
-import { Home, Video, Upload as UploadIcon, Store, Wallet, Users, Mail, Info, Palette, LogIn, User, Activity, BarChart3, Megaphone, HelpCircle, Share2, Youtube, CalendarClock, Radio, X, Settings, FolderHeart, Trophy, Gift, Shield, Bell, TrendingUp, FlaskConical } from "lucide-react";
+import { Home, Video, Upload as UploadIcon, Store, Wallet, Users, Mail, Info, Palette, LogIn, User, Activity, BarChart3, Megaphone, HelpCircle, Share2, Youtube, CalendarClock, Radio, X, Settings, FolderHeart, Trophy, Gift, Shield, Bell, TrendingUp, FlaskConical, FileText } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,6 +45,7 @@ const baseItems = [
   { title: "Notification Preferences", url: "/notification-preferences", icon: Bell },
   { title: "Notification Analytics", url: "/notification-analytics", icon: TrendingUp },
   { title: "A/B Testing", url: "/notification-ab-tests", icon: FlaskConical },
+  { title: "PII Audit Logs", url: "/pii-audit-logs", icon: FileText },
   { title: "About", url: "/about", icon: Info },
   { title: "FAQ", url: "/faq", icon: HelpCircle },
   { title: "Contact", url: "/contact", icon: Mail },

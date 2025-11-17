@@ -1696,8 +1696,14 @@ export type Database = {
         }
         Returns: string
       }
-      decrypt_pii: { Args: { ciphertext: string }; Returns: string }
-      encrypt_pii: { Args: { plaintext: string }; Returns: string }
+      decrypt_pii: {
+        Args: { ciphertext: string; context?: string }
+        Returns: string
+      }
+      encrypt_pii: {
+        Args: { context?: string; plaintext: string }
+        Returns: string
+      }
       get_ab_test_results: {
         Args: { test_id_param: string }
         Returns: {
