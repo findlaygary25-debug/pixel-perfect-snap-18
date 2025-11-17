@@ -1589,6 +1589,60 @@ export default function Feed() {
           preload="metadata"
         />
 
+        {/* PLAY / PAUSE OVERLAY BUTTON */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            const vid = videoRefs.current.get(video.id);
+            if (!vid) return;
+
+            if (vid.paused) {
+              vid.play();
+              setPlayingVideos((prev) => new Set(prev).add(video.id));
+            } else {
+              vid.pause();
+              setPlayingVideos((prev) => {
+                const next = new Set(prev);
+                next.delete(video.id);
+                return next;
+              });
+            }
+          }}
+          className="absolute inset-0 flex items-center justify-center pointer-events-auto z-10"
+        >
+          {!playingVideos.has(video.id) && (
+            <Play className="h-16 w-16 text-white opacity-80 drop-shadow-xl" />
+          )}
+        </button>
+
+        {/* MUTE BUTTON */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            const vid = videoRefs.current.get(video.id);
+            if (!vid) return;
+
+            if (mutedVideos.has(video.id)) {
+              vid.muted = false;
+              setMutedVideos((prev) => {
+                const next = new Set(prev);
+                next.delete(video.id);
+                return next;
+              });
+            } else {
+              vid.muted = true;
+              setMutedVideos((prev) => new Set(prev).add(video.id));
+            }
+          }}
+          className="absolute bottom-4 right-4 bg-black/40 px-3 py-3 rounded-full backdrop-blur-md z-10 hover:bg-black/60 transition-colors"
+        >
+          {mutedVideos.has(video.id) ? (
+            <VolumeX className="h-6 w-6 text-white" />
+          ) : (
+            <Volume2 className="h-6 w-6 text-white" />
+          )}
+        </button>
+
         {/* Double-tap heart animation */}
         {doubleTapHearts.has(video.id) && (
           <motion.div
@@ -1779,65 +1833,6 @@ export default function Feed() {
             className="p-2 rounded-full bg-black/40 backdrop-blur-sm text-white"
           >
             <Share2 className="h-6 w-6" />
-          </button>
-        </div>
-
-        {/* VIDEO CONTROLS - Bottom Center */}
-        <div className="pointer-events-auto flex items-center justify-center gap-3">
-          {/* PAUSE/PLAY BUTTON */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              const videoElement = videoRefs.current.get(video.id);
-              if (!videoElement) return;
-
-              if (playingVideos.has(video.id)) {
-                videoElement.pause();
-                setPlayingVideos((prev) => {
-                  const next = new Set(prev);
-                  next.delete(video.id);
-                  return next;
-                });
-              } else {
-                videoElement.play();
-                setPlayingVideos((prev) => new Set(prev).add(video.id));
-              }
-            }}
-            className="bg-black/40 px-3 py-3 rounded-full backdrop-blur-md hover:bg-black/60 transition-colors"
-          >
-            {playingVideos.has(video.id) ? (
-              <Pause className="h-6 w-6 text-white" />
-            ) : (
-              <Play className="h-6 w-6 text-white" />
-            )}
-          </button>
-
-          {/* MUTE BUTTON */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              const videoElement = videoRefs.current.get(video.id);
-              if (!videoElement) return;
-
-              if (mutedVideos.has(video.id)) {
-                videoElement.muted = false;
-                setMutedVideos((prev) => {
-                  const next = new Set(prev);
-                  next.delete(video.id);
-                  return next;
-                });
-              } else {
-                videoElement.muted = true;
-                setMutedVideos((prev) => new Set(prev).add(video.id));
-              }
-            }}
-            className="bg-black/40 px-3 py-3 rounded-full backdrop-blur-md hover:bg-black/60 transition-colors"
-          >
-            {mutedVideos.has(video.id) ? (
-              <VolumeX className="h-6 w-6 text-white" />
-            ) : (
-              <Volume2 className="h-6 w-6 text-white" />
-            )}
           </button>
         </div>
       </div>
