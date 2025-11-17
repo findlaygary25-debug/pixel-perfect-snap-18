@@ -47,6 +47,7 @@ const baseItems = [
   { title: "Template Editor", url: "/admin/templates", icon: MailIcon },
   { title: "Shares", url: "/shares", icon: Share2 },
   { title: "Gifts", url: "/gifts", icon: Gift },
+  { title: "Gift Leaderboard", url: "/gift-leaderboard", icon: Trophy },
   { title: "Wallet", url: "/wallet", icon: Wallet },
   { title: "Affiliate", url: "/affiliate", icon: Users },
   { title: "Video Studio", url: "/makeup", icon: Palette },

@@ -49,6 +49,7 @@ import EscalationConfig from "./pages/EscalationConfig";
 import NotificationTemplates from "./pages/NotificationTemplates";
 import NotificationTemplateEditor from "./pages/NotificationTemplateEditor";
 import Gifts from "./pages/Gifts";
+import GiftLeaderboard from "./pages/GiftLeaderboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -121,6 +122,7 @@ const App = () => (
           <Route path="/admin/templates/new" element={<NotificationTemplateEditor />} />
           <Route path="/admin/templates/edit/:id" element={<NotificationTemplateEditor />} />
           <Route path="/gifts" element={<Gifts />} />
+          <Route path="/gift-leaderboard" element={<GiftLeaderboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
               </main>
