@@ -609,9 +609,13 @@ export type Database = {
         Row: {
           channel: string
           created_at: string
+          delivered_at: string | null
+          delivery_status: string | null
           error_message: string | null
           external_id: string | null
+          failed_reason: string | null
           id: string
+          last_status_update: string | null
           message: string
           metadata: Json | null
           notification_type: string
@@ -625,9 +629,13 @@ export type Database = {
         Insert: {
           channel: string
           created_at?: string
+          delivered_at?: string | null
+          delivery_status?: string | null
           error_message?: string | null
           external_id?: string | null
+          failed_reason?: string | null
           id?: string
+          last_status_update?: string | null
           message: string
           metadata?: Json | null
           notification_type: string
@@ -641,9 +649,13 @@ export type Database = {
         Update: {
           channel?: string
           created_at?: string
+          delivered_at?: string | null
+          delivery_status?: string | null
           error_message?: string | null
           external_id?: string | null
+          failed_reason?: string | null
           id?: string
+          last_status_update?: string | null
           message?: string
           metadata?: Json | null
           notification_type?: string
