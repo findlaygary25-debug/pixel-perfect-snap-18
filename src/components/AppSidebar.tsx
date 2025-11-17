@@ -133,33 +133,56 @@ export function AppSidebar() {
   if (isMobile) {
     return (
       <>
-        <Drawer open={open} onOpenChange={setOpen}>
-          <DrawerContent className="h-[85vh] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]">
-            <div className="mx-auto mt-4 mb-2 relative">
-              <div className="h-1.5 w-12 rounded-full bg-muted-foreground/30 animate-pulse" />
-              <div className="absolute inset-0 h-1.5 w-12 rounded-full bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20 animate-[pulse_2s_ease-in-out_infinite]" />
-            </div>
-            <DrawerHeader className="border-b pt-2">
-              <DrawerTitle className="flex items-center justify-between">
-                <span>Voice2Fire</span>
-                <button 
-                  onClick={() => setOpen(false)}
-                  className="p-1 hover:bg-muted rounded transition-colors"
-                  aria-label="Close menu"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </DrawerTitle>
-            </DrawerHeader>
-            <div className="overflow-y-auto pb-20 px-2">
-              <SidebarGroup>
-                <SidebarGroupContent>
-                  {menuContent}
-                </SidebarGroupContent>
-              </SidebarGroup>
-            </div>
-          </DrawerContent>
-        </Drawer>
+        {/* Always-visible toggle when closed */}
+        {!open && (
+          <button
+            onClick={() => setOpen(true)}
+            className="fixed left-0 top-4 z-50 bg-primary text-primary-foreground p-2 rounded-r-lg shadow-md hover:bg-primary/90 transition-colors"
+            aria-label="Open menu"
+          >
+            <Home className="h-5 w-5" />
+          </button>
+        )}
+
+        {/* Dark overlay */}
+        {open && (
+          <div
+            onClick={() => setOpen(false)}
+            className="fixed inset-0 bg-black/40 z-40"
+          />
+        )}
+
+        {/* Sliding menu */}
+        <aside
+          className={`
+            fixed top-0 left-0 h-full z-50
+            bg-sidebar text-sidebar-foreground border-r border-sidebar-border
+            transition-transform duration-300
+            w-[50vw] max-w-[280px]
+            ${open ? "translate-x-0" : "-translate-x-full"}
+          `}
+        >
+          {/* Close button inside menu */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-sidebar-border">
+            <span className="font-semibold">Voice2Fire</span>
+            <button
+              onClick={() => setOpen(false)}
+              className="p-2 rounded-md hover:bg-sidebar-accent transition-colors"
+              aria-label="Close menu"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Menu content */}
+          <div className="overflow-y-auto pb-20 px-2 h-[calc(100%-60px)]">
+            <SidebarGroup>
+              <SidebarGroupContent>
+                {menuContent}
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </div>
+        </aside>
 
         <AdvertiseDialog 
           open={advertiseDialogOpen} 
