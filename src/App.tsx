@@ -34,6 +34,7 @@ import CollectionDetail from "./pages/CollectionDetail";
 import ChallengeHistory from "./pages/ChallengeHistory";
 import RewardsStore from "./pages/RewardsStore";
 import AdminFlashSales from "./pages/AdminFlashSales";
+import NotificationPreferences from "./pages/NotificationPreferences";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -88,6 +89,7 @@ const App = () => (
           <Route path="/challenge-history" element={<ChallengeHistory />} />
           <Route path="/rewards-store" element={<RewardsStore />} />
           <Route path="/admin/flash-sales" element={<AdminFlashSales />} />
+          <Route path="/notification-preferences" element={<NotificationPreferences />} />
           <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>

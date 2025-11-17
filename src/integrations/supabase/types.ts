@@ -992,6 +992,81 @@ export type Database = {
         }
         Relationships: []
       }
+      user_notification_preferences: {
+        Row: {
+          challenges_email: boolean
+          challenges_in_app: boolean
+          challenges_sms: boolean
+          comments_email: boolean
+          comments_in_app: boolean
+          comments_sms: boolean
+          created_at: string
+          email_enabled: boolean
+          flash_sales_email: boolean
+          flash_sales_in_app: boolean
+          flash_sales_sms: boolean
+          follows_email: boolean
+          follows_in_app: boolean
+          follows_sms: boolean
+          id: string
+          in_app_enabled: boolean
+          shares_email: boolean
+          shares_in_app: boolean
+          shares_sms: boolean
+          sms_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          challenges_email?: boolean
+          challenges_in_app?: boolean
+          challenges_sms?: boolean
+          comments_email?: boolean
+          comments_in_app?: boolean
+          comments_sms?: boolean
+          created_at?: string
+          email_enabled?: boolean
+          flash_sales_email?: boolean
+          flash_sales_in_app?: boolean
+          flash_sales_sms?: boolean
+          follows_email?: boolean
+          follows_in_app?: boolean
+          follows_sms?: boolean
+          id?: string
+          in_app_enabled?: boolean
+          shares_email?: boolean
+          shares_in_app?: boolean
+          shares_sms?: boolean
+          sms_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          challenges_email?: boolean
+          challenges_in_app?: boolean
+          challenges_sms?: boolean
+          comments_email?: boolean
+          comments_in_app?: boolean
+          comments_sms?: boolean
+          created_at?: string
+          email_enabled?: boolean
+          flash_sales_email?: boolean
+          flash_sales_in_app?: boolean
+          flash_sales_sms?: boolean
+          follows_email?: boolean
+          follows_in_app?: boolean
+          follows_sms?: boolean
+          id?: string
+          in_app_enabled?: boolean
+          shares_email?: boolean
+          shares_in_app?: boolean
+          shares_sms?: boolean
+          sms_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_purchases: {
         Row: {
           id: string
