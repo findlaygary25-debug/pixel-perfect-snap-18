@@ -1552,15 +1552,10 @@ export default function Feed() {
   }, []);
 
   const renderVideoCard = (video: VideoPost) => (
-    <motion.div
-      ref={(el) => setVideoContainerRef(video.id, el)}
+    <div
       key={video.id}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className={cn(
-        "relative h-[calc(100vh-8rem)] w-full max-w-[min(100vw-2rem,calc((100vh-8rem)*9/16))] mx-auto snap-start snap-always",
-        desktopLayoutMode === 'side-panel' && "md:flex md:items-center md:justify-center md:gap-8 md:max-w-none"
-      )}
+      ref={(el) => setVideoContainerRef(video.id, el)}
+      className="relative h-[100vh] w-full overflow-hidden snap-start snap-always"
     >
       <VideoSchema
         videoId={video.id}
@@ -1581,806 +1576,213 @@ export default function Feed() {
         }}
       />
 
-      {/* Video container - Responsive with TikTok aspect ratio */}
-      <div className={cn(
-        "relative h-full w-full bg-black rounded-lg overflow-hidden",
-        desktopLayoutMode === 'side-panel' && "md:max-w-[calc((100vh-8rem)*9/16)]"
-      )}>
-        <div className="relative h-full w-full">
-          <div
-            className="relative h-full w-full flex items-center justify-center"
-            onClick={() => handleDoubleTap(video.id)}
-            onTouchEnd={() => handleDoubleTap(video.id)}
-            onMouseDown={(e) => {
-              handleLongPressStartContextMenu(video.id, e);
-            }}
-            onMouseUp={handleLongPressEnd}
-            onMouseLeave={handleLongPressEnd}
-            onTouchStart={(e) => {
-              handleLongPressStartContextMenu(video.id, e);
-            }}
-            onTouchCancel={handleLongPressEnd}
-            onContextMenu={(e) => e.preventDefault()} // Prevent default context menu
-          >
-            {/* Long-press progress indicator */}
-            {longPressActive === `context-${video.id}` && (
-              <motion.div
-                className="absolute inset-0 pointer-events-none z-10"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                <div className="absolute inset-0 bg-primary/10 backdrop-blur-sm" />
-                <motion.div
-                  className="absolute inset-0 border-4 border-primary"
-                  initial={{ scale: 0.95 }}
-                  animate={{ scale: [0.95, 1.05, 0.95] }}
-                  transition={{ duration: 1, ease: "easeInOut" }}
-                />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
-                  <div className="bg-background/90 backdrop-blur-md rounded-full px-6 py-3 shadow-lg">
-                    <p className="text-foreground font-semibold">Hold for menu...</p>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-            <video
-              ref={(el) => setVideoRef(video.id, el)}
-              data-video-id={video.id}
-              src={video.video_url}
-              className="h-full w-full object-cover"
-              preload="metadata"
-              playsInline
-              muted={mutedVideos.has(video.id)}
-              loop
-            />
-            
-            {/* Quality Indicator Badge */}
-            <div className="absolute top-4 right-4 pointer-events-none z-10">
-              <Badge variant="secondary" className="text-xs font-semibold bg-black/60 backdrop-blur-sm text-white border-none">
-                {currentQuality}
-              </Badge>
-            </div>
-            
-            {/* Error Indicator */}
-            {videoErrors.has(video.id) && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in pointer-events-none">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="bg-destructive/20 backdrop-blur-md rounded-full p-4 animate-scale-in">
-                    <AlertCircle className="h-12 w-12 text-destructive" />
-                  </div>
-                  <div className="text-center px-6">
-                    <p className="text-destructive font-semibold text-lg">Playback Error</p>
-                    <p className="text-destructive-foreground/80 text-sm mt-1">Unable to load video</p>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {/* Buffering Indicator */}
-            {bufferingVideos.has(video.id) && !videoErrors.has(video.id) && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none animate-fade-in">
-                <div className="bg-background/20 backdrop-blur-md rounded-full p-4">
-                  <Loader2 className="h-10 w-10 text-primary animate-spin" />
-                </div>
-              </div>
-            )}
-          
-          {/* Play/Pause and Mute controls */}
-          <div className="absolute top-4 left-4 flex gap-2">
-            <Button
-              variant="ghost"
-              size="rounded-sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                triggerHaptic('light', 'interactions');
-                const videoElement = videoRefs.current.get(video.id);
-                if (!videoElement) return;
-                
-                if (videoElement.paused) {
-                  videoElement.play();
-                  setPlayingVideos((prev) => new Set(prev).add(video.id));
-                } else {
-                  videoElement.pause();
-                  setPlayingVideos((prev) => {
-                    const next = new Set(prev);
-                    next.delete(video.id);
-                    return next;
-                  });
-                }
-              }}
-              className="bg-background/80 backdrop-blur-sm rounded-full h-10 w-10 p-0 hover:bg-background/90"
-            >
-              {playingVideos.has(video.id) ? (
-                <Pause className="h-5 w-5" />
-              ) : (
-                <Play className="h-5 w-5" />
-              )}
-            </Button>
-            
-            {/* Quality indicator badge (ABR) */}
-            {autoQualityEnabled && activeQuality[video.id] && (
-              <div className="bg-background/90 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-1.5">
-                <div className={`h-2 w-2 rounded-full ${
-                  bufferHealth[video.id] >= 10 ? 'bg-green-500' :
-                  bufferHealth[video.id] >= 5 ? 'bg-yellow-500' :
-                  bufferHealth[video.id] >= 2 ? 'bg-orange-500' : 'bg-red-500'
-                } animate-pulse`} />
-                <span className="text-xs font-semibold">{activeQuality[video.id]}</span>
-              </div>
-            )}
-            
-            {/* More options dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="rounded-sm"
-                  onClick={(e) => e.stopPropagation()}
-                  className="bg-background/80 backdrop-blur-sm h-10 w-10 p-0 hover:bg-background/90"
-                >
-                  <MoreHorizontal className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const videoElement = videoRefs.current.get(video.id);
-                    if (!videoElement) return;
-                    
-                    if (mutedVideos.has(video.id)) {
-                      videoElement.muted = false;
-                      setMutedVideos((prev) => {
-                        const next = new Set(prev);
-                        next.delete(video.id);
-                        return next;
-                      });
-                    } else {
-                      videoElement.muted = true;
-                      setMutedVideos((prev) => new Set(prev).add(video.id));
-                    }
-                  }}
-                >
-                  {mutedVideos.has(video.id) ? (
-                    <>
-                      <Volume2 className="mr-2 h-4 w-4" />
-                      Unmute
-                    </>
-                  ) : (
-                    <>
-                      <VolumeX className="mr-2 h-4 w-4" />
-                      Mute
-                    </>
-                  )}
-                </DropdownMenuItem>
-                
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const videoElement = videoRefs.current.get(video.id);
-                    if (!videoElement) return;
-                    
-                    const videoContainer = videoElement.parentElement;
-                    if (!videoContainer) return;
-                    
-                    if (fullscreenVideoId === video.id) {
-                      if (document.exitFullscreen) {
-                        document.exitFullscreen();
-                      } else if ((document as any).webkitExitFullscreen) {
-                        (document as any).webkitExitFullscreen();
-                      } else if ((document as any).mozCancelFullScreen) {
-                        (document as any).mozCancelFullScreen();
-                      } else if ((document as any).msExitFullscreen) {
-                        (document as any).msExitFullscreen();
-                      }
-                      setFullscreenVideoId(null);
-                    } else {
-                      if (videoContainer.requestFullscreen) {
-                        videoContainer.requestFullscreen();
-                      } else if ((videoContainer as any).webkitRequestFullscreen) {
-                        (videoContainer as any).webkitRequestFullscreen();
-                      } else if ((videoContainer as any).mozRequestFullScreen) {
-                        (videoContainer as any).mozRequestFullScreen();
-                      } else if ((videoContainer as any).msRequestFullscreen) {
-                        (videoContainer as any).msRequestFullscreen();
-                      }
-                      setFullscreenVideoId(video.id);
-                    }
-                  }}
-                >
-                  {fullscreenVideoId === video.id ? (
-                    <>
-                      <Minimize className="mr-2 h-4 w-4" />
-                      Exit Fullscreen
-                    </>
-                  ) : (
-                    <>
-                      <Maximize className="mr-2 h-4 w-4" />
-                      Fullscreen
-                    </>
-                  )}
-                </DropdownMenuItem>
-                
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCaptionsEnabled(prev => {
-                      const next = new Set(prev);
-                      if (next.has(video.id)) {
-                        next.delete(video.id);
-                      } else {
-                        next.add(video.id);
-                      }
-                      return next;
-                    });
-                  }}
-                >
-                  <Subtitles className="mr-2 h-4 w-4" />
-                  {captionsEnabled.has(video.id) ? 'Hide' : 'Show'} Captions
-                </DropdownMenuItem>
-                
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handlePiPToggle(video.id);
-                  }}
-                >
-                  <PictureInPicture className="mr-2 h-4 w-4" />
-                  Picture-in-Picture
-                </DropdownMenuItem>
-                
-                {currentUser === video.user_id && (
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedChapterVideo(video);
-                      setChaptersDialogOpen(true);
-                    }}
-                  >
-                    <ListVideo className="mr-2 h-4 w-4" />
-                    Chapters {videoChapters[video.id]?.length > 0 && `(${videoChapters[video.id].length})`}
-                  </DropdownMenuItem>
-                )}
-                
-                <DropdownMenuSeparator />
-                
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    document.getElementById(`settings-trigger-${video.id}`)?.click();
-                  }}
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            {/* Settings popover (hidden trigger) */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  id={`settings-trigger-${video.id}`}
-                  variant="ghost"
-                  size="rounded-sm"
-                  onClick={(e) => e.stopPropagation()}
-                  className="hidden"
-                >
-                  <Settings className="h-5 w-5" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-72" onClick={(e) => e.stopPropagation()}>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="video-quality">Video Quality</Label>
-                    <Select value={videoQuality} onValueChange={(value: typeof videoQuality) => setVideoQuality(value)}>
-                      <SelectTrigger id="video-quality">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="auto">
-                          Auto - Adaptive (ABR)
-                        </SelectItem>
-                        <SelectItem value="360p">360p</SelectItem>
-                        <SelectItem value="480p">480p</SelectItem>
-                        <SelectItem value="720p">720p (HD)</SelectItem>
-                        <SelectItem value="1080p">1080p (Full HD)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {autoQualityEnabled ? (
-                      <div className="text-xs space-y-1">
-                        <p className="text-muted-foreground">
-                          Network: {networkSpeed === 'fast' ? '🟢 Fast' : networkSpeed === 'medium' ? '🟡 Medium' : '🔴 Slow'}
-                        </p>
-                        <p className="text-primary font-medium">
-                          ✨ Adaptive streaming automatically adjusts quality based on buffer health
-                        </p>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">
-                        Quality locked to {videoQuality}
-                      </p>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="caption-size">Caption Size</Label>
-                    <Select value={captionTextSize} onValueChange={(value: 'small' | 'medium' | 'large') => setCaptionTextSize(value)}>
-                      <SelectTrigger id="caption-size">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="small">Small</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="large">Large</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="caption-bg">Caption Background</Label>
-                    <Select value={captionBackground} onValueChange={(value: 'none' | 'semi' | 'solid') => setCaptionBackground(value)}>
-                      <SelectTrigger id="caption-bg">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        <SelectItem value="semi">Semi-transparent</SelectItem>
-                        <SelectItem value="solid">Solid</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-          
-          {/* Quality Badge */}
-          {videoQuality === 'auto' && (
-            <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded flex items-center gap-1 z-10">
-              <span className={cn(
-                "w-1.5 h-1.5 rounded-full",
-                networkSpeed === 'fast' ? "bg-green-500" : networkSpeed === 'medium' ? "bg-yellow-500" : "bg-red-500"
-              )} />
-              {currentQuality}
-            </div>
-          )}
-          
-          {/* Caption overlay */}
-          {captionsEnabled.has(video.id) && video.caption && (
-            <div className="absolute bottom-16 left-0 right-0 flex justify-center px-4 pointer-events-none">
-              <div
-                className={cn(
-                  "px-4 py-2 rounded-lg max-w-[90%] text-center text-white font-medium",
-                  captionTextSize === 'small' && "text-sm",
-                  captionTextSize === 'medium' && "text-base",
-                  captionTextSize === 'large' && "text-lg",
-                  captionBackground === 'none' && "text-shadow-lg",
-                  captionBackground === 'semi' && "bg-black/60 backdrop-blur-sm",
-                  captionBackground === 'solid' && "bg-black"
-                )}
-                style={captionBackground === 'none' ? {
-                  textShadow: '2px 2px 4px rgba(0,0,0,0.8), -2px -2px 4px rgba(0,0,0,0.8)'
-                } : undefined}
-              >
-                {video.caption}
-              </div>
-            </div>
-          )}
+      {/* Video */}
+      <video
+        ref={(el) => setVideoRef(video.id, el as HTMLVideoElement | null)}
+        data-video-id={video.id}
+        src={video.video_url}
+        className="h-full w-full object-cover"
+        muted={mutedVideos.has(video.id)}
+        playsInline
+        loop
+        preload="metadata"
+      />
 
-          {/* Video progress bar */}
-          {videoProgress[video.id] && (
-            <div 
-              className="absolute bottom-0 left-0 right-0 h-1 bg-background/30 backdrop-blur-sm cursor-pointer hover:h-2 transition-all duration-200"
-              onMouseEnter={() => {
-                if (!canvasRef.current) {
-                  canvasRef.current = document.createElement('canvas');
-                }
-              }}
-              onMouseMove={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const percentage = (x / rect.width) * 100;
-                const timestamp = (percentage / 100) * videoProgress[video.id].duration;
-                
-                // Capture thumbnail at hovered timestamp
-                const videoElement = videoRefs.current.get(video.id);
-                if (videoElement && canvasRef.current) {
-                  const canvas = canvasRef.current;
-                  canvas.width = 160;
-                  canvas.height = 90;
-                  const ctx = canvas.getContext('2d');
-                  
-                  // Store current time to restore later
-                  const currentTime = videoElement.currentTime;
-                  videoElement.currentTime = timestamp;
-                  
-                  // Wait for seek to complete
-                  videoElement.onseeked = () => {
-                    if (ctx) {
-                      ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-                      const thumbnail = canvas.toDataURL();
-                      setHoveredProgress({
-                        videoId: video.id,
-                        percentage,
-                        x: e.clientX,
-                        thumbnail
-                      });
-                      // Restore original time
-                      videoElement.currentTime = currentTime;
-                    }
-                  };
-                }
-              }}
-              onMouseLeave={() => {
-                setHoveredProgress(null);
-              }}
+      {/* Double-tap heart animation */}
+      {doubleTapHearts.has(video.id) && (
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1.2, opacity: 1 }}
+          exit={{ scale: 1.5, opacity: 0 }}
+          transition={{ duration: 0.5 }}
+          className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
+        >
+          <Heart className="w-24 h-24 text-red-500 fill-red-500" />
+        </motion.div>
+      )}
+
+      {/* Success checkmark overlay for follow */}
+      {justFollowed === video.user_id && (
+        <motion.div
+          className="absolute inset-0 flex items-center justify-center pointer-events-none z-30"
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0, opacity: 0 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+        >
+          <div className="bg-primary rounded-full h-20 w-20 flex items-center justify-center shadow-lg">
+            <motion.svg
+              className="h-10 w-10 text-primary-foreground"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
             >
-              {/* Buffered progress */}
-              <div
-                className="absolute top-0 left-0 h-full bg-muted/50 transition-all duration-300"
-                style={{
-                  width: `${(videoProgress[video.id].buffered / videoProgress[video.id].duration) * 100}%`
-                }}
-              />
-              {/* Playback progress */}
-              <div
-                className="absolute top-0 left-0 h-full bg-primary transition-all duration-100"
-                style={{
-                  width: `${(videoProgress[video.id].current / videoProgress[video.id].duration) * 100}%`
-                }}
-              />
-              
-              {/* Hover indicator */}
-              {hoveredProgress && hoveredProgress.videoId === video.id && (
-                <div
-                  className="absolute top-0 h-full w-0.5 bg-foreground/80"
-                  style={{
-                    left: `${hoveredProgress.percentage}%`
-                  }}
-                />
-              )}
-              
-              {/* Chapter markers */}
-              {videoChapters[video.id]?.map((chapter) => (
-                <div
-                  key={chapter.id}
-                  className="absolute top-0 h-full w-1 bg-accent hover:bg-accent/80 cursor-pointer transition-colors"
-                  style={{
-                    left: `${(chapter.timestamp / videoProgress[video.id].duration) * 100}%`
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    jumpToChapter(video.id, chapter.timestamp);
-                  }}
-                  title={chapter.label}
-                />
-              ))}
-            </div>
-          )}
-          
-          {/* Thumbnail preview tooltip */}
-          {hoveredProgress && hoveredProgress.videoId === video.id && (
-            <div
-              className="fixed z-50 -translate-x-1/2 pointer-events-none"
-              style={{
-                left: `${hoveredProgress.x}px`,
-                bottom: '80px'
-              }}
-            >
-              <div className="bg-background border border-border rounded-lg shadow-lg overflow-hidden">
-                <img 
-                  src={hoveredProgress.thumbnail} 
-                  alt="Video preview"
-                  className="w-40 h-auto"
-                />
-                <div className="px-2 py-1 text-xs text-center text-muted-foreground">
-                  {new Date((hoveredProgress.percentage / 100) * videoProgress[video.id].duration * 1000).toISOString().substr(14, 5)}
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {/* Double-tap heart animation */}
-          {doubleTapHearts.has(video.id) && (
-            <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1.2, opacity: 1 }}
-              exit={{ scale: 1.5, opacity: 0 }}
-              transition={{ duration: 0.5 }}
-              className="absolute inset-0 flex items-center justify-center pointer-events-none"
-            >
-              <Heart className="w-24 h-24 text-red-500 fill-red-500" />
-            </motion.div>
+              <motion.path d="M20 6L9 17l-5-5" />
+            </motion.svg>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Caption overlay */}
+      <div className="absolute bottom-20 left-4 right-20 pointer-events-none z-10">
+        <div className="bg-black/40 backdrop-blur-sm rounded-lg px-4 py-3 max-w-md">
+          <p className="text-white font-semibold text-sm mb-1">@{video.username}</p>
+          {video.caption && (
+            <p className="text-white/90 text-sm line-clamp-2">{video.caption}</p>
           )}
         </div>
-        
-        {/* Action buttons - positioned on right side */}
-        <div className={cn(
-          "absolute right-4 bottom-24 flex flex-col gap-4 z-10",
-          desktopLayoutMode === 'side-panel' && "md:relative md:right-auto md:bottom-auto md:flex md:justify-center"
-        )}>
-          {/* Profile/Follow button - Always shown with profile image */}
-          <div className="flex flex-col items-center gap-2">
-            <Button
-              variant="ghost"
-              size="rounded-sm"
-              onClick={(e) => {
-                if (!longPressActive && currentUser && video.user_id !== currentUser) {
-                  handleFollow(video.user_id);
-                }
-              }}
-              onMouseDown={() => currentUser && video.user_id !== currentUser && handleLongPressStart(`follow-${video.user_id}`, () => handleFollow(video.user_id))}
-              onMouseUp={handleLongPressEnd}
-              onMouseLeave={handleLongPressEnd}
-              onTouchStart={(e) => {
-                if (currentUser && video.user_id !== currentUser) {
-                  e.preventDefault();
-                  handleLongPressStart(`follow-${video.user_id}`, () => handleFollow(video.user_id));
-                }
-              }}
-              onTouchEnd={(e) => {
-                e.preventDefault();
-                handleLongPressEnd();
-              }}
-              onTouchCancel={handleLongPressEnd}
-              className={cn(
-                "bg-background/80 backdrop-blur-sm rounded-full h-14 w-14 p-0 relative overflow-visible transition-transform",
-                longPressActive === `follow-${video.user_id}` && "scale-110"
-              )}
-            >
-              {/* Long-press progress indicator */}
-              {longPressActive === `follow-${video.user_id}` && (
-                <motion.div
-                  className="absolute inset-0 rounded-full border-4 border-primary"
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1.2, opacity: [0.5, 1, 0.5] }}
-                  transition={{ duration: 1, ease: "easeInOut" }}
-                />
-              )}
-              {justFollowed === video.user_id && (
-                <motion.div
-                  className="absolute inset-0 flex items-center justify-center"
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
-                >
-                  <div className="bg-primary rounded-full h-20 w-20 flex items-center justify-center shadow-lg">
-                    <motion.svg
-                      className="h-10 w-10 text-primary-foreground"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
-                    >
-                      <motion.path d="M20 6L9 17l-5-5" />
-                    </motion.svg>
-                  </div>
-                </motion.div>
-              )}
-              <div className="flex flex-col items-center gap-1">
-                <div className="relative">
-                  {video.avatar_url ? (
-                    <img 
-                      src={video.avatar_url} 
-                      alt={video.username}
-                      className="h-16 w-16 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-lg font-semibold text-foreground">{video.username[0].toUpperCase()}</span>
-                    </div>
-                  )}
-                  {currentUser && video.user_id !== currentUser && !followedUsers.has(video.user_id) && (
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-primary rounded-full h-6 w-6 flex items-center justify-center border-2 border-background">
-                      <UserPlus className="h-3.5 w-3.5 text-primary-foreground" />
-                    </div>
-                  )}
-                </div>
-                <span className="text-xs text-foreground font-medium max-w-[60px] truncate bg-background/80 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-lg">{video.username}</span>
-                {followerCounts[video.user_id] !== undefined && (
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-muted/80 backdrop-blur-sm">
-                    {followerCounts[video.user_id]} {followerCounts[video.user_id] === 1 ? 'follower' : 'followers'}
-                  </Badge>
-                )}
-              </div>
-            </Button>
-          </div>
-          
-          {/* Like button */}
-          <Button
-            variant="ghost"
-            size="rounded-sm"
-            onClick={() => handleLike(video.id)}
-            className="bg-background/80 backdrop-blur-sm h-14 w-14 p-0"
-          >
-            <div className="flex flex-col items-center gap-1">
-              <Heart
-                className={`h-7 w-7 ${likedVideos.has(video.id) ? "fill-red-500 text-red-500" : "text-white"}`}
-              />
-              <span className="text-xs text-white font-semibold">{video.likes}</span>
-            </div>
-          </Button>
+      </div>
 
-          {/* Comments button */}
-          <Button
-            variant="ghost"
-            size="rounded-sm"
+      {/* =========================== */}
+      {/*   MOBILE ACTIONS OVERLAY    */}
+      {/* =========================== */}
+      <div className="absolute inset-0 md:hidden pointer-events-none flex flex-col justify-between px-4 py-6">
+        <div className="pointer-events-auto ml-auto flex flex-col items-center gap-4">
+          {/* PROFILE / FOLLOW BUTTON */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (currentUser && video.user_id !== currentUser) {
+                handleFollow(video.user_id);
+              }
+            }}
+            className="relative h-14 w-14 overflow-hidden rounded-full border border-white/30 bg-black/40 backdrop-blur-sm flex items-center justify-center"
+          >
+            {video.avatar_url ? (
+              <img
+                src={video.avatar_url}
+                alt={video.username}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <UserPlus className="h-6 w-6 text-white opacity-80" />
+            )}
+
+            {/* PLUS BADGE (only if not following) */}
+            {currentUser && video.user_id !== currentUser && !followedUsers.has(video.user_id) && (
+              <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white shadow-md">
+                +
+              </span>
+            )}
+          </button>
+
+          {/* LIKE BUTTON */}
+          <button
+            onClick={() => handleLike(video.id)}
+            className="p-2 rounded-full bg-black/40 backdrop-blur-sm text-white flex flex-col items-center"
+          >
+            <Heart className={`h-6 w-6 ${likedVideos.has(video.id) ? "fill-red-500 text-red-500" : ""}`} />
+            <span className="text-xs mt-1">{video.likes}</span>
+          </button>
+
+          {/* COMMENT BUTTON */}
+          <button
             onClick={() => {
               triggerHaptic('medium', 'interactions');
               setSelectedVideoId(video.id);
             }}
-            className="bg-background/80 backdrop-blur-sm h-14 w-14 p-0"
+            className="p-2 rounded-full bg-black/40 backdrop-blur-sm text-white flex flex-col items-center"
           >
-            <div className="flex flex-col items-center gap-1">
-              <MessageCircle className="h-7 w-7 text-white" />
-              <span className="text-xs text-white font-semibold">{commentCounts[video.id] || 0}</span>
-            </div>
-          </Button>
+            <MessageCircle className="h-6 w-6" />
+            <span className="text-xs mt-1">{commentCounts[video.id] || 0}</span>
+          </button>
 
-          {/* Bookmark button */}
-          <Button
-            variant="ghost"
-            size="rounded-sm"
-            onClick={(e) => {
-              // Only trigger on click if not a long press
-              if (!longPressActive) {
-                handleBookmark(video.id);
-              }
-            }}
-            onMouseDown={() => handleLongPressStart(video.id, () => handleBookmark(video.id))}
-            onMouseUp={handleLongPressEnd}
-            onMouseLeave={handleLongPressEnd}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              handleLongPressStart(video.id, () => handleBookmark(video.id));
-            }}
-            onTouchEnd={(e) => {
-              e.preventDefault();
-              handleLongPressEnd();
-            }}
-            onTouchCancel={handleLongPressEnd}
-            className={cn(
-              "bg-background/80 backdrop-blur-sm rounded-full h-14 w-14 p-0 relative overflow-visible transition-transform",
-              longPressActive === video.id && "scale-110"
-            )}
+          {/* BOOKMARK BUTTON */}
+          <button
+            onClick={() => handleBookmark(video.id)}
+            className="p-2 rounded-full bg-black/40 backdrop-blur-sm text-white"
           >
-            {/* Long-press progress indicator */}
-            {longPressActive === video.id && (
-              <motion.div
-                className="absolute inset-0 rounded-full border-4 border-primary"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1.2, opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 1, ease: "easeInOut" }}
-              />
-            )}
-            <div className="flex flex-col items-center gap-1">
-              <Bookmark
-                className={`h-7 w-7 ${bookmarkedVideos.has(video.id) ? "fill-yellow-400 text-yellow-400" : "text-white"}`}
-              />
-            </div>
-          </Button>
+            <Bookmark className={`h-6 w-6 ${bookmarkedVideos.has(video.id) ? "fill-yellow-400 text-yellow-400" : ""}`} />
+          </button>
 
-          {/* Share button */}
-          <Button
-            variant="ghost"
-            size="rounded-sm"
+          {/* SHARE BUTTON */}
+          <button
             onClick={() => handleShare(video.id)}
-            className="bg-background/80 backdrop-blur-sm h-14 w-14 p-0"
+            className="p-2 rounded-full bg-black/40 backdrop-blur-sm text-white"
           >
-            <div className="flex flex-col items-center gap-1">
-              <Share2 className="h-7 w-7 text-white" />
-            </div>
-          </Button>
-
-          {/* Promote button (only for video owner) */}
-          {currentUser && video.user_id === currentUser && (
-            <Button
-              variant="ghost"
-              size="rounded-sm"
-              onClick={() => {
-                setSelectedPromoteVideo(video);
-                setPromoteDialogOpen(true);
-              }}
-              className="bg-background/80 backdrop-blur-sm h-14 w-14 p-0"
-            >
-              <div className="flex flex-col items-center gap-1">
-                <TrendingUp className="h-7 w-7 text-primary" />
-              </div>
-            </Button>
-          )}
+            <Share2 className="h-6 w-6" />
+          </button>
         </div>
-        </div>
-
-        {/* User info and caption - bottom left */}
-        <div className="absolute left-4 bottom-24 right-24 z-10 text-white">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="font-bold text-lg drop-shadow-lg">@{video.username}</span>
-          </div>
-          {video.caption && (
-            <p className="text-sm drop-shadow-lg line-clamp-2">{video.caption}</p>
-          )}
-        </div>
-
-        {/* Mini progress bar at the bottom */}
-        {videoProgress[video.id] && (
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 z-20">
-            {/* Buffered progress (light gray) */}
-            <div
-              className="absolute top-0 left-0 h-full bg-white/40 transition-all duration-300"
-              style={{
-                width: `${(videoProgress[video.id].buffered / videoProgress[video.id].duration) * 100}%`
-              }}
-            />
-            {/* Playback progress (white/primary) */}
-            <div
-              className="absolute top-0 left-0 h-full bg-white transition-all duration-100"
-              style={{
-                width: `${(videoProgress[video.id].current / videoProgress[video.id].duration) * 100}%`
-              }}
-            />
-          </div>
-        )}
       </div>
-      
-      {/* Chapters list */}
-      {videoChapters[video.id]?.length > 0 && (
-        <div className="px-4 pb-4">
-          <Button
-            variant="ghost"
-            size="rounded-sm"
-            onClick={() => {
-              setShowChaptersList(prev => {
-                const next = new Set(prev);
-                if (next.has(video.id)) {
-                  next.delete(video.id);
-                } else {
-                  next.add(video.id);
-                }
-                return next;
-              });
-            }}
-            className="w-full flex items-center justify-between text-sm"
-          >
-            <span className="flex items-center gap-2">
-              <ListVideo className="h-4 w-4" />
-              {videoChapters[video.id].length} Chapter{videoChapters[video.id].length !== 1 ? 's' : ''}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {showChaptersList.has(video.id) ? 'Hide' : 'Show'}
-            </span>
-          </Button>
-          
-          {showChaptersList.has(video.id) && (
-            <ScrollArea className="h-32 mt-2">
-              <div className="space-y-2">
-                {videoChapters[video.id].map((chapter) => (
-                  <button
-                    key={chapter.id}
-                    onClick={() => jumpToChapter(video.id, chapter.timestamp)}
-                    className="w-full text-left px-3 py-2 rounded-md bg-muted/50 hover:bg-muted transition-colors flex items-start justify-between group"
-                  >
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{chapter.label}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {new Date(chapter.timestamp * 1000).toISOString().substr(14, 5)}
-                      </div>
-                    </div>
-                    <Play className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0 mt-1" />
-                  </button>
-                ))}
-              </div>
-            </ScrollArea>
+
+      {/* ========================== */}
+      {/*     DESKTOP RIGHT RAIL      */}
+      {/* ========================== */}
+      <div className="hidden md:flex flex-col gap-5 absolute right-6 bottom-32 z-20">
+        {/* PROFILE / FOLLOW BUTTON */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (currentUser && video.user_id !== currentUser) {
+              handleFollow(video.user_id);
+            }
+          }}
+          className="relative h-16 w-16 overflow-hidden rounded-full border border-white/30 bg-black/40 backdrop-blur-sm flex items-center justify-center"
+        >
+          {video.avatar_url ? (
+            <img
+              src={video.avatar_url}
+              alt={video.username}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <UserPlus className="h-7 w-7 text-white opacity-80" />
           )}
-        </div>
-      )}
-    </motion.div>
+
+          {/* PLUS BADGE (only if not following) */}
+          {currentUser && video.user_id !== currentUser && !followedUsers.has(video.user_id) && (
+            <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[12px] font-bold text-white shadow-md">
+              +
+            </span>
+          )}
+        </button>
+
+        {/* LIKE BUTTON */}
+        <button
+          onClick={() => handleLike(video.id)}
+          className="p-3 rounded-full bg-black/40 backdrop-blur-sm text-white flex flex-col items-center"
+        >
+          <Heart className={`h-7 w-7 ${likedVideos.has(video.id) ? "fill-red-500 text-red-500" : ""}`} />
+          <span className="text-xs mt-1">{video.likes}</span>
+        </button>
+
+        {/* COMMENT BUTTON */}
+        <button
+          onClick={() => {
+            triggerHaptic('medium', 'interactions');
+            setSelectedVideoId(video.id);
+          }}
+          className="p-3 rounded-full bg-black/40 backdrop-blur-sm text-white flex flex-col items-center"
+        >
+          <MessageCircle className="h-7 w-7" />
+          <span className="text-xs mt-1">{commentCounts[video.id] || 0}</span>
+        </button>
+
+        {/* BOOKMARK BUTTON */}
+        <button
+          onClick={() => handleBookmark(video.id)}
+          className="p-3 rounded-full bg-black/40 backdrop-blur-sm text-white"
+        >
+          <Bookmark className={`h-7 w-7 ${bookmarkedVideos.has(video.id) ? "fill-yellow-400 text-yellow-400" : ""}`} />
+        </button>
+
+        {/* SHARE BUTTON */}
+        <button
+          onClick={() => handleShare(video.id)}
+          className="p-3 rounded-full bg-black/40 backdrop-blur-sm text-white"
+        >
+          <Share2 className="h-7 w-7" />
+        </button>
+      </div>
+    </div>
   );
 
   return (
