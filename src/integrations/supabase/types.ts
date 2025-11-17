@@ -465,6 +465,60 @@ export type Database = {
           },
         ]
       }
+      delivery_alerts: {
+        Row: {
+          affected_period_end: string | null
+          affected_period_start: string | null
+          alert_sent: boolean | null
+          alert_sent_at: string | null
+          alert_type: string
+          created_at: string | null
+          description: string
+          id: string
+          metadata: Json | null
+          metric_value: number | null
+          resolved: boolean | null
+          resolved_at: string | null
+          severity: string
+          threshold_value: number | null
+          title: string
+        }
+        Insert: {
+          affected_period_end?: string | null
+          affected_period_start?: string | null
+          alert_sent?: boolean | null
+          alert_sent_at?: string | null
+          alert_type: string
+          created_at?: string | null
+          description: string
+          id?: string
+          metadata?: Json | null
+          metric_value?: number | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          severity?: string
+          threshold_value?: number | null
+          title: string
+        }
+        Update: {
+          affected_period_end?: string | null
+          affected_period_start?: string | null
+          alert_sent?: boolean | null
+          alert_sent_at?: string | null
+          alert_type?: string
+          created_at?: string | null
+          description?: string
+          id?: string
+          metadata?: Json | null
+          metric_value?: number | null
+          resolved?: boolean | null
+          resolved_at?: string | null
+          severity?: string
+          threshold_value?: number | null
+          title?: string
+        }
+        Relationships: []
+      }
       follows: {
         Row: {
           created_at: string
