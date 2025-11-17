@@ -717,13 +717,17 @@ export type Database = {
           affiliate_id: string | null
           created_at: string
           customer_email: string
+          customer_email_encrypted: string | null
           customer_id: string
           customer_name: string
           customer_phone: string | null
+          customer_phone_encrypted: string | null
           delivered_at: string | null
+          encryption_key_id: string | null
           id: string
           shipped_at: string | null
           shipping_address: string
+          shipping_address_encrypted: string | null
           status: Database["public"]["Enums"]["order_status"]
           store_id: string
           total_amount: number
@@ -734,13 +738,17 @@ export type Database = {
           affiliate_id?: string | null
           created_at?: string
           customer_email: string
+          customer_email_encrypted?: string | null
           customer_id: string
           customer_name: string
           customer_phone?: string | null
+          customer_phone_encrypted?: string | null
           delivered_at?: string | null
+          encryption_key_id?: string | null
           id?: string
           shipped_at?: string | null
           shipping_address: string
+          shipping_address_encrypted?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           store_id: string
           total_amount: number
@@ -751,13 +759,17 @@ export type Database = {
           affiliate_id?: string | null
           created_at?: string
           customer_email?: string
+          customer_email_encrypted?: string | null
           customer_id?: string
           customer_name?: string
           customer_phone?: string | null
+          customer_phone_encrypted?: string | null
           delivered_at?: string | null
+          encryption_key_id?: string | null
           id?: string
           shipped_at?: string | null
           shipping_address?: string
+          shipping_address_encrypted?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           store_id?: string
           total_amount?: number
@@ -780,6 +792,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pii_audit_logs: {
+        Row: {
+          accessed_at: string
+          accessed_columns: string[] | null
+          action: string
+          id: string
+          ip_address: string | null
+          row_id: string
+          table_name: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          accessed_at?: string
+          accessed_columns?: string[] | null
+          action: string
+          id?: string
+          ip_address?: string | null
+          row_id: string
+          table_name: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          accessed_at?: string
+          accessed_columns?: string[] | null
+          action?: string
+          id?: string
+          ip_address?: string | null
+          row_id?: string
+          table_name?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       products: {
         Row: {
@@ -1635,6 +1683,21 @@ export type Database = {
       }
     }
     Functions: {
+      create_order_with_encrypted_pii: {
+        Args: {
+          p_affiliate_id?: string
+          p_customer_email: string
+          p_customer_id: string
+          p_customer_name: string
+          p_customer_phone: string
+          p_shipping_address: string
+          p_store_id: string
+          p_total_amount: number
+        }
+        Returns: string
+      }
+      decrypt_pii: { Args: { ciphertext: string }; Returns: string }
+      encrypt_pii: { Args: { plaintext: string }; Returns: string }
       get_ab_test_results: {
         Args: { test_id_param: string }
         Returns: {
@@ -1734,6 +1797,26 @@ export type Database = {
           total_users: number
         }[]
       }
+      get_order_with_pii: {
+        Args: { order_id_param: string }
+        Returns: {
+          affiliate_id: string
+          created_at: string
+          customer_email: string
+          customer_id: string
+          customer_name: string
+          customer_phone: string
+          delivered_at: string
+          id: string
+          shipped_at: string
+          shipping_address: string
+          status: Database["public"]["Enums"]["order_status"]
+          store_id: string
+          total_amount: number
+          tracking_number: string
+          updated_at: string
+        }[]
+      }
       get_user_challenge_stats: {
         Args: never
         Returns: {
@@ -1748,6 +1831,15 @@ export type Database = {
       }
       increment_wallet_balance: {
         Args: { amount: number; user_id: string }
+        Returns: undefined
+      }
+      log_pii_access: {
+        Args: {
+          p_action: string
+          p_columns: string[]
+          p_row_id: string
+          p_table_name: string
+        }
         Returns: undefined
       }
       notify_flash_sale: { Args: never; Returns: undefined }
