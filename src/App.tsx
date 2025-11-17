@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { NotificationBell } from "@/components/NotificationBell";
+import { AdminNotificationBell } from "@/components/AdminNotificationBell";
 import { BottomNav } from "@/components/BottomNav";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { FlashSaleAlert } from "@/components/FlashSaleAlert";
@@ -66,7 +67,10 @@ const App = () => (
                     className="h-10 w-auto object-contain hover-scale"
                   />
                 </div>
-                <NotificationBell />
+                <div className="flex items-center gap-2">
+                  <AdminNotificationBell />
+                  <NotificationBell />
+                </div>
               </header>
               <main className="flex-1 pb-16 md:pb-0">
                 <Routes>
