@@ -605,6 +605,57 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_delivery_logs: {
+        Row: {
+          channel: string
+          created_at: string
+          error_message: string | null
+          external_id: string | null
+          id: string
+          message: string
+          metadata: Json | null
+          notification_type: string
+          priority: string
+          recipient_id: string
+          recipient_identifier: string
+          sent_at: string
+          status: string
+          title: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          error_message?: string | null
+          external_id?: string | null
+          id?: string
+          message: string
+          metadata?: Json | null
+          notification_type: string
+          priority?: string
+          recipient_id: string
+          recipient_identifier: string
+          sent_at?: string
+          status?: string
+          title: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          error_message?: string | null
+          external_id?: string | null
+          id?: string
+          message?: string
+          metadata?: Json | null
+          notification_type?: string
+          priority?: string
+          recipient_id?: string
+          recipient_identifier?: string
+          sent_at?: string
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
       notification_test_assignments: {
         Row: {
           assigned_at: string | null

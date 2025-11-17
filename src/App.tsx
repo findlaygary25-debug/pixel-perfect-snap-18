@@ -43,6 +43,7 @@ import AdminRoles from "./pages/AdminRoles";
 import AdminBootstrap from "./pages/AdminBootstrap";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminNotificationPreferences from "./pages/AdminNotificationPreferences";
+import NotificationDeliveryLogs from "./pages/NotificationDeliveryLogs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -108,6 +109,7 @@ const App = () => (
           <Route path="/admin/roles" element={<AdminRoles />} />
           <Route path="/admin/bootstrap" element={<AdminBootstrap />} />
           <Route path="/admin/notification-preferences" element={<AdminNotificationPreferences />} />
+          <Route path="/admin/notification-logs" element={<NotificationDeliveryLogs />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
               </main>
