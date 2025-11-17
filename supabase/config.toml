@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.monitor-sms-delivery]
 verify_jwt = false
+
+[functions.escalate-alerts]
+verify_jwt = false
