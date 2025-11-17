@@ -34,8 +34,9 @@ export function TriggerFlashSale() {
       if (error) throw error;
 
       if (data.success) {
+        const emailInfo = data.emails_sent > 0 ? `, ${data.emails_sent} emails sent` : '';
         toast.success("Flash Sale Triggered!", {
-          description: `${data.items_updated} items on sale, ${data.notifications_sent} users notified!`,
+          description: `${data.items_updated} items on sale, ${data.notifications_sent} users notified${emailInfo}!`,
         });
         setOpen(false);
         

@@ -1,9 +1,12 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { Resend } from 'https://esm.sh/resend@2.0.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 
 interface FlashSaleConfig {
   duration_hours: number;
@@ -127,7 +130,8 @@ Deno.serve(async (req) => {
     // 4. Send notifications to all users
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
-      .select('user_id, username');
+      .select('user_id, username')
+      .limit(1000); // Limit to avoid overwhelming the system
 
     if (profilesError) {
       console.error('Error fetching profiles:', profilesError);
@@ -136,7 +140,9 @@ Deno.serve(async (req) => {
 
     console.log(`Sending notifications to ${profiles?.length || 0} users`);
 
+    let emailsSent = 0;
     if (profiles && profiles.length > 0) {
+      // Send in-app notifications
       const notifications = profiles.map(profile => ({
         user_id: profile.user_id,
         type: 'flash_sale',
@@ -155,7 +161,92 @@ Deno.serve(async (req) => {
         throw notificationError;
       }
 
-      console.log(`Sent ${notifications.length} notifications`);
+      console.log(`Sent ${notifications.length} in-app notifications`);
+
+      // Send email notifications
+      // Get user emails from auth.users
+      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      
+      if (authError) {
+        console.error('Error fetching user emails:', authError);
+      } else if (authUsers.users && authUsers.users.length > 0) {
+        console.log(`Sending emails to ${authUsers.users.length} users`);
+        
+        // Send emails in batches to avoid rate limits
+        const batchSize = 50;
+        for (let i = 0; i < authUsers.users.length; i += batchSize) {
+          const batch = authUsers.users.slice(i, i + batchSize);
+          
+          try {
+            const emailPromises = batch.map(user => {
+              if (!user.email) return Promise.resolve();
+              
+              return resend.emails.send({
+                from: 'Voice2Fire <notifications@resend.dev>',
+                to: [user.email],
+                subject: `⚡ FLASH SALE: ${config.discount_percentage}% OFF!`,
+                html: `
+                  <!DOCTYPE html>
+                  <html>
+                    <head>
+                      <meta charset="utf-8">
+                      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    </head>
+                    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+                      <div style="background: linear-gradient(135deg, #ef4444 0%, #f97316 50%, #eab308 100%); padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 30px;">
+                        <h1 style="color: white; margin: 0; font-size: 32px; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">⚡ FLASH SALE ALERT!</h1>
+                        <p style="color: white; font-size: 24px; font-weight: bold; margin: 10px 0 0 0;">${config.discount_percentage}% OFF</p>
+                      </div>
+                      
+                      <div style="background: #f9fafb; padding: 25px; border-radius: 8px; margin-bottom: 25px;">
+                        <h2 style="margin-top: 0; color: #111827;">Lightning Deal Active Now!</h2>
+                        <p style="margin-bottom: 15px; color: #4b5563;">
+                          Grab premium items at massive discounts! This exclusive flash sale is only available for the next <strong>${config.duration_hours} hour${config.duration_hours > 1 ? 's' : ''}</strong>.
+                        </p>
+                        <p style="margin-bottom: 20px; color: #4b5563;">
+                          Don't miss out on exclusive badges, cosmetics, and premium features at unbeatable prices!
+                        </p>
+                        <div style="text-align: center;">
+                          <a href="${Deno.env.get('SUPABASE_URL')?.replace('https://konbogydmhjhrlaskbgv.supabase.co', 'https://voice2fire.com') || 'https://voice2fire.com'}/rewards-store" 
+                             style="display: inline-block; background: linear-gradient(135deg, #ef4444, #f97316); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                            Shop Flash Sale Now →
+                          </a>
+                        </div>
+                      </div>
+                      
+                      <div style="text-align: center; color: #6b7280; font-size: 14px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                        <p style="margin: 5px 0;">This is a limited-time offer. Sale ends at ${endDate.toLocaleString('en-US', { 
+                          weekday: 'short', 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric', 
+                          hour: '2-digit', 
+                          minute: '2-digit',
+                          timeZoneName: 'short'
+                        })}</p>
+                        <p style="margin: 15px 0 5px 0;">© ${new Date().getFullYear()} Voice2Fire. All rights reserved.</p>
+                      </div>
+                    </body>
+                  </html>
+                `,
+              }).catch(err => {
+                console.error(`Failed to send email to ${user.email}:`, err);
+                return null;
+              });
+            });
+            
+            const results = await Promise.allSettled(emailPromises);
+            const successful = results.filter(r => r.status === 'fulfilled' && r.value !== null).length;
+            emailsSent += successful;
+            
+            console.log(`Batch ${Math.floor(i / batchSize) + 1}: Sent ${successful}/${batch.length} emails`);
+          } catch (error) {
+            console.error(`Error sending email batch:`, error);
+          }
+        }
+        
+        console.log(`Total emails sent: ${emailsSent}`);
+      }
     }
 
     // 5. Return success response
@@ -166,6 +257,7 @@ Deno.serve(async (req) => {
         banner_id: banner.id,
         items_updated: itemsUpdatedCount,
         notifications_sent: profiles?.length || 0,
+        emails_sent: emailsSent,
         start_date: startDate.toISOString(),
         end_date: endDate.toISOString(),
         config,
