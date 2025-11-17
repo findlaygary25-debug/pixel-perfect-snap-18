@@ -449,6 +449,191 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_ab_tests: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          name: string
+          notification_type: string
+          start_date: string | null
+          status: string
+          target_audience: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name: string
+          notification_type: string
+          start_date?: string | null
+          status?: string
+          target_audience?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name?: string
+          notification_type?: string
+          start_date?: string | null
+          status?: string
+          target_audience?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      notification_test_assignments: {
+        Row: {
+          assigned_at: string | null
+          id: string
+          test_id: string
+          user_id: string
+          variant_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          id?: string
+          test_id: string
+          user_id: string
+          variant_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          id?: string
+          test_id?: string
+          user_id?: string
+          variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_test_assignments_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "notification_ab_tests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_test_assignments_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "notification_test_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_test_metrics: {
+        Row: {
+          clicked_at: string | null
+          conversion_event: boolean | null
+          converted_at: string | null
+          created_at: string | null
+          id: string
+          notification_clicked: boolean | null
+          notification_sent_at: string | null
+          notification_viewed: boolean | null
+          test_id: string
+          user_id: string
+          variant_id: string
+          viewed_at: string | null
+        }
+        Insert: {
+          clicked_at?: string | null
+          conversion_event?: boolean | null
+          converted_at?: string | null
+          created_at?: string | null
+          id?: string
+          notification_clicked?: boolean | null
+          notification_sent_at?: string | null
+          notification_viewed?: boolean | null
+          test_id: string
+          user_id: string
+          variant_id: string
+          viewed_at?: string | null
+        }
+        Update: {
+          clicked_at?: string | null
+          conversion_event?: boolean | null
+          converted_at?: string | null
+          created_at?: string | null
+          id?: string
+          notification_clicked?: boolean | null
+          notification_sent_at?: string | null
+          notification_viewed?: boolean | null
+          test_id?: string
+          user_id?: string
+          variant_id?: string
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_test_metrics_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "notification_ab_tests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_test_metrics_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "notification_test_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_test_variants: {
+        Row: {
+          created_at: string | null
+          cta_link: string | null
+          cta_text: string | null
+          id: string
+          message_body: string
+          message_title: string
+          test_id: string
+          traffic_allocation: number
+          variant_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          cta_link?: string | null
+          cta_text?: string | null
+          id?: string
+          message_body: string
+          message_title: string
+          test_id: string
+          traffic_allocation?: number
+          variant_name: string
+        }
+        Update: {
+          created_at?: string | null
+          cta_link?: string | null
+          cta_text?: string | null
+          id?: string
+          message_body?: string
+          message_title?: string
+          test_id?: string
+          traffic_allocation?: number
+          variant_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_test_variants_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "notification_ab_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
@@ -1450,6 +1635,20 @@ export type Database = {
       }
     }
     Functions: {
+      get_ab_test_results: {
+        Args: { test_id_param: string }
+        Returns: {
+          click_rate: number
+          conversion_rate: number
+          total_clicked: number
+          total_converted: number
+          total_sent: number
+          total_viewed: number
+          variant_id: string
+          variant_name: string
+          view_rate: number
+        }[]
+      }
       get_achievement_leaderboard: {
         Args: { limit_count?: number }
         Returns: {

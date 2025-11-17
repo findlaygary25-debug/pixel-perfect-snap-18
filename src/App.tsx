@@ -36,6 +36,7 @@ import RewardsStore from "./pages/RewardsStore";
 import AdminFlashSales from "./pages/AdminFlashSales";
 import NotificationPreferences from "./pages/NotificationPreferences";
 import NotificationAnalytics from "./pages/NotificationAnalytics";
+import NotificationABTests from "./pages/NotificationABTests";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -92,6 +93,7 @@ const App = () => (
           <Route path="/admin/flash-sales" element={<AdminFlashSales />} />
           <Route path="/notification-preferences" element={<NotificationPreferences />} />
           <Route path="/notification-analytics" element={<NotificationAnalytics />} />
+          <Route path="/notification-ab-tests" element={<NotificationABTests />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
               </main>
