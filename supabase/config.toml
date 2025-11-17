@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.get-optimal-schedule-times]
 verify_jwt = false
+
+[functions.trigger-flash-sale]
+verify_jwt = false
