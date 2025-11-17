@@ -31,6 +31,7 @@ import HapticSettings from "./pages/HapticSettings";
 import Collections from "./pages/Collections";
 import CollectionDetail from "./pages/CollectionDetail";
 import ChallengeHistory from "./pages/ChallengeHistory";
+import RewardsStore from "./pages/RewardsStore";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -82,6 +83,7 @@ const App = () => (
           <Route path="/collections" element={<Collections />} />
           <Route path="/collections/:id" element={<CollectionDetail />} />
           <Route path="/challenge-history" element={<ChallengeHistory />} />
+          <Route path="/rewards-store" element={<RewardsStore />} />
           <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>

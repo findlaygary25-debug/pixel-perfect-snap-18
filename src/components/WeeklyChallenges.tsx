@@ -156,6 +156,11 @@ export function WeeklyChallenges({ profiles, usageHistory, onProgressUpdate }: W
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Get challenge details to check reward type
+      const challenge = challenges.find(c => c.id === challengeId);
+      if (!challenge) return;
+
+      // Update challenge as claimed
       const { error } = await supabase
         .from('user_weekly_progress')
         .update({ reward_claimed: true })
@@ -164,7 +169,34 @@ export function WeeklyChallenges({ profiles, usageHistory, onProgressUpdate }: W
 
       if (error) throw error;
 
-      toast.success("Reward claimed successfully!");
+      // If it's a points reward, credit the points to user's balance
+      if (challenge.reward_type === 'points') {
+        const pointsToAdd = parseInt(challenge.reward_value);
+        
+        // First, ensure user has a record in user_achievement_stats
+        const { data: existingStats } = await supabase
+          .from('user_achievement_stats')
+          .select('points_balance')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        const currentBalance = existingStats?.points_balance || 0;
+
+        await supabase
+          .from('user_achievement_stats')
+          .upsert({
+            user_id: user.id,
+            points_balance: currentBalance + pointsToAdd,
+            last_updated: new Date().toISOString(),
+          }, {
+            onConflict: 'user_id'
+          });
+
+        toast.success(`🎉 ${pointsToAdd} points added to your balance!`);
+      } else {
+        toast.success("Reward claimed successfully!");
+      }
+
       await fetchChallenges();
     } catch (error) {
       console.error("Error claiming reward:", error);

@@ -681,6 +681,51 @@ export type Database = {
           },
         ]
       }
+      reward_items: {
+        Row: {
+          created_at: string | null
+          icon_name: string
+          id: string
+          is_available: boolean | null
+          item_description: string
+          item_name: string
+          item_type: string
+          metadata: Json | null
+          point_cost: number
+          stock_limit: number | null
+          stock_remaining: number | null
+          tier: string
+        }
+        Insert: {
+          created_at?: string | null
+          icon_name: string
+          id?: string
+          is_available?: boolean | null
+          item_description: string
+          item_name: string
+          item_type: string
+          metadata?: Json | null
+          point_cost: number
+          stock_limit?: number | null
+          stock_remaining?: number | null
+          tier: string
+        }
+        Update: {
+          created_at?: string | null
+          icon_name?: string
+          id?: string
+          is_available?: boolean | null
+          item_description?: string
+          item_name?: string
+          item_type?: string
+          metadata?: Json | null
+          point_cost?: number
+          stock_limit?: number | null
+          stock_remaining?: number | null
+          tier?: string
+        }
+        Relationships: []
+      }
       scheduled_videos: {
         Row: {
           created_at: string
@@ -810,6 +855,7 @@ export type Database = {
           last_updated: string | null
           longest_streak_days: number | null
           platinum_achievements: number | null
+          points_balance: number | null
           profiles_created: number | null
           silver_achievements: number | null
           total_achievements_unlocked: number | null
@@ -825,6 +871,7 @@ export type Database = {
           last_updated?: string | null
           longest_streak_days?: number | null
           platinum_achievements?: number | null
+          points_balance?: number | null
           profiles_created?: number | null
           silver_achievements?: number | null
           total_achievements_unlocked?: number | null
@@ -840,6 +887,7 @@ export type Database = {
           last_updated?: string | null
           longest_streak_days?: number | null
           platinum_achievements?: number | null
+          points_balance?: number | null
           profiles_created?: number | null
           silver_achievements?: number | null
           total_achievements_unlocked?: number | null
@@ -847,6 +895,71 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_inventory: {
+        Row: {
+          acquired_at: string | null
+          id: string
+          item_data: Json | null
+          item_id: string
+          item_name: string
+          item_type: string
+          user_id: string
+        }
+        Insert: {
+          acquired_at?: string | null
+          id?: string
+          item_data?: Json | null
+          item_id: string
+          item_name: string
+          item_type: string
+          user_id: string
+        }
+        Update: {
+          acquired_at?: string | null
+          id?: string
+          item_data?: Json | null
+          item_id?: string
+          item_name?: string
+          item_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_purchases: {
+        Row: {
+          id: string
+          is_active: boolean | null
+          points_spent: number
+          purchased_at: string | null
+          reward_item_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          is_active?: boolean | null
+          points_spent: number
+          purchased_at?: string | null
+          reward_item_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          is_active?: boolean | null
+          points_spent?: number
+          purchased_at?: string | null
+          reward_item_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_purchases_reward_item_id_fkey"
+            columns: ["reward_item_id"]
+            isOneToOne: false
+            referencedRelation: "reward_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_weekly_progress: {
         Row: {
@@ -1261,6 +1374,10 @@ export type Database = {
       increment_wallet_balance: {
         Args: { amount: number; user_id: string }
         Returns: undefined
+      }
+      purchase_reward_item: {
+        Args: { points_to_spend: number; reward_item_id_param: string }
+        Returns: Json
       }
     }
     Enums: {
