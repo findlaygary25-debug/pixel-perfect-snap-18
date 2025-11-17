@@ -1452,6 +1452,7 @@ export type Database = {
         Args: { amount: number; user_id: string }
         Returns: undefined
       }
+      notify_flash_sale: { Args: never; Returns: undefined }
       purchase_reward_item: {
         Args: { points_to_spend: number; reward_item_id_param: string }
         Returns: Json
