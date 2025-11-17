@@ -47,8 +47,8 @@ const App = () => (
       <LoadingScreen />
       <Toaster />
       <Sonner />
-      <FlashSaleAlert />
       <BrowserRouter>
+        <FlashSaleAlert />
         <SidebarProvider defaultOpen={false}>
           <div className="flex min-h-screen w-full">
             <AppSidebar />
