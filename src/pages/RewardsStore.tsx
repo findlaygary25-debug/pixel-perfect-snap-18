@@ -34,6 +34,8 @@ import {
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import * as LucideIcons from "lucide-react";
+import { PromotionalBannerCard } from "@/components/PromotionalBanner";
+import { SaleCountdown } from "@/components/SaleCountdown";
 
 type RewardItem = {
   id: string;
@@ -47,6 +49,25 @@ type RewardItem = {
   stock_limit: number | null;
   stock_remaining: number | null;
   metadata: any;
+  is_on_sale: boolean;
+  sale_percentage: number;
+  original_price: number | null;
+  sale_start_date: string | null;
+  sale_end_date: string | null;
+};
+
+type PromotionalBanner = {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  description: string;
+  banner_type: string;
+  background_gradient: string;
+  icon_name: string;
+  cta_text: string;
+  cta_link: string | null;
+  start_date: string;
+  end_date: string;
 };
 
 type UserInventory = {
@@ -61,6 +82,7 @@ type UserInventory = {
 export default function RewardsStore() {
   const navigate = useNavigate();
   const [rewardItems, setRewardItems] = useState<RewardItem[]>([]);
+  const [banners, setBanners] = useState<PromotionalBanner[]>([]);
   const [inventory, setInventory] = useState<UserInventory[]>([]);
   const [pointsBalance, setPointsBalance] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -76,11 +98,21 @@ export default function RewardsStore() {
     try {
       setLoading(true);
 
+      // Fetch promotional banners
+      const { data: bannersData, error: bannersError } = await supabase
+        .from('promotional_banners')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+
+      if (bannersError) throw bannersError;
+
       // Fetch reward items
       const { data: itemsData, error: itemsError } = await supabase
         .from('reward_items')
         .select('*')
         .eq('is_available', true)
+        .order('is_on_sale', { ascending: false })
         .order('point_cost', { ascending: true });
 
       if (itemsError) throw itemsError;
@@ -102,6 +134,7 @@ export default function RewardsStore() {
 
       if (statsError) throw statsError;
 
+      setBanners(bannersData || []);
       setRewardItems(itemsData || []);
       setInventory(inventoryData || []);
       setPointsBalance(statsData?.points_balance || 0);
@@ -176,6 +209,7 @@ export default function RewardsStore() {
 
   const groupItemsByType = (items: RewardItem[]) => {
     return {
+      on_sale: items.filter(item => item.is_on_sale && item.sale_end_date && new Date(item.sale_end_date) > new Date()),
       profile_slot: items.filter(item => item.item_type === 'profile_slot'),
       badge: items.filter(item => item.item_type === 'badge'),
       premium_feature: items.filter(item => item.item_type === 'premium_feature')
@@ -235,6 +269,19 @@ export default function RewardsStore() {
         </CardContent>
       </Card>
 
+      {/* Promotional Banners */}
+      {banners.length > 0 && (
+        <div className="space-y-3">
+          {banners.map((banner) => (
+            <PromotionalBannerCard
+              key={banner.id}
+              banner={banner}
+              getItemIcon={getItemIcon}
+            />
+          ))}
+        </div>
+      )}
+
       {/* My Inventory */}
       {inventory.length > 0 && (
         <Card>
@@ -272,16 +319,47 @@ export default function RewardsStore() {
 
       {/* Store Items */}
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="all">All Items</TabsTrigger>
-          <TabsTrigger value="profile_slot">Profile Slots</TabsTrigger>
+          <TabsTrigger value="on_sale" className="relative">
+            On Sale
+            {groupedItems.on_sale.length > 0 && (
+              <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-xs">
+                {groupedItems.on_sale.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="profile_slot">Slots</TabsTrigger>
           <TabsTrigger value="badge">Badges</TabsTrigger>
           <TabsTrigger value="premium_feature">Premium</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="space-y-4 mt-6">
+          {groupedItems.on_sale.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold capitalize flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-red-500" />
+                Flash Sale Items
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {groupedItems.on_sale.map((item) => (
+                  <RewardItemCard
+                    key={item.id}
+                    item={item}
+                    owned={isOwned(item.id, item.item_type)}
+                    canAfford={canAfford(item.point_cost)}
+                    onPurchase={() => openPurchaseDialog(item)}
+                    getTierColor={getTierColor}
+                    getItemIcon={getItemIcon}
+                  />
+                ))}
+              </div>
+              <Separator className="my-6" />
+            </div>
+          )}
+
           {Object.entries(groupedItems).map(([type, items]) => (
-            items.length > 0 && (
+            items.length > 0 && type !== 'on_sale' && (
               <div key={type} className="space-y-3">
                 <h3 className="text-lg font-semibold capitalize flex items-center gap-2">
                   {type === 'profile_slot' && <Layers className="h-5 w-5" />}
@@ -306,6 +384,32 @@ export default function RewardsStore() {
               </div>
             )
           ))}
+        </TabsContent>
+
+        <TabsContent value="on_sale" className="mt-6">
+          {groupedItems.on_sale.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {groupedItems.on_sale.map((item) => (
+                <RewardItemCard
+                  key={item.id}
+                  item={item}
+                  owned={isOwned(item.id, item.item_type)}
+                  canAfford={canAfford(item.point_cost)}
+                  onPurchase={() => openPurchaseDialog(item)}
+                  getTierColor={getTierColor}
+                  getItemIcon={getItemIcon}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Sparkles className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <h3 className="text-lg font-semibold mb-2">No Active Sales</h3>
+              <p className="text-muted-foreground">
+                Check back later for amazing deals!
+              </p>
+            </div>
+          )}
         </TabsContent>
 
         {(['profile_slot', 'badge', 'premium_feature'] as const).map((type) => (
@@ -417,11 +521,21 @@ function RewardItemCard({
   getTierColor: (tier: string) => string;
   getItemIcon: (iconName: string) => JSX.Element;
 }) {
+  const isOnSale = item.is_on_sale && item.sale_end_date && new Date(item.sale_end_date) > new Date();
+  
   return (
-    <Card className={owned ? "border-primary bg-primary/5" : ""}>
+    <Card className={`relative ${owned ? "border-primary bg-primary/5" : ""} ${isOnSale ? "border-red-500 shadow-lg shadow-red-500/20" : ""}`}>
+      {isOnSale && (
+        <div className="absolute top-3 right-3 z-10">
+          <Badge variant="destructive" className="gap-1 font-bold">
+            {item.sale_percentage}% OFF
+          </Badge>
+        </div>
+      )}
+      
       <CardContent className="pt-6 space-y-4">
         <div className="flex items-start justify-between">
-          <div className="p-3 rounded-lg bg-muted text-foreground">
+          <div className={`p-3 rounded-lg ${isOnSale ? 'bg-red-100 text-red-600 dark:bg-red-950/30' : 'bg-muted text-foreground'}`}>
             {getItemIcon(item.icon_name)}
           </div>
           <Badge className={getTierColor(item.tier)}>
@@ -436,26 +550,40 @@ function RewardItemCard({
           </p>
         </div>
 
-        <div className="flex items-center justify-between pt-2">
-          <Badge variant="secondary" className="gap-1">
-            <Coins className="h-3 w-3" />
-            {item.point_cost}
-          </Badge>
-
-          {owned ? (
-            <Badge variant="default" className="gap-1">
-              <CheckCircle2 className="h-3 w-3" />
-              Owned
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            {isOnSale && item.original_price && (
+              <Badge variant="outline" className="gap-1 line-through text-muted-foreground">
+                <Coins className="h-3 w-3" />
+                {item.original_price}
+              </Badge>
+            )}
+            <Badge variant={isOnSale ? "destructive" : "secondary"} className="gap-1">
+              <Coins className="h-3 w-3" />
+              {item.point_cost}
             </Badge>
-          ) : (
-            <Button
-              size="sm"
-              onClick={onPurchase}
-              disabled={!canAfford}
-            >
-              {canAfford ? "Purchase" : "Insufficient Points"}
-            </Button>
-          )}
+            {isOnSale && item.sale_end_date && (
+              <SaleCountdown endDate={item.sale_end_date} />
+            )}
+          </div>
+
+          <div className="flex items-center justify-between pt-2">
+            {owned ? (
+              <Badge variant="default" className="gap-1">
+                <CheckCircle2 className="h-3 w-3" />
+                Owned
+              </Badge>
+            ) : (
+              <Button
+                size="sm"
+                onClick={onPurchase}
+                disabled={!canAfford}
+                variant={isOnSale ? "destructive" : "default"}
+              >
+                {canAfford ? "Purchase" : "Insufficient Points"}
+              </Button>
+            )}
+          </div>
         </div>
 
         {item.stock_limit && item.stock_remaining !== null && (

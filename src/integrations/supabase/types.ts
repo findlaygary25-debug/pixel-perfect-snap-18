@@ -681,17 +681,73 @@ export type Database = {
           },
         ]
       }
+      promotional_banners: {
+        Row: {
+          background_gradient: string
+          banner_type: string
+          created_at: string | null
+          cta_link: string | null
+          cta_text: string
+          description: string
+          display_order: number | null
+          end_date: string
+          icon_name: string
+          id: string
+          is_active: boolean | null
+          start_date: string
+          subtitle: string | null
+          title: string
+        }
+        Insert: {
+          background_gradient: string
+          banner_type: string
+          created_at?: string | null
+          cta_link?: string | null
+          cta_text: string
+          description: string
+          display_order?: number | null
+          end_date: string
+          icon_name: string
+          id?: string
+          is_active?: boolean | null
+          start_date: string
+          subtitle?: string | null
+          title: string
+        }
+        Update: {
+          background_gradient?: string
+          banner_type?: string
+          created_at?: string | null
+          cta_link?: string | null
+          cta_text?: string
+          description?: string
+          display_order?: number | null
+          end_date?: string
+          icon_name?: string
+          id?: string
+          is_active?: boolean | null
+          start_date?: string
+          subtitle?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       reward_items: {
         Row: {
           created_at: string | null
           icon_name: string
           id: string
           is_available: boolean | null
+          is_on_sale: boolean | null
           item_description: string
           item_name: string
           item_type: string
           metadata: Json | null
+          original_price: number | null
           point_cost: number
+          sale_end_date: string | null
+          sale_percentage: number | null
+          sale_start_date: string | null
           stock_limit: number | null
           stock_remaining: number | null
           tier: string
@@ -701,11 +757,16 @@ export type Database = {
           icon_name: string
           id?: string
           is_available?: boolean | null
+          is_on_sale?: boolean | null
           item_description: string
           item_name: string
           item_type: string
           metadata?: Json | null
+          original_price?: number | null
           point_cost: number
+          sale_end_date?: string | null
+          sale_percentage?: number | null
+          sale_start_date?: string | null
           stock_limit?: number | null
           stock_remaining?: number | null
           tier: string
@@ -715,11 +776,16 @@ export type Database = {
           icon_name?: string
           id?: string
           is_available?: boolean | null
+          is_on_sale?: boolean | null
           item_description?: string
           item_name?: string
           item_type?: string
           metadata?: Json | null
+          original_price?: number | null
           point_cost?: number
+          sale_end_date?: string | null
+          sale_percentage?: number | null
+          sale_start_date?: string | null
           stock_limit?: number | null
           stock_remaining?: number | null
           tier?: string
@@ -1321,6 +1387,17 @@ export type Database = {
           silver_count: number
           total_achievements: number
           total_switches: number
+        }[]
+      }
+      get_active_sales: {
+        Args: never
+        Returns: {
+          item_id: string
+          item_name: string
+          original_price: number
+          sale_percentage: number
+          sale_price: number
+          time_remaining: unknown
         }[]
       }
       get_affiliate_chain: {
