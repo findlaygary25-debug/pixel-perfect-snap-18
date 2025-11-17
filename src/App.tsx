@@ -42,6 +42,7 @@ import PIIAuditLogs from "./pages/PIIAuditLogs";
 import AdminRoles from "./pages/AdminRoles";
 import AdminBootstrap from "./pages/AdminBootstrap";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminNotificationPreferences from "./pages/AdminNotificationPreferences";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -106,6 +107,7 @@ const App = () => (
           <Route path="/pii-audit-logs" element={<PIIAuditLogs />} />
           <Route path="/admin/roles" element={<AdminRoles />} />
           <Route path="/admin/bootstrap" element={<AdminBootstrap />} />
+          <Route path="/admin/notification-preferences" element={<AdminNotificationPreferences />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
               </main>

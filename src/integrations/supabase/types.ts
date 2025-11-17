@@ -88,6 +88,90 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_notification_preferences: {
+        Row: {
+          created_at: string | null
+          email_enabled: boolean
+          ending_sales_email: boolean
+          ending_sales_in_app: boolean
+          ending_sales_sms: boolean
+          high_value_order_threshold: number | null
+          high_value_orders_email: boolean
+          high_value_orders_in_app: boolean
+          high_value_orders_sms: boolean
+          id: string
+          in_app_enabled: boolean
+          new_users_email: boolean
+          new_users_in_app: boolean
+          new_users_sms: boolean
+          notification_email: string | null
+          notification_phone: string | null
+          pending_orders_email: boolean
+          pending_orders_in_app: boolean
+          pending_orders_sms: boolean
+          sms_enabled: boolean
+          system_errors_email: boolean
+          system_errors_in_app: boolean
+          system_errors_sms: boolean
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email_enabled?: boolean
+          ending_sales_email?: boolean
+          ending_sales_in_app?: boolean
+          ending_sales_sms?: boolean
+          high_value_order_threshold?: number | null
+          high_value_orders_email?: boolean
+          high_value_orders_in_app?: boolean
+          high_value_orders_sms?: boolean
+          id?: string
+          in_app_enabled?: boolean
+          new_users_email?: boolean
+          new_users_in_app?: boolean
+          new_users_sms?: boolean
+          notification_email?: string | null
+          notification_phone?: string | null
+          pending_orders_email?: boolean
+          pending_orders_in_app?: boolean
+          pending_orders_sms?: boolean
+          sms_enabled?: boolean
+          system_errors_email?: boolean
+          system_errors_in_app?: boolean
+          system_errors_sms?: boolean
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email_enabled?: boolean
+          ending_sales_email?: boolean
+          ending_sales_in_app?: boolean
+          ending_sales_sms?: boolean
+          high_value_order_threshold?: number | null
+          high_value_orders_email?: boolean
+          high_value_orders_in_app?: boolean
+          high_value_orders_sms?: boolean
+          id?: string
+          in_app_enabled?: boolean
+          new_users_email?: boolean
+          new_users_in_app?: boolean
+          new_users_sms?: boolean
+          notification_email?: string | null
+          notification_phone?: string | null
+          pending_orders_email?: boolean
+          pending_orders_in_app?: boolean
+          pending_orders_sms?: boolean
+          sms_enabled?: boolean
+          system_errors_email?: boolean
+          system_errors_in_app?: boolean
+          system_errors_sms?: boolean
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       advertisements: {
         Row: {
           advertiser_id: string
