@@ -36,6 +36,7 @@ import { useNavigate } from "react-router-dom";
 import * as LucideIcons from "lucide-react";
 import { PromotionalBannerCard } from "@/components/PromotionalBanner";
 import { SaleCountdown } from "@/components/SaleCountdown";
+import { TriggerFlashSale } from "@/components/TriggerFlashSale";
 
 type RewardItem = {
   id: string;
@@ -246,6 +247,7 @@ export default function RewardsStore() {
             </p>
           </div>
         </div>
+        <TriggerFlashSale />
       </div>
 
       {/* Points Balance */}
