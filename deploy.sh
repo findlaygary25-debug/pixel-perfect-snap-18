@@ -14,7 +14,7 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 # Configuration
-REPO_URL="YOUR_GITHUB_REPO_URL"  # Replace with your GitHub repo URL
+REPO_URL="https://github.com/findlaygary25-debug/pixel-perfect-snap-18.git"  # Your GitHub repo URL
 APP_DIR="/var/www/lovable-app"
 DOMAIN="your-domain.com"  # Replace with your domain
 
