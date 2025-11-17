@@ -1781,6 +1781,65 @@ export default function Feed() {
             <Share2 className="h-6 w-6" />
           </button>
         </div>
+
+        {/* VIDEO CONTROLS - Bottom Center */}
+        <div className="pointer-events-auto flex items-center justify-center gap-3">
+          {/* PAUSE/PLAY BUTTON */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              const videoElement = videoRefs.current.get(video.id);
+              if (!videoElement) return;
+
+              if (playingVideos.has(video.id)) {
+                videoElement.pause();
+                setPlayingVideos((prev) => {
+                  const next = new Set(prev);
+                  next.delete(video.id);
+                  return next;
+                });
+              } else {
+                videoElement.play();
+                setPlayingVideos((prev) => new Set(prev).add(video.id));
+              }
+            }}
+            className="bg-black/40 px-3 py-3 rounded-full backdrop-blur-md hover:bg-black/60 transition-colors"
+          >
+            {playingVideos.has(video.id) ? (
+              <Pause className="h-6 w-6 text-white" />
+            ) : (
+              <Play className="h-6 w-6 text-white" />
+            )}
+          </button>
+
+          {/* MUTE BUTTON */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              const videoElement = videoRefs.current.get(video.id);
+              if (!videoElement) return;
+
+              if (mutedVideos.has(video.id)) {
+                videoElement.muted = false;
+                setMutedVideos((prev) => {
+                  const next = new Set(prev);
+                  next.delete(video.id);
+                  return next;
+                });
+              } else {
+                videoElement.muted = true;
+                setMutedVideos((prev) => new Set(prev).add(video.id));
+              }
+            }}
+            className="bg-black/40 px-3 py-3 rounded-full backdrop-blur-md hover:bg-black/60 transition-colors"
+          >
+            {mutedVideos.has(video.id) ? (
+              <VolumeX className="h-6 w-6 text-white" />
+            ) : (
+              <Volume2 className="h-6 w-6 text-white" />
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
