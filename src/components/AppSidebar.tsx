@@ -157,7 +157,7 @@ export function AppSidebar() {
           fixed top-0 left-0 h-full z-50
           bg-sidebar text-sidebar-foreground border-r border-sidebar-border
           transition-transform duration-300
-          ${isMobile ? "w-[50vw] max-w-[280px]" : "w-[280px]"}
+          w-full
           ${open ? "translate-x-0" : "-translate-x-full"}
         `}
       >
