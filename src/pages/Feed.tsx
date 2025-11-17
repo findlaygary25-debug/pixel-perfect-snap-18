@@ -1577,12 +1577,12 @@ export default function Feed() {
       />
 
       {/* Inner video frame - limited width on desktop */}
-      <div className="relative h-full w-full max-w-[430px] px-2 flex items-center justify-center">
+      <div className="relative h-full w-full max-w-[430px] flex items-center justify-center">
         <video
           ref={(el) => setVideoRef(video.id, el as HTMLVideoElement | null)}
           data-video-id={video.id}
           src={video.video_url}
-          className="h-full max-h-[90vh] w-auto mx-auto object-contain md:rounded-2xl"
+          className="h-auto max-h-[85vh] w-full md:w-auto md:max-w-full object-contain md:rounded-2xl"
           muted={mutedVideos.has(video.id)}
           playsInline
           loop
