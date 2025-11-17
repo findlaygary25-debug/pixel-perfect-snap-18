@@ -4,9 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Trophy, Gift, Sparkles, Star, Clock, CheckCircle2 } from "lucide-react";
+import { Trophy, Gift, Sparkles, Star, Clock, CheckCircle2, History } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 type WeeklyChallenge = {
   id: string;
@@ -41,6 +42,7 @@ type WeeklyChallengesProps = {
 };
 
 export function WeeklyChallenges({ profiles, usageHistory, onProgressUpdate }: WeeklyChallengesProps) {
+  const navigate = useNavigate();
   const [challenges, setChallenges] = useState<WeeklyChallenge[]>([]);
   const [loading, setLoading] = useState(true);
   const [weekEnds, setWeekEnds] = useState<string>("");
@@ -201,14 +203,27 @@ export function WeeklyChallenges({ profiles, usageHistory, onProgressUpdate }: W
       {/* Header */}
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-primary" />
-            Weekly Challenges
-          </CardTitle>
-          <CardDescription className="flex items-center gap-2">
-            <span>Reset every Monday</span>
-            <span className="text-foreground font-medium">• Ends {weekEnds}</span>
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-primary" />
+                Weekly Challenges
+              </CardTitle>
+              <CardDescription className="flex items-center gap-2 mt-1">
+                <span>Reset every Monday</span>
+                <span className="text-foreground font-medium">• Ends {weekEnds}</span>
+              </CardDescription>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate('/challenge-history')}
+              className="gap-2"
+            >
+              <History className="h-4 w-4" />
+              History
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-2 text-sm">

@@ -1166,7 +1166,34 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      challenge_history_view: {
+        Row: {
+          challenge_description: string | null
+          challenge_id: string | null
+          challenge_title: string | null
+          challenge_type: string | null
+          completed_at: string | null
+          current_progress: number | null
+          is_completed: boolean | null
+          reward_claimed: boolean | null
+          reward_type: string | null
+          reward_value: string | null
+          target_value: number | null
+          tier: string | null
+          user_id: string | null
+          week_end: string | null
+          week_start: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_weekly_progress_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       get_achievement_leaderboard: {
@@ -1217,6 +1244,18 @@ export type Database = {
           total_achievements_unlocked: number
           total_profile_switches: number
           total_users: number
+        }[]
+      }
+      get_user_challenge_stats: {
+        Args: never
+        Returns: {
+          badges_earned: number
+          best_week_completions: number
+          completion_rate: number
+          current_week_completions: number
+          total_challenges_completed: number
+          total_points_earned: number
+          total_rewards_earned: number
         }[]
       }
       increment_wallet_balance: {

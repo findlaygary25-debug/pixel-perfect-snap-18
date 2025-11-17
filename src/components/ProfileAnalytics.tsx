@@ -3,11 +3,14 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { TrendingUp, Award, Calendar, Lightbulb } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, subDays, isAfter } from "date-fns";
 import { ProfileAchievements } from "@/components/ProfileAchievements";
 import { AchievementLeaderboard } from "@/components/AchievementLeaderboard";
 import { WeeklyChallenges } from "@/components/WeeklyChallenges";
+import { useNavigate } from "react-router-dom";
+import { History } from "lucide-react";
 
 type ProfileUsageHistory = {
   timestamp: string;
@@ -27,6 +30,8 @@ type ProfileAnalyticsProps = {
 };
 
 export function ProfileAnalytics({ profiles, usageHistory }: ProfileAnalyticsProps) {
+  const navigate = useNavigate();
+  
   // Calculate analytics data
   const analytics = useMemo(() => {
     const totalUsage = usageHistory.length;
@@ -93,7 +98,24 @@ export function ProfileAnalytics({ profiles, usageHistory }: ProfileAnalyticsPro
   }, [profiles, usageHistory]);
 
   return (
-        <Tabs defaultValue="overview" className="w-full">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="text-lg font-semibold">Profile Analytics</h3>
+          <p className="text-sm text-muted-foreground">Track your profile usage and achievements</p>
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => navigate('/challenge-history')}
+          className="gap-2"
+        >
+          <History className="h-4 w-4" />
+          View History
+        </Button>
+      </div>
+
+      <Tabs defaultValue="overview" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="challenges">Challenges</TabsTrigger>
@@ -285,6 +307,7 @@ export function ProfileAnalytics({ profiles, usageHistory }: ProfileAnalyticsPro
         <AchievementLeaderboard />
       </TabsContent>
     </Tabs>
+  </div>
   );
 }
 
