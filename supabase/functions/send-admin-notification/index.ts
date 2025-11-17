@@ -202,6 +202,28 @@ const handler = async (req: Request): Promise<Response> => {
             `,
           });
 
+          const emailStatus = emailResult.error ? 'failed' : 'sent';
+          const emailExternalId = emailResult.data?.id || null;
+          const emailError = emailResult.error ? JSON.stringify(emailResult.error) : null;
+
+          // Log email delivery
+          await supabaseClient.from('notification_delivery_logs').insert({
+            notification_type,
+            recipient_id: userId,
+            recipient_identifier: prefs.notification_email,
+            channel: 'email',
+            status: emailStatus,
+            title,
+            message,
+            priority,
+            error_message: emailError,
+            external_id: emailExternalId,
+            metadata: {
+              action_url,
+              order_value,
+            },
+          });
+
           if (emailResult.error) {
             console.error(`Email failed for ${prefs.notification_email}:`, emailResult.error);
             emailsFailed.push(prefs.notification_email);
@@ -215,7 +237,26 @@ const handler = async (req: Request): Promise<Response> => {
         if (shouldSendSMS && prefs?.notification_phone) {
           // Validate phone number
           if (!validatePhoneNumber(prefs.notification_phone)) {
-            console.error(`Invalid phone number format for user ${userId}: ${prefs.notification_phone.slice(-4)}`);
+            const errorMsg = `Invalid phone number format: ${prefs.notification_phone.slice(-4)}`;
+            console.error(errorMsg);
+            
+            // Log failed SMS due to invalid phone
+            await supabaseClient.from('notification_delivery_logs').insert({
+              notification_type,
+              recipient_id: userId,
+              recipient_identifier: `***${prefs.notification_phone.slice(-4)}`,
+              channel: 'sms',
+              status: 'failed',
+              title,
+              message,
+              priority,
+              error_message: errorMsg,
+              metadata: {
+                action_url,
+                order_value,
+              },
+            });
+            
             smsFailed.push(`***${prefs.notification_phone.slice(-4)}`);
             continue;
           }
@@ -223,6 +264,28 @@ const handler = async (req: Request): Promise<Response> => {
           // Format and send SMS
           const smsBody = formatSMSMessage(title, message, priority, action_url);
           const smsResult = await sendSMS(prefs.notification_phone, smsBody);
+
+          const smsStatus = smsResult.success ? 'sent' : 'failed';
+          const smsExternalId = smsResult.messageSid || null;
+          const smsError = smsResult.error || null;
+
+          // Log SMS delivery
+          await supabaseClient.from('notification_delivery_logs').insert({
+            notification_type,
+            recipient_id: userId,
+            recipient_identifier: `***${prefs.notification_phone.slice(-4)}`,
+            channel: 'sms',
+            status: smsStatus,
+            title,
+            message: smsBody,
+            priority,
+            error_message: smsError,
+            external_id: smsExternalId,
+            metadata: {
+              action_url,
+              order_value,
+            },
+          });
 
           if (smsResult.success) {
             console.log(`SMS sent to ***${prefs.notification_phone.slice(-4)} (SID: ${smsResult.messageSid})`);
