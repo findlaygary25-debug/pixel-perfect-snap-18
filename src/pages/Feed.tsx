@@ -1619,22 +1619,22 @@ export default function Feed() {
         <button
           onClick={(e) => {
             e.stopPropagation();
-            const vid = videoRefs.current.get(video.id);
-            if (!vid) return;
+            const videoElement = videoRefs.current.get(video.id);
+            if (!videoElement) return;
 
             if (mutedVideos.has(video.id)) {
-              vid.muted = false;
+              videoElement.muted = false;
               setMutedVideos((prev) => {
                 const next = new Set(prev);
                 next.delete(video.id);
                 return next;
               });
             } else {
-              vid.muted = true;
+              videoElement.muted = true;
               setMutedVideos((prev) => new Set(prev).add(video.id));
             }
           }}
-          className="absolute bottom-4 right-4 bg-black/40 px-3 py-3 rounded-full backdrop-blur-md z-10 hover:bg-black/60 transition-colors"
+          className="absolute bottom-4 right-4 bg-black/40 px-3 py-3 rounded-full backdrop-blur-md"
         >
           {mutedVideos.has(video.id) ? (
             <VolumeX className="h-6 w-6 text-white" />
