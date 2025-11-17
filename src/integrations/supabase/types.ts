@@ -250,6 +250,39 @@ export type Database = {
         }
         Relationships: []
       }
+      alert_escalation_config: {
+        Row: {
+          alert_type: string
+          created_at: string | null
+          escalation_level: number
+          id: string
+          notification_channels: string[] | null
+          target_role: string
+          time_threshold_minutes: number
+          updated_at: string | null
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string | null
+          escalation_level: number
+          id?: string
+          notification_channels?: string[] | null
+          target_role: string
+          time_threshold_minutes: number
+          updated_at?: string | null
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string | null
+          escalation_level?: number
+          id?: string
+          notification_channels?: string[] | null
+          target_role?: string
+          time_threshold_minutes?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       bookmarks: {
         Row: {
           created_at: string
@@ -474,6 +507,10 @@ export type Database = {
           alert_type: string
           created_at: string | null
           description: string
+          escalated_at: string | null
+          escalated_to: string[] | null
+          escalation_history: Json | null
+          escalation_level: number | null
           id: string
           metadata: Json | null
           metric_value: number | null
@@ -491,6 +528,10 @@ export type Database = {
           alert_type: string
           created_at?: string | null
           description: string
+          escalated_at?: string | null
+          escalated_to?: string[] | null
+          escalation_history?: Json | null
+          escalation_level?: number | null
           id?: string
           metadata?: Json | null
           metric_value?: number | null
@@ -508,6 +549,10 @@ export type Database = {
           alert_type?: string
           created_at?: string | null
           description?: string
+          escalated_at?: string | null
+          escalated_to?: string[] | null
+          escalation_history?: Json | null
+          escalation_level?: number | null
           id?: string
           metadata?: Json | null
           metric_value?: number | null
