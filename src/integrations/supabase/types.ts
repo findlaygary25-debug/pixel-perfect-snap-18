@@ -767,6 +767,151 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_template_content: {
+        Row: {
+          channel: string
+          content_blocks: Json | null
+          created_at: string | null
+          id: string
+          language_code: string
+          plain_text: string | null
+          preview_data: Json | null
+          subject: string | null
+          template_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          channel: string
+          content_blocks?: Json | null
+          created_at?: string | null
+          id?: string
+          language_code: string
+          plain_text?: string | null
+          preview_data?: Json | null
+          subject?: string | null
+          template_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          channel?: string
+          content_blocks?: Json | null
+          created_at?: string | null
+          id?: string
+          language_code?: string
+          plain_text?: string | null
+          preview_data?: Json | null
+          subject?: string | null
+          template_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_template_content_language_code_fkey"
+            columns: ["language_code"]
+            isOneToOne: false
+            referencedRelation: "supported_languages"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "notification_template_content_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "notification_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_template_versions: {
+        Row: {
+          change_description: string | null
+          changed_by: string | null
+          content_snapshot: Json
+          created_at: string | null
+          id: string
+          template_id: string
+          version_number: number
+        }
+        Insert: {
+          change_description?: string | null
+          changed_by?: string | null
+          content_snapshot: Json
+          created_at?: string | null
+          id?: string
+          template_id: string
+          version_number: number
+        }
+        Update: {
+          change_description?: string | null
+          changed_by?: string | null
+          content_snapshot?: Json
+          created_at?: string | null
+          id?: string
+          template_id?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_template_versions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "notification_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_templates: {
+        Row: {
+          available_channels: string[] | null
+          category: string
+          created_at: string | null
+          created_by: string | null
+          default_language: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+          variables: Json | null
+          version: number | null
+        }
+        Insert: {
+          available_channels?: string[] | null
+          category: string
+          created_at?: string | null
+          created_by?: string | null
+          default_language?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+          variables?: Json | null
+          version?: number | null
+        }
+        Update: {
+          available_channels?: string[] | null
+          category?: string
+          created_at?: string | null
+          created_by?: string | null
+          default_language?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+          variables?: Json | null
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_templates_default_language_fkey"
+            columns: ["default_language"]
+            isOneToOne: false
+            referencedRelation: "supported_languages"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       notification_test_assignments: {
         Row: {
           assigned_at: string | null
@@ -1447,6 +1592,30 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      supported_languages: {
+        Row: {
+          code: string
+          is_active: boolean | null
+          name: string
+          native_name: string
+          rtl: boolean | null
+        }
+        Insert: {
+          code: string
+          is_active?: boolean | null
+          name: string
+          native_name: string
+          rtl?: boolean | null
+        }
+        Update: {
+          code?: string
+          is_active?: boolean | null
+          name?: string
+          native_name?: string
+          rtl?: boolean | null
         }
         Relationships: []
       }
