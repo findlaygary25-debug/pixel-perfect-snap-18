@@ -48,7 +48,7 @@ const baseItems = [
   { title: "Shares", url: "/shares", icon: Share2 },
   { title: "Wallet", url: "/wallet", icon: Wallet },
   { title: "Affiliate", url: "/affiliate", icon: Users },
-  { title: "Makeup", url: "/makeup", icon: Palette },
+  { title: "Video Studio", url: "/makeup", icon: Palette },
   { title: "Haptic Settings", url: "/haptic-settings", icon: Settings },
   { title: "Notification Preferences", url: "/notification-preferences", icon: Bell },
   { title: "Notification Analytics", url: "/notification-analytics", icon: TrendingUp },
