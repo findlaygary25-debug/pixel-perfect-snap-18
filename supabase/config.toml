@@ -11,3 +11,6 @@ verify_jwt = true
 
 [functions.twilio-sms-webhook]
 verify_jwt = false
+
+[functions.monitor-sms-delivery]
+verify_jwt = false
