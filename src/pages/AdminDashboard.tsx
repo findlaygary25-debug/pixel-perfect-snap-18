@@ -255,13 +255,13 @@ export default function AdminDashboard() {
       <Card>
         <CardHeader>
           <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Common administrative tasks</CardDescription>
+          <CardDescription>Common administrative tasks and notifications</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
             <Button
               variant="outline"
-              className="h-auto flex-col gap-2 py-4"
+              className="h-auto flex-col gap-2 py-4 relative"
               onClick={() => navigate("/admin/flash-sales")}
             >
               <Zap className="h-6 w-6" />
@@ -269,6 +269,14 @@ export default function AdminDashboard() {
               <span className="text-xs text-muted-foreground">
                 {stats?.activeFlashSales || 0} active
               </span>
+              {stats && stats.activeFlashSales > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-2 -right-2 h-6 w-6 flex items-center justify-center p-0"
+                >
+                  {stats.activeFlashSales}
+                </Badge>
+              )}
             </Button>
 
             <Button
