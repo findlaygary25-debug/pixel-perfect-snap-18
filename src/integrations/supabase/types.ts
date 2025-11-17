@@ -1511,6 +1511,30 @@ export type Database = {
           total_users: number
         }[]
       }
+      get_notification_stats: {
+        Args: never
+        Returns: {
+          challenges_email_count: number
+          challenges_in_app_count: number
+          challenges_sms_count: number
+          comments_email_count: number
+          comments_in_app_count: number
+          comments_sms_count: number
+          email_enabled_count: number
+          flash_sales_email_count: number
+          flash_sales_in_app_count: number
+          flash_sales_sms_count: number
+          follows_email_count: number
+          follows_in_app_count: number
+          follows_sms_count: number
+          in_app_enabled_count: number
+          shares_email_count: number
+          shares_in_app_count: number
+          shares_sms_count: number
+          sms_enabled_count: number
+          total_users: number
+        }[]
+      }
       get_user_challenge_stats: {
         Args: never
         Returns: {
