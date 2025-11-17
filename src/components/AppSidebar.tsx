@@ -46,6 +46,7 @@ const baseItems = [
   { title: "Escalation Rules", url: "/admin/escalation-config", icon: ArrowUp },
   { title: "Template Editor", url: "/admin/templates", icon: MailIcon },
   { title: "Shares", url: "/shares", icon: Share2 },
+  { title: "Gifts", url: "/gifts", icon: Gift },
   { title: "Wallet", url: "/wallet", icon: Wallet },
   { title: "Affiliate", url: "/affiliate", icon: Users },
   { title: "Video Studio", url: "/makeup", icon: Palette },
