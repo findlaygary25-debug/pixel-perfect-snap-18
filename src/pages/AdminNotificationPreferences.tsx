@@ -248,7 +248,7 @@ export default function AdminNotificationPreferences() {
 
           {preferences.sms_enabled && (
             <div className="ml-8 space-y-2">
-              <Label htmlFor="notification-phone">Phone Number</Label>
+              <Label htmlFor="notification-phone">Phone Number (E.164 Format)</Label>
               <Input
                 id="notification-phone"
                 type="tel"
@@ -257,7 +257,31 @@ export default function AdminNotificationPreferences() {
                 onChange={(e) =>
                   setPreferences({ ...preferences, notification_phone: e.target.value })
                 }
+                className={
+                  preferences.notification_phone && 
+                  !/^\+[1-9]\d{1,14}$/.test(preferences.notification_phone)
+                    ? "border-orange-500 focus-visible:ring-orange-500"
+                    : ""
+                }
               />
+              <p className="text-sm text-muted-foreground">
+                Enter phone number in international format starting with + and country code. 
+                Example: +1 for USA, +44 for UK, +91 for India
+              </p>
+              {preferences.notification_phone && 
+               !/^\+[1-9]\d{1,14}$/.test(preferences.notification_phone) && (
+                <p className="text-sm text-orange-600 flex items-center gap-1">
+                  <span>⚠️</span>
+                  Invalid format. Phone must start with + followed by country code and number (e.g., +12345678901)
+                </p>
+              )}
+              {preferences.notification_phone && 
+               /^\+[1-9]\d{1,14}$/.test(preferences.notification_phone) && (
+                <p className="text-sm text-green-600 flex items-center gap-1">
+                  <span>✓</span>
+                  Valid phone number format
+                </p>
+              )}
             </div>
           )}
         </CardContent>

@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import { Resend } from "npm:resend@4.0.0";
+import { Resend } from "https://esm.sh/resend@4.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,6 +18,66 @@ interface NotificationRequest {
 }
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+
+// Twilio configuration
+const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID");
+const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN");
+const TWILIO_PHONE_NUMBER = Deno.env.get("TWILIO_PHONE_NUMBER");
+
+// Phone number validation (E.164 format)
+const validatePhoneNumber = (phone: string): boolean => {
+  const e164Regex = /^\+[1-9]\d{1,14}$/;
+  return e164Regex.test(phone);
+};
+
+// Format SMS message (keep under 160 characters when possible)
+const formatSMSMessage = (title: string, message: string, priority: string, action_url?: string): string => {
+  const priorityPrefix = `[${priority.toUpperCase()}]`;
+  let smsText = `${priorityPrefix} ${title}: ${message}`;
+  
+  if (action_url && smsText.length < 120) {
+    smsText += ` ${action_url}`;
+  }
+  
+  return smsText;
+};
+
+// Send SMS via Twilio REST API
+const sendSMS = async (to: string, body: string): Promise<{ success: boolean; messageSid?: string; error?: string }> => {
+  try {
+    if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
+      return { success: false, error: "Twilio credentials not configured" };
+    }
+
+    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
+    const authHeader = `Basic ${btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`)}`;
+
+    const response = await fetch(twilioUrl, {
+      method: "POST",
+      headers: {
+        "Authorization": authHeader,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        To: to,
+        From: TWILIO_PHONE_NUMBER,
+        Body: body,
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return { success: true, messageSid: data.sid };
+    } else {
+      const error = await response.text();
+      console.error("Twilio API error:", error);
+      return { success: false, error: error };
+    }
+  } catch (error: any) {
+    console.error("Error sending SMS:", error);
+    return { success: false, error: error.message };
+  }
+};
 
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
@@ -68,6 +128,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     const emailsSent = [];
     const emailsFailed = [];
+    const smsSent = [];
+    const smsFailed = [];
 
     // Process each admin
     for (const userId of targetAdmins) {
@@ -83,6 +145,10 @@ const handler = async (req: Request): Promise<Response> => {
         const shouldSendEmail = prefs?.email_enabled && 
           prefs?.[`${notification_type}_email` as keyof typeof prefs];
 
+        // Check if we should send SMS for this notification type
+        const shouldSendSMS = prefs?.sms_enabled && 
+          prefs?.[`${notification_type}_sms` as keyof typeof prefs];
+
         // Check high value order threshold
         if (notification_type === 'high_value_orders' && order_value) {
           const threshold = prefs?.high_value_order_threshold || 1000;
@@ -92,8 +158,8 @@ const handler = async (req: Request): Promise<Response> => {
           }
         }
 
+        // Send Email Notification
         if (shouldSendEmail && prefs?.notification_email) {
-          // Send email notification
           const emailResult = await resend.emails.send({
             from: "Voice2Fire Admin <onboarding@resend.dev>",
             to: [prefs.notification_email],
@@ -107,8 +173,8 @@ const handler = async (req: Request): Promise<Response> => {
                     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
                     .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px 8px 0 0; }
                     .content { background: white; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; }
-                    .priority { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
-                    .priority-high { background: #fee2e2; color: #991b1b; }
+                    .priority { display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-top: 10px; }
+                    .priority-high { background: #fecaca; color: #991b1b; }
                     .priority-medium { background: #fef3c7; color: #92400e; }
                     .priority-low { background: #d1fae5; color: #065f46; }
                     .button { display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 20px; }
@@ -145,8 +211,27 @@ const handler = async (req: Request): Promise<Response> => {
           }
         }
 
-        // SMS notifications would go here if implemented
-        // if (prefs?.sms_enabled && prefs?.[`${notification_type}_sms`]) { ... }
+        // Send SMS Notification
+        if (shouldSendSMS && prefs?.notification_phone) {
+          // Validate phone number
+          if (!validatePhoneNumber(prefs.notification_phone)) {
+            console.error(`Invalid phone number format for user ${userId}: ${prefs.notification_phone.slice(-4)}`);
+            smsFailed.push(`***${prefs.notification_phone.slice(-4)}`);
+            continue;
+          }
+
+          // Format and send SMS
+          const smsBody = formatSMSMessage(title, message, priority, action_url);
+          const smsResult = await sendSMS(prefs.notification_phone, smsBody);
+
+          if (smsResult.success) {
+            console.log(`SMS sent to ***${prefs.notification_phone.slice(-4)} (SID: ${smsResult.messageSid})`);
+            smsSent.push(`***${prefs.notification_phone.slice(-4)}`);
+          } else {
+            console.error(`SMS failed for ***${prefs.notification_phone.slice(-4)}: ${smsResult.error}`);
+            smsFailed.push(`***${prefs.notification_phone.slice(-4)}`);
+          }
+        }
         
       } catch (error) {
         console.error(`Error processing notifications for user ${userId}:`, error);
@@ -158,7 +243,10 @@ const handler = async (req: Request): Promise<Response> => {
         success: true,
         emails_sent: emailsSent.length,
         emails_failed: emailsFailed.length,
+        sms_sent: smsSent.length,
+        sms_failed: smsFailed.length,
         emails_sent_to: emailsSent,
+        sms_sent_to: smsSent,
       }),
       {
         status: 200,
