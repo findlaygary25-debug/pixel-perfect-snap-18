@@ -127,7 +127,7 @@ Deno.serve(async (req) => {
       console.log(`Updated ${itemsUpdatedCount} items with flash sale pricing`);
     }
 
-    // 4. Send notifications to all users
+    // 4. Send notifications to all users with preference checking
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
       .select('user_id, username')
@@ -138,44 +138,83 @@ Deno.serve(async (req) => {
       throw profilesError;
     }
 
-    console.log(`Sending notifications to ${profiles?.length || 0} users`);
+    console.log(`Processing notifications for ${profiles?.length || 0} users`);
 
     let emailsSent = 0;
     if (profiles && profiles.length > 0) {
-      // Send in-app notifications
-      const notifications = profiles.map(profile => ({
-        user_id: profile.user_id,
-        type: 'flash_sale',
-        message: `⚡ FLASH SALE ALERT! Get ${config.discount_percentage}% off on premium items for the next ${config.duration_hours} hour${config.duration_hours > 1 ? 's' : ''}!`,
-        sender_id: profile.user_id,
-        sender_username: 'Voice2Fire',
-        is_read: false,
-      }));
+      // Get notification preferences to determine who gets in-app notifications
+      const { data: allPreferences, error: allPrefsError } = await supabase
+        .from('user_notification_preferences')
+        .select('user_id, in_app_enabled, flash_sales_in_app, email_enabled, flash_sales_email');
 
-      const { error: notificationError } = await supabase
-        .from('notifications')
-        .insert(notifications);
-
-      if (notificationError) {
-        console.error('Error sending notifications:', notificationError);
-        throw notificationError;
+      if (allPrefsError) {
+        console.error('Error fetching all preferences:', allPrefsError);
       }
 
-      console.log(`Sent ${notifications.length} in-app notifications`);
+      // Create maps for quick lookup
+      const inAppOptedIn = new Set(
+        allPreferences?.filter(p => p.in_app_enabled && p.flash_sales_in_app).map(p => p.user_id) || []
+      );
 
-      // Send email notifications
+      // Send in-app notifications to opted-in users only
+      const inAppNotifications = profiles
+        .filter(profile => inAppOptedIn.has(profile.user_id))
+        .map(profile => ({
+          user_id: profile.user_id,
+          type: 'flash_sale',
+          message: `⚡ FLASH SALE ALERT! Get ${config.discount_percentage}% off on premium items for the next ${config.duration_hours} hour${config.duration_hours > 1 ? 's' : ''}!`,
+          sender_id: profile.user_id,
+          sender_username: 'Voice2Fire',
+          is_read: false,
+        }));
+
+      if (inAppNotifications.length > 0) {
+        const { error: notificationError } = await supabase
+          .from('notifications')
+          .insert(inAppNotifications);
+
+        if (notificationError) {
+          console.error('Error sending in-app notifications:', notificationError);
+          throw notificationError;
+        }
+
+        console.log(`Sent ${inAppNotifications.length} in-app notifications (${profiles.length - inAppNotifications.length} users opted out)`);
+      }
+
+      // Send email notifications with preference checking
       // Get user emails from auth.users
       const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
       
       if (authError) {
         console.error('Error fetching user emails:', authError);
       } else if (authUsers.users && authUsers.users.length > 0) {
-        console.log(`Sending emails to ${authUsers.users.length} users`);
+        // Get notification preferences for all users
+        const { data: preferences, error: prefsError } = await supabase
+          .from('user_notification_preferences')
+          .select('user_id, email_enabled, flash_sales_email')
+          .eq('email_enabled', true)
+          .eq('flash_sales_email', true);
+
+        if (prefsError) {
+          console.error('Error fetching notification preferences:', prefsError);
+        }
+
+        // Create a set of user IDs who have opted in to flash sale emails
+        const optedInUsers = new Set(
+          preferences?.map(p => p.user_id) || []
+        );
+
+        // Filter users who have opted in
+        const eligibleUsers = authUsers.users.filter(user => 
+          optedInUsers.has(user.id)
+        );
+
+        console.log(`Sending emails to ${eligibleUsers.length} users (${authUsers.users.length} total, ${authUsers.users.length - eligibleUsers.length} opted out)`);
         
         // Send emails in batches to avoid rate limits
         const batchSize = 50;
-        for (let i = 0; i < authUsers.users.length; i += batchSize) {
-          const batch = authUsers.users.slice(i, i + batchSize);
+        for (let i = 0; i < eligibleUsers.length; i += batchSize) {
+          const batch = eligibleUsers.slice(i, i + batchSize);
           
           try {
             const emailPromises = batch.map(user => {
@@ -245,7 +284,7 @@ Deno.serve(async (req) => {
           }
         }
         
-        console.log(`Total emails sent: ${emailsSent}`);
+        console.log(`Total emails sent: ${emailsSent} (to users who opted in)`);
       }
     }
 
