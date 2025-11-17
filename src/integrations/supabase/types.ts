@@ -585,6 +585,110 @@ export type Database = {
         }
         Relationships: []
       }
+      gift_balances: {
+        Row: {
+          created_at: string | null
+          id: string
+          total_received: number | null
+          total_sent: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          total_received?: number | null
+          total_sent?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          total_received?: number | null
+          total_sent?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      gift_catalog: {
+        Row: {
+          created_at: string | null
+          gift_value: number
+          id: string
+          image_url: string
+          is_active: boolean | null
+          name: string
+          price_usd: number
+          tier: string
+        }
+        Insert: {
+          created_at?: string | null
+          gift_value: number
+          id?: string
+          image_url: string
+          is_active?: boolean | null
+          name: string
+          price_usd: number
+          tier: string
+        }
+        Update: {
+          created_at?: string | null
+          gift_value?: number
+          id?: string
+          image_url?: string
+          is_active?: boolean | null
+          name?: string
+          price_usd?: number
+          tier?: string
+        }
+        Relationships: []
+      }
+      gift_transactions: {
+        Row: {
+          affiliate_commission: number | null
+          affiliate_id: string | null
+          created_at: string | null
+          gift_id: string
+          gift_value: number
+          id: string
+          platform_fee: number
+          recipient_id: string
+          sender_id: string
+        }
+        Insert: {
+          affiliate_commission?: number | null
+          affiliate_id?: string | null
+          created_at?: string | null
+          gift_id: string
+          gift_value: number
+          id?: string
+          platform_fee: number
+          recipient_id: string
+          sender_id: string
+        }
+        Update: {
+          affiliate_commission?: number | null
+          affiliate_id?: string | null
+          created_at?: string | null
+          gift_id?: string
+          gift_value?: number
+          id?: string
+          platform_fee?: number
+          recipient_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_transactions_gift_id_fkey"
+            columns: ["gift_id"]
+            isOneToOne: false
+            referencedRelation: "gift_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       live_stream_messages: {
         Row: {
           created_at: string | null
