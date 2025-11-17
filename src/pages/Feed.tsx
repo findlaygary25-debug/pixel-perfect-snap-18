@@ -1610,7 +1610,9 @@ export default function Feed() {
           }}
           className="absolute inset-0 flex items-center justify-center pointer-events-auto z-10"
         >
-          {!playingVideos.has(video.id) && (
+          {playingVideos.has(video.id) ? (
+            <Pause className="h-16 w-16 text-white opacity-80 drop-shadow-xl" />
+          ) : (
             <Play className="h-16 w-16 text-white opacity-80 drop-shadow-xl" />
           )}
         </button>
