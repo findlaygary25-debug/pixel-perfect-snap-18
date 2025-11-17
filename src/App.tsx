@@ -46,6 +46,8 @@ import AdminNotificationPreferences from "./pages/AdminNotificationPreferences";
 import NotificationDeliveryLogs from "./pages/NotificationDeliveryLogs";
 import DeliveryAlerts from "./pages/DeliveryAlerts";
 import EscalationConfig from "./pages/EscalationConfig";
+import NotificationTemplates from "./pages/NotificationTemplates";
+import NotificationTemplateEditor from "./pages/NotificationTemplateEditor";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -114,6 +116,9 @@ const App = () => (
           <Route path="/admin/notification-logs" element={<NotificationDeliveryLogs />} />
           <Route path="/admin/delivery-alerts" element={<DeliveryAlerts />} />
           <Route path="/admin/escalation-config" element={<EscalationConfig />} />
+          <Route path="/admin/templates" element={<NotificationTemplates />} />
+          <Route path="/admin/templates/new" element={<NotificationTemplateEditor />} />
+          <Route path="/admin/templates/edit/:id" element={<NotificationTemplateEditor />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
               </main>
