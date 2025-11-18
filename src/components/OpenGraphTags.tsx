@@ -25,7 +25,7 @@ export const OpenGraphTags = ({
   likes = 0,
 }: OpenGraphTagsProps) => {
   useEffect(() => {
-    const videoPageUrl = `https://voice2fire.com/video/${videoId}`;
+    const videoPageUrl = `https://utubchat.com/video/${videoId}`;
     
     // Update or create meta tags
     const metaTags = [
@@ -40,11 +40,11 @@ export const OpenGraphTags = ({
       { property: 'og:video', content: videoUrl },
       { property: 'og:video:secure_url', content: videoUrl },
       { property: 'og:video:type', content: 'video/mp4' },
-      { property: 'og:site_name', content: 'Voice2Fire' },
+      { property: 'og:site_name', content: 'uTubChat' },
       
       // Twitter Card
       { name: 'twitter:card', content: 'player' },
-      { name: 'twitter:site', content: '@voice2fire' },
+      { name: 'twitter:site', content: '@utubchat' },
       { name: 'twitter:title', content: title },
       { name: 'twitter:description', content: description },
       { name: 'twitter:image', content: thumbnailUrl },
@@ -81,7 +81,7 @@ export const OpenGraphTags = ({
     canonical.setAttribute('href', videoPageUrl);
 
     // Update page title
-    document.title = `${title} - Voice2Fire`;
+    document.title = `${title} - uTubChat`;
 
   }, [videoId, title, description, thumbnailUrl, videoUrl, author, views, likes]);
 

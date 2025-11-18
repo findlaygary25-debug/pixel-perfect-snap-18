@@ -70,8 +70,8 @@ const App = () => (
                 <div className="flex items-center gap-3">
                   <SidebarTrigger />
                   <img 
-                    src="/voice2fire-logo.png" 
-                    alt="Voice2Fire" 
+                    src="/favicon.png" 
+                    alt="uTubChat" 
                     className="h-10 w-auto object-contain hover-scale"
                   />
                 </div>

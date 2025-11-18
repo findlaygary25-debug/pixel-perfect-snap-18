@@ -27,7 +27,7 @@ export const PersonSchema = ({
     const schema = {
       "@context": "https://schema.org",
       "@type": "Person",
-      "@id": `https://voice2fire.com/profile/${userId}`,
+      "@id": `https://utubchat.com/profile/${userId}`,
       "name": name,
       ...(image && { "image": image }),
       ...(description && { "description": description }),

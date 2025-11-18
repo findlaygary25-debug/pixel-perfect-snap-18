@@ -44,7 +44,7 @@ export const VideoSchema = ({
     const schema = {
       "@context": "https://schema.org",
       "@type": "VideoObject",
-      "@id": `https://voice2fire.com/video/${videoId}`,
+      "@id": `https://utubchat.com/video/${videoId}`,
       name,
       description,
       thumbnailUrl,
@@ -80,11 +80,11 @@ export const VideoSchema = ({
       },
       publisher: {
         "@type": "Organization",
-        "@id": "https://voice2fire.com/#organization",
-        "name": "Voice2Fire",
+        "@id": "https://utubchat.com/#organization",
+        "name": "uTubChat",
         "logo": {
           "@type": "ImageObject",
-          "url": "https://voice2fire.com/favicon.png"
+          "url": "https://utubchat.com/favicon.png"
         }
       },
       potentialAction: {
