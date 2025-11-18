@@ -1589,40 +1589,36 @@ export default function Feed() {
           preload="metadata"
         />
 
-        {/* PLAY BUTTON - Only shown when paused (TikTok style) */}
-        {!playingVideos.has(video.id) && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              const vid = videoRefs.current.get(video.id);
-              if (!vid) return;
-              vid.play();
-              setPlayingVideos((prev) => new Set(prev).add(video.id));
-            }}
-            className="absolute bottom-4 left-4 bg-black/40 px-3 py-3 rounded-full backdrop-blur-md z-10"
-          >
-            <Play className="h-6 w-6 text-white" />
-          </button>
-        )}
-        
-        {/* Tap video to pause - no visible pause button when playing */}
+        {/* Tap anywhere on video to play/pause */}
         <div 
           onClick={(e) => {
             e.stopPropagation();
+            const vid = videoRefs.current.get(video.id);
+            if (!vid) return;
+
             if (playingVideos.has(video.id)) {
-              const vid = videoRefs.current.get(video.id);
-              if (vid) {
-                vid.pause();
-                setPlayingVideos((prev) => {
-                  const next = new Set(prev);
-                  next.delete(video.id);
-                  return next;
-                });
-              }
+              vid.pause();
+              setPlayingVideos((prev) => {
+                const next = new Set(prev);
+                next.delete(video.id);
+                return next;
+              });
+            } else {
+              vid.play();
+              setPlayingVideos((prev) => new Set(prev).add(video.id));
             }
           }}
-          className="absolute inset-0 z-[5]"
-        />
+          className="absolute inset-0 z-[5] cursor-pointer"
+        >
+          {/* PLAY BUTTON - Centered, only shown when paused */}
+          {!playingVideos.has(video.id) && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="bg-black/20 rounded-full p-4">
+                <Play className="h-16 w-16 text-white/80 fill-white/80" />
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* MUTE BUTTON */}
         <button
