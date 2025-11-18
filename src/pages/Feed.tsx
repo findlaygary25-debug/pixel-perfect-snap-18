@@ -1589,33 +1589,40 @@ export default function Feed() {
           preload="metadata"
         />
 
-        {/* PLAY / PAUSE OVERLAY BUTTON */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            const vid = videoRefs.current.get(video.id);
-            if (!vid) return;
-
-            if (vid.paused) {
+        {/* PLAY BUTTON - Only shown when paused (TikTok style) */}
+        {!playingVideos.has(video.id) && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              const vid = videoRefs.current.get(video.id);
+              if (!vid) return;
               vid.play();
               setPlayingVideos((prev) => new Set(prev).add(video.id));
-            } else {
-              vid.pause();
-              setPlayingVideos((prev) => {
-                const next = new Set(prev);
-                next.delete(video.id);
-                return next;
-              });
+            }}
+            className="absolute bottom-4 left-4 bg-black/40 px-3 py-3 rounded-full backdrop-blur-md z-10"
+          >
+            <Play className="h-6 w-6 text-white" />
+          </button>
+        )}
+        
+        {/* Tap video to pause - no visible pause button when playing */}
+        <div 
+          onClick={(e) => {
+            e.stopPropagation();
+            if (playingVideos.has(video.id)) {
+              const vid = videoRefs.current.get(video.id);
+              if (vid) {
+                vid.pause();
+                setPlayingVideos((prev) => {
+                  const next = new Set(prev);
+                  next.delete(video.id);
+                  return next;
+                });
+              }
             }
           }}
-          className="absolute bottom-4 left-4 bg-black/40 px-3 py-3 rounded-full backdrop-blur-md z-10"
-        >
-          {playingVideos.has(video.id) ? (
-            <Pause className="h-6 w-6 text-white" />
-          ) : (
-            <Play className="h-6 w-6 text-white" />
-          )}
-        </button>
+          className="absolute inset-0 z-[5]"
+        />
 
         {/* MUTE BUTTON */}
         <button
