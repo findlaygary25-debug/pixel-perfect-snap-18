@@ -442,11 +442,18 @@ export default function Feed() {
           
           // Only auto-play if enabled
           if (autoPlay) {
+            console.log(`[Feed] Attempting to play video ${videoId}`, { 
+              videoUrl: video.src, 
+              muted: video.muted,
+              readyState: video.readyState 
+            });
             video.play().then(() => {
+              console.log(`[Feed] Video ${videoId} playing successfully`);
               if (videoId) {
                 setPlayingVideos((prev) => new Set(prev).add(videoId));
               }
-            }).catch(() => {
+            }).catch((err) => {
+              console.error(`[Feed] Failed to play video ${videoId}:`, err);
               if (videoId) {
                 setPlayingVideos((prev) => {
                   const newSet = new Set(prev);
@@ -455,6 +462,8 @@ export default function Feed() {
                 });
               }
             });
+          } else {
+            console.log(`[Feed] Autoplay disabled for video ${videoId}`);
           }
         } else {
           // Check if video was playing before pausing
@@ -1586,7 +1595,21 @@ export default function Feed() {
           muted={mutedVideos.has(video.id)}
           playsInline
           loop
-          preload="metadata"
+          preload="auto"
+          onError={(e) => {
+            console.error(`[Feed] Video error for ${video.id}:`, {
+              error: e.currentTarget.error,
+              src: video.video_url,
+              networkState: e.currentTarget.networkState,
+              readyState: e.currentTarget.readyState
+            });
+          }}
+          onLoadedData={(e) => {
+            console.log(`[Feed] Video ${video.id} loaded:`, {
+              duration: e.currentTarget.duration,
+              readyState: e.currentTarget.readyState
+            });
+          }}
         />
 
         {/* Tap anywhere on video to play/pause */}
@@ -1608,11 +1631,11 @@ export default function Feed() {
               setPlayingVideos((prev) => new Set(prev).add(video.id));
             }
           }}
-          className="absolute inset-0 z-[5] cursor-pointer"
+          className="absolute inset-0 z-[5] cursor-pointer pointer-events-auto"
         >
           {/* PLAY BUTTON - Centered, only shown when paused */}
           {!playingVideos.has(video.id) && (
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="bg-black/20 rounded-full p-4">
                 <Play className="h-16 w-16 text-white/80 fill-white/80" />
               </div>
@@ -1624,6 +1647,7 @@ export default function Feed() {
         <button
           onClick={(e) => {
             e.stopPropagation();
+            e.preventDefault();
             const videoElement = videoRefs.current.get(video.id);
             if (!videoElement) return;
 
@@ -1639,7 +1663,7 @@ export default function Feed() {
               setMutedVideos((prev) => new Set(prev).add(video.id));
             }
           }}
-          className="absolute bottom-4 left-4 bg-black/60 p-2 rounded-full backdrop-blur-sm hover:bg-black/80 transition-colors z-30"
+          className="absolute bottom-4 left-4 bg-black/60 p-2 rounded-full backdrop-blur-sm hover:bg-black/80 transition-colors z-[50] pointer-events-auto"
         >
           {mutedVideos.has(video.id) ? (
             <VolumeX className="h-5 w-5 text-white" />
