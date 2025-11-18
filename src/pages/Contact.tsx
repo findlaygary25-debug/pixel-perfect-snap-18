@@ -26,12 +26,16 @@ const Contact = () => {
       <h1 className="text-3xl font-bold mb-4">Contact</h1>
       <form onSubmit={submit} className="grid gap-4">
         <Input 
+          id="name"
+          name="name"
           placeholder="Your name" 
           value={name} 
           onChange={e => setName(e.target.value)}
           required
         />
         <Input 
+          id="email"
+          name="email"
           placeholder="Your email" 
           type="email" 
           value={email} 
@@ -39,6 +43,8 @@ const Contact = () => {
           required
         />
         <Textarea 
+          id="message"
+          name="message"
           placeholder="Your message" 
           value={message} 
           onChange={e => setMessage(e.target.value)}
