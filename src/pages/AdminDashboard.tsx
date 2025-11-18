@@ -369,7 +369,7 @@ export default function AdminDashboard() {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Platform</span>
-                <span className="text-sm font-medium">Voice2Fire</span>
+                <span className="text-sm font-medium">uTubChat</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Backend</span>
