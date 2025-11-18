@@ -16,7 +16,7 @@ NC='\033[0m' # No Color
 # Configuration
 REPO_URL="https://github.com/findlaygary25-debug/pixel-perfect-snap-18.git"  # Your GitHub repo URL
 APP_DIR="/var/www/lovable-app"
-DOMAIN="your-domain.com"  # Replace with your domain
+DOMAIN="5.223.76.26"  # Singapore server IP
 
 echo -e "${BLUE}📦 Step 1: Installing dependencies...${NC}"
 
