@@ -1620,7 +1620,7 @@ export default function Feed() {
           )}
         </div>
 
-        {/* MUTE BUTTON */}
+        {/* MUTE BUTTON - Bottom Left */}
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -1639,12 +1639,12 @@ export default function Feed() {
               setMutedVideos((prev) => new Set(prev).add(video.id));
             }
           }}
-          className="absolute bottom-4 right-4 bg-black/40 px-3 py-3 rounded-full backdrop-blur-md"
+          className="absolute bottom-4 left-4 bg-black/60 p-2 rounded-full backdrop-blur-sm hover:bg-black/80 transition-colors z-30"
         >
           {mutedVideos.has(video.id) ? (
-            <VolumeX className="h-6 w-6 text-white" />
+            <VolumeX className="h-5 w-5 text-white" />
           ) : (
-            <Volume2 className="h-6 w-6 text-white" />
+            <Volume2 className="h-5 w-5 text-white" />
           )}
         </button>
 
