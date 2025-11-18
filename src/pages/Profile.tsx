@@ -189,12 +189,45 @@ const Profile = () => {
         />
       )}
       <div className="flex items-center gap-6 mb-8">
-        <Avatar className="h-24 w-24">
-          <AvatarImage src={profile?.avatar_url || undefined} />
-          <AvatarFallback className="text-2xl">
-            {profile?.username.charAt(0).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
+        <div className="relative group cursor-pointer" onClick={() => document.getElementById('avatar-upload')?.click()}>
+          <Avatar className="h-24 w-24">
+            <AvatarImage src={profile?.avatar_url || undefined} />
+            <AvatarFallback className="text-2xl">
+              {profile?.username.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="absolute inset-0 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <span className="text-white text-2xl font-bold">U</span>
+          </div>
+        </div>
+        <input
+          id="avatar-upload"
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (!file || !user) return;
+            
+            const fileExt = file.name.split('.').pop();
+            const filePath = `${user.id}-${Math.random()}.${fileExt}`;
+            
+            const { error: uploadError } = await supabase.storage
+              .from('avatars')
+              .upload(filePath, file, { upsert: true });
+            
+            if (uploadError) {
+              toast({ title: "Error uploading image", variant: "destructive" });
+              return;
+            }
+            
+            const { data: { publicUrl } } = supabase.storage
+              .from('avatars')
+              .getPublicUrl(filePath);
+            
+            await updateProfile({ avatar_url: publicUrl });
+          }}
+        />
         <div className="flex-1">
           <h1 className="text-3xl font-bold">{profile?.username}</h1>
           <p className="text-muted-foreground">{user?.email}</p>
