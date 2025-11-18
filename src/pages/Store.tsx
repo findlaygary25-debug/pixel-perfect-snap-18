@@ -126,6 +126,7 @@ export default function StorePage() {
     image: null,
   });
   const [uploading, setUploading] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const { toast } = useToast();
   const { performUndoableAction } = useUndoableAction();
 
@@ -655,30 +656,83 @@ export default function StorePage() {
     }
   };
 
+  const uploadStoreLogo = async (file: File): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("product-images")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from("product-images")
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error("Error uploading logo:", error);
+      return null;
+    }
+  };
+
   const saveStore = async () => {
     if (!store) return;
-    const { error } = await supabase
-      .from("stores")
-      .update({
-        name: store.name,
-        logo_url: store.logo_url,
-        email: store.email,
-        phone: store.phone,
-        description: store.description,
-      })
-      .eq("id", store.id);
     
-    if (error) {
+    setUploading(true);
+    
+    try {
+      let logoUrl = store.logo_url;
+      
+      if (logoFile) {
+        logoUrl = await uploadStoreLogo(logoFile);
+        if (!logoUrl) {
+          toast({
+            title: "Error",
+            description: "Failed to upload logo",
+            variant: "destructive",
+          });
+          setUploading(false);
+          return;
+        }
+      }
+      
+      const { error } = await supabase
+        .from("stores")
+        .update({
+          name: store.name,
+          logo_url: logoUrl,
+          email: store.email,
+          phone: store.phone,
+          description: store.description,
+        })
+        .eq("id", store.id);
+      
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Store settings saved successfully",
+        });
+        setLogoFile(null);
+        loadStoreAndProducts();
+      }
+    } catch (error: any) {
       toast({
         title: "Error",
         description: error.message,
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Success",
-        description: "Store settings saved successfully",
-      });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -1354,11 +1408,22 @@ export default function StorePage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Logo URL</label>
+                <label className="text-sm font-medium mb-2 block">Store Banner/Logo</label>
                 <Input
-                  value={store?.logo_url ?? ""}
-                  onChange={(e) => store && setStore({ ...store, logo_url: e.target.value })}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
                 />
+                {store?.logo_url && !logoFile && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Current: {store.logo_url.split('/').pop()}
+                  </p>
+                )}
+                {logoFile && (
+                  <p className="text-xs text-primary mt-1">
+                    New image selected: {logoFile.name}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="text-sm font-medium mb-2 block">Contact Email</label>
@@ -1383,7 +1448,9 @@ export default function StorePage() {
                 />
               </div>
               <div className="md:col-span-2">
-                <Button onClick={saveStore}>Save Store</Button>
+                <Button onClick={saveStore} disabled={uploading}>
+                  {uploading ? "Saving..." : "Save Store"}
+                </Button>
               </div>
             </CardContent>
           </Card>
