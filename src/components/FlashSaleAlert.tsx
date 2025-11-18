@@ -21,7 +21,7 @@ export function FlashSaleAlert() {
         .lte('start_date', new Date().toISOString())
         .order('display_order', { ascending: true })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (!error && data) {
         setFlashSale(data);
