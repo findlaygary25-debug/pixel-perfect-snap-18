@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send } from "lucide-react";
+import { Send, ThumbsDown } from "lucide-react";
 
 const commentSchema = z.object({
   comment_text: z
@@ -48,6 +48,7 @@ export default function CommentsDrawer({
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(false);
+  const [dislikedComments, setDislikedComments] = useState<Set<string>>(new Set());
   const [currentUser, setCurrentUser] = useState<{
     id: string;
     username: string;
@@ -129,6 +130,20 @@ export default function CommentsDrawer({
     }
   };
 
+  const handleDislike = (commentId: string) => {
+    setDislikedComments(prev => {
+      const next = new Set(prev);
+      if (next.has(commentId)) {
+        next.delete(commentId);
+        toast.success("Dislike removed");
+      } else {
+        next.add(commentId);
+        toast.success("Comment disliked");
+      }
+      return next;
+    });
+  };
+
   return (
     <Drawer open={isOpen} onOpenChange={onClose}>
       <DrawerContent className="h-[80vh]">
@@ -149,13 +164,29 @@ export default function CommentsDrawer({
               <div className="space-y-4">
                 {comments.map((comment) => (
                   <div key={comment.id} className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm">
-                        @{comment.username}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(comment.created_at).toLocaleDateString()}
-                      </span>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm">
+                          @{comment.username}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(comment.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDislike(comment.id)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <ThumbsDown 
+                          className={`h-4 w-4 ${
+                            dislikedComments.has(comment.id) 
+                              ? "fill-destructive text-destructive" 
+                              : "text-muted-foreground"
+                          }`} 
+                        />
+                      </Button>
                     </div>
                     <p className="text-sm">{comment.comment_text}</p>
                   </div>
