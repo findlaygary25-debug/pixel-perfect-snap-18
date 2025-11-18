@@ -1405,9 +1405,11 @@ export type Database = {
           created_at: string
           id: string
           referred_by: string | null
+          social_links: Json | null
           updated_at: string
           user_id: string
           username: string
+          website_url: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -1415,9 +1417,11 @@ export type Database = {
           created_at?: string
           id?: string
           referred_by?: string | null
+          social_links?: Json | null
           updated_at?: string
           user_id: string
           username: string
+          website_url?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -1425,9 +1429,11 @@ export type Database = {
           created_at?: string
           id?: string
           referred_by?: string | null
+          social_links?: Json | null
           updated_at?: string
           user_id?: string
           username?: string
+          website_url?: string | null
         }
         Relationships: [
           {
