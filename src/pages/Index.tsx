@@ -1,4 +1,4 @@
-import logo from "@/assets/voice2fire-logo.png";
+import logo from "@/assets/utubchat-logo.png";
 
 const Index = () => {
   return (
@@ -6,7 +6,7 @@ const Index = () => {
       <div className="text-center">
         <img 
           src={logo} 
-          alt="Voice2Fire" 
+          alt="UTubChat" 
           className="w-64 h-auto mx-auto mb-6 drop-shadow-2xl"
         />
         <p className="text-xl text-muted-foreground">
