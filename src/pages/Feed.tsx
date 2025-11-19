@@ -424,7 +424,7 @@ export default function Feed() {
 
     const observerCallback = (entries: IntersectionObserverEntry[]) => {
       entries.forEach((entry) => {
-        const video = entry.target as HTMLVideoElement;
+        const video = entry.target as HTMLVideoElement | HTMLIFrameElement;
         const videoId = video.dataset.videoId;
         
         if (entry.isIntersecting) {
@@ -443,38 +443,55 @@ export default function Feed() {
           // Only auto-play if enabled
           if (autoPlay) {
             console.log(`[Feed] Attempting to play video ${videoId}`, { 
-              videoUrl: video.src, 
-              muted: video.muted,
-              readyState: video.readyState 
+              videoUrl: (video as HTMLVideoElement).src || (video as HTMLIFrameElement).src, 
+              muted: (video as HTMLVideoElement).muted,
+              readyState: (video as HTMLVideoElement).readyState 
             });
-            video.play().then(() => {
-              console.log(`[Feed] Video ${videoId} playing successfully`);
+            
+            // Handle both video elements and iframes
+            if (video.tagName === 'VIDEO') {
+              (video as HTMLVideoElement).play().then(() => {
+                console.log(`[Feed] Video ${videoId} playing successfully`);
+                if (videoId) {
+                  setPlayingVideos((prev) => new Set(prev).add(videoId));
+                }
+              }).catch((err) => {
+                console.error(`[Feed] Failed to play video ${videoId}:`, err);
+                if (videoId) {
+                  setPlayingVideos((prev) => {
+                    const newSet = new Set(prev);
+                    newSet.delete(videoId);
+                    return newSet;
+                  });
+                }
+              });
+            } else {
+              // For iframes (YouTube), just add to playing set
               if (videoId) {
                 setPlayingVideos((prev) => new Set(prev).add(videoId));
               }
-            }).catch((err) => {
-              console.error(`[Feed] Failed to play video ${videoId}:`, err);
-              if (videoId) {
-                setPlayingVideos((prev) => {
-                  const newSet = new Set(prev);
-                  newSet.delete(videoId);
-                  return newSet;
-                });
-              }
-            });
+            }
           } else {
             console.log(`[Feed] Autoplay disabled for video ${videoId}`);
           }
         } else {
-          // Check if video was playing before pausing
-          const wasPlaying = !video.paused;
-          video.pause();
+          // Pause all videos when they leave viewport
           if (videoId) {
+            // Remove from playing set first
             setPlayingVideos((prev) => {
               const newSet = new Set(prev);
               newSet.delete(videoId);
               return newSet;
             });
+            
+            // Check if video was playing before pausing
+            const wasPlaying = video.tagName === 'VIDEO' ? !(video as HTMLVideoElement).paused : prev => prev.has(videoId);
+            
+            // For native video elements, pause them
+            if (video.tagName === 'VIDEO') {
+              (video as HTMLVideoElement).pause();
+            }
+            // For iframes, the src will update automatically due to playingVideos state change
             
             // Show mini player if video was playing and scrolled away
             if (wasPlaying && !miniPlayerVideo) {
@@ -1591,8 +1608,11 @@ export default function Feed() {
           <iframe
             ref={(el) => setVideoRef(video.id, el as any)}
             data-video-id={video.id}
-            src={`${video.video_url}${video.video_url.includes('?') ? '&' : '?'}autoplay=1&mute=${mutedVideos.has(video.id) ? '1' : '0'}&loop=1&playlist=${video.video_url.split('/').pop()}`}
-            className="h-auto max-h-[85vh] w-full md:w-auto md:max-w-full object-contain md:rounded-2xl"
+            src={playingVideos.has(video.id) 
+              ? `${video.video_url}${video.video_url.includes('?') ? '&' : '?'}autoplay=1&mute=${mutedVideos.has(video.id) ? '1' : '0'}&loop=1&playlist=${video.video_url.split('/').pop()}`
+              : `${video.video_url}${video.video_url.includes('?') ? '&' : '?'}autoplay=0&mute=${mutedVideos.has(video.id) ? '1' : '0'}&loop=1&playlist=${video.video_url.split('/').pop()}`
+            }
+            className="h-screen md:h-auto md:max-h-[85vh] w-full md:w-auto md:max-w-full object-contain md:rounded-2xl"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
           />
@@ -1601,7 +1621,7 @@ export default function Feed() {
             ref={(el) => setVideoRef(video.id, el as HTMLVideoElement | null)}
             data-video-id={video.id}
             src={video.video_url}
-            className="h-auto max-h-[85vh] w-full md:w-auto md:max-w-full object-contain md:rounded-2xl"
+            className="h-screen md:h-auto md:max-h-[85vh] w-full md:w-auto md:max-w-full object-contain md:rounded-2xl"
             muted={mutedVideos.has(video.id)}
             playsInline
             loop
