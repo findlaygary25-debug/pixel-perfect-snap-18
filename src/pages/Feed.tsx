@@ -442,37 +442,27 @@ export default function Feed() {
           
           // Only auto-play if enabled
           if (autoPlay) {
-            console.log(`[Feed] Attempting to play video ${videoId}`, { 
-              videoUrl: (video as HTMLVideoElement).src || (video as HTMLIFrameElement).src, 
-              muted: (video as HTMLVideoElement).muted,
-              readyState: (video as HTMLVideoElement).readyState 
-            });
-            
-            // Handle both video elements and iframes
+            // Handle both video elements and iframes differently
             if (video.tagName === 'VIDEO') {
-              (video as HTMLVideoElement).play().then(() => {
-                console.log(`[Feed] Video ${videoId} playing successfully`);
-                if (videoId) {
-                  setPlayingVideos((prev) => new Set(prev).add(videoId));
-                }
-              }).catch((err) => {
-                console.error(`[Feed] Failed to play video ${videoId}:`, err);
-                if (videoId) {
-                  setPlayingVideos((prev) => {
-                    const newSet = new Set(prev);
-                    newSet.delete(videoId);
-                    return newSet;
-                  });
-                }
-              });
-            } else {
+              const videoElement = video as HTMLVideoElement;
+              
+              // Only try to play if video is ready
+              if (videoElement.readyState >= 2) {
+                videoElement.play().then(() => {
+                  if (videoId) {
+                    setPlayingVideos((prev) => new Set(prev).add(videoId));
+                  }
+                }).catch((err) => {
+                  console.error(`[Feed] Failed to play video ${videoId}:`, err);
+                });
+              }
+            } else if (video.tagName === 'IFRAME') {
               // For iframes (YouTube), just add to playing set
+              // The src URL will automatically update with autoplay=1
               if (videoId) {
                 setPlayingVideos((prev) => new Set(prev).add(videoId));
               }
             }
-          } else {
-            console.log(`[Feed] Autoplay disabled for video ${videoId}`);
           }
         } else {
           // Pause all videos when they leave viewport
