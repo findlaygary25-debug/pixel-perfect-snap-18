@@ -7,7 +7,7 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.monitor-sms-delivery]
-verify_jwt = false
+verify_jwt = true
 
 [functions.escalate-alerts]
-verify_jwt = false
+verify_jwt = true
