@@ -28,7 +28,7 @@ export function SocialShareDialog({
   const videoUrl = `${window.location.origin}/video/${videoId}`;
   const shareText = videoCaption 
     ? `Check out this video by @${username}: ${videoCaption}` 
-    : `Check out this video by @${username} on uTubChat!`;
+    : `Check out this video by @${username} on Voice2Fire!`;
 
   const trackShare = async (platform: string) => {
     try {
@@ -93,7 +93,7 @@ export function SocialShareDialog({
 
   const handleShareEmail = async () => {
     await trackShare('email');
-    const subject = encodeURIComponent(`Check out this video on uTubChat`);
+    const subject = encodeURIComponent(`Check out this video on Voice2Fire`);
     const body = encodeURIComponent(`${shareText}\n\n${videoUrl}`);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
     onOpenChange(false);
