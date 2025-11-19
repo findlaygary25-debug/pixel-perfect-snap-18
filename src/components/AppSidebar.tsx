@@ -2,7 +2,7 @@ import { Home, Video, Upload as UploadIcon, Store, Wallet, Users, Mail, Info, Pa
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import logo from "@/assets/voice2fire-logo.png";
+import logo from "@/assets/voice2fire-logo-new.png";
 import { useState, useEffect } from "react";
 import { AdvertiseDialog } from "@/components/AdvertiseDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
