@@ -2,6 +2,7 @@ import { Home, Video, Upload as UploadIcon, Store, Wallet, Users, Mail, Info, Pa
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import logo from "@/assets/voice2fire-logo.png";
 import { useState, useEffect } from "react";
 import { AdvertiseDialog } from "@/components/AdvertiseDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -163,7 +164,11 @@ export function AppSidebar() {
       >
         {/* Close button inside menu */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-sidebar-border">
-          <span className="font-semibold">Voice2Fire</span>
+          <img 
+            src={logo} 
+            alt="Voice2Fire" 
+            className="h-10 w-auto"
+          />
           <button
             onClick={() => setOpen(false)}
             className="p-2 rounded-md hover:bg-sidebar-accent transition-colors"
