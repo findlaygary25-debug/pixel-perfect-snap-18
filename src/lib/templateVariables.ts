@@ -13,8 +13,8 @@ export interface TemplateVariable {
 }
 
 export const SYSTEM_VARIABLES: TemplateVariable[] = [
-  { key: 'app_name', type: 'string', required: false, description: 'Application name', default: 'uTubChat' },
-  { key: 'support_email', type: 'string', required: false, description: 'Support email address', default: 'support@utubchat.com' },
+  { key: 'app_name', type: 'string', required: false, description: 'Application name', default: 'Voice2Fire' },
+  { key: 'support_email', type: 'string', required: false, description: 'Support email address', default: 'support@voice2fire.com' },
   { key: 'current_date', type: 'date', required: false, description: 'Current date', format: 'MMM DD, YYYY' },
   { key: 'current_year', type: 'number', required: false, description: 'Current year' },
 ];

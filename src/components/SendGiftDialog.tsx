@@ -95,7 +95,7 @@ export function SendGiftDialog({ open, onOpenChange, recipientId, recipientUsern
         <DialogHeader>
           <DialogTitle>Send Gift to {recipientUsername}</DialogTitle>
           <DialogDescription>
-            Choose a gift to send. The recipient will receive 80% of the gift value in their wallet, and uTubChat will earn 20% platform fee.
+            Choose a gift to send. The recipient will receive 80% of the gift value in their wallet, and Voice2Fire will earn 20% platform fee.
           </DialogDescription>
         </DialogHeader>
 

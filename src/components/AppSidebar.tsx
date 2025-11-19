@@ -163,7 +163,7 @@ export function AppSidebar() {
       >
         {/* Close button inside menu */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-sidebar-border">
-          <span className="font-semibold">uTubChat</span>
+          <span className="font-semibold">Voice2Fire</span>
           <button
             onClick={() => setOpen(false)}
             className="p-2 rounded-md hover:bg-sidebar-accent transition-colors"
