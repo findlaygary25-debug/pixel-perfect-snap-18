@@ -1,4 +1,4 @@
-import { Home, Video, Upload as UploadIcon, Store, Wallet, Users, Mail, Info, Palette, LogIn, User, Activity, BarChart3, Megaphone, HelpCircle, Share2, Youtube, CalendarClock, Radio, X, Settings, FolderHeart, Trophy, Gift, Shield, Bell, TrendingUp, FlaskConical, FileText, UserCog, KeyRound, LayoutDashboard, BellRing, ScrollText, AlertTriangle, ArrowUp, Mail as MailIcon } from "lucide-react";
+import { Home, Video, Upload as UploadIcon, Store, Wallet, Users, Mail, Info, Palette, LogIn, User, Activity, BarChart3, Megaphone, HelpCircle, Share2, Youtube, CalendarClock, Radio, X, Settings, FolderHeart, Trophy, Gift, Shield, Bell, TrendingUp, FlaskConical, FileText, UserCog, KeyRound, LayoutDashboard, BellRing, ScrollText, AlertTriangle, ArrowUp, Mail as MailIcon, Menu } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -163,7 +163,14 @@ export function AppSidebar() {
         `}
       >
         {/* Close button inside menu */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-sidebar-border">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-sidebar-border">
+          <button
+            onClick={() => setOpen(false)}
+            className="p-1.5 rounded-md hover:bg-sidebar-accent transition-colors flex-shrink-0"
+            aria-label="Toggle menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
           <img 
             src={logo} 
             alt="Voice2Fire" 
@@ -171,7 +178,7 @@ export function AppSidebar() {
           />
           <button
             onClick={() => setOpen(false)}
-            className="p-2 rounded-md hover:bg-sidebar-accent transition-colors"
+            className="p-2 rounded-md hover:bg-sidebar-accent transition-colors ml-auto"
             aria-label="Close menu"
           >
             <X className="h-4 w-4" />
