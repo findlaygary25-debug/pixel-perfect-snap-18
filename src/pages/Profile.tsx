@@ -16,6 +16,14 @@ interface Profile {
   username: string;
   avatar_url: string | null;
   bio: string | null;
+  website_url: string | null;
+  social_links: {
+    youtube?: string;
+    tiktok?: string;
+    instagram?: string;
+    twitter?: string;
+    facebook?: string;
+  } | null;
 }
 
 interface Video {
@@ -88,7 +96,10 @@ const Profile = () => {
     if (error) {
       toast({ title: "Error loading profile", variant: "destructive" });
     } else {
-      setProfile(data);
+      setProfile({
+        ...data,
+        social_links: data.social_links as Profile['social_links']
+      });
     }
   };
 
@@ -346,6 +357,95 @@ const Profile = () => {
                   placeholder="Tell us about yourself"
                   rows={4}
                 />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Website URL</label>
+                <Input
+                  value={profile?.website_url || ""}
+                  onChange={(e) => setProfile({ ...profile!, website_url: e.target.value })}
+                  onBlur={(e) => updateProfile({ website_url: e.target.value })}
+                  placeholder="https://yourwebsite.com"
+                />
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-sm font-medium block">Social Media Links</label>
+                
+                <div>
+                  <label className="text-xs text-muted-foreground">YouTube</label>
+                  <Input
+                    value={profile?.social_links?.youtube || ""}
+                    onChange={(e) => {
+                      const updated = { ...profile!, social_links: { ...profile?.social_links, youtube: e.target.value } };
+                      setProfile(updated);
+                    }}
+                    onBlur={(e) => updateProfile({ 
+                      social_links: { ...profile?.social_links, youtube: e.target.value } 
+                    })}
+                    placeholder="https://youtube.com/@username"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-muted-foreground">TikTok</label>
+                  <Input
+                    value={profile?.social_links?.tiktok || ""}
+                    onChange={(e) => {
+                      const updated = { ...profile!, social_links: { ...profile?.social_links, tiktok: e.target.value } };
+                      setProfile(updated);
+                    }}
+                    onBlur={(e) => updateProfile({ 
+                      social_links: { ...profile?.social_links, tiktok: e.target.value } 
+                    })}
+                    placeholder="https://tiktok.com/@username"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-muted-foreground">Instagram</label>
+                  <Input
+                    value={profile?.social_links?.instagram || ""}
+                    onChange={(e) => {
+                      const updated = { ...profile!, social_links: { ...profile?.social_links, instagram: e.target.value } };
+                      setProfile(updated);
+                    }}
+                    onBlur={(e) => updateProfile({ 
+                      social_links: { ...profile?.social_links, instagram: e.target.value } 
+                    })}
+                    placeholder="https://instagram.com/username"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-muted-foreground">Twitter</label>
+                  <Input
+                    value={profile?.social_links?.twitter || ""}
+                    onChange={(e) => {
+                      const updated = { ...profile!, social_links: { ...profile?.social_links, twitter: e.target.value } };
+                      setProfile(updated);
+                    }}
+                    onBlur={(e) => updateProfile({ 
+                      social_links: { ...profile?.social_links, twitter: e.target.value } 
+                    })}
+                    placeholder="https://twitter.com/username"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-muted-foreground">Facebook</label>
+                  <Input
+                    value={profile?.social_links?.facebook || ""}
+                    onChange={(e) => {
+                      const updated = { ...profile!, social_links: { ...profile?.social_links, facebook: e.target.value } };
+                      setProfile(updated);
+                    }}
+                    onBlur={(e) => updateProfile({ 
+                      social_links: { ...profile?.social_links, facebook: e.target.value } 
+                    })}
+                    placeholder="https://facebook.com/username"
+                  />
+                </div>
               </div>
               
               <Button onClick={handleLogout} variant="destructive" className="w-full">
