@@ -807,22 +807,33 @@ export default function Feed() {
         }));
       };
       
-      // Error handling with haptic feedback
+      // Error handling with haptic feedback (debounced per video)
       const handleError = () => {
-        triggerHaptic('error');
-        setVideoErrors(prev => new Set(prev).add(videoId));
-        toast.error('Video playback failed', {
-          description: 'Unable to play this video. Please try again.'
-        });
-        
-        // Clear error after 5 seconds
-        setTimeout(() => {
-          setVideoErrors(prev => {
-            const next = new Set(prev);
-            next.delete(videoId);
-            return next;
+        setVideoErrors(prev => {
+          // If we've already recorded an error for this video, don't spam toasts
+          if (prev.has(videoId)) {
+            return prev;
+          }
+
+          const next = new Set(prev);
+          next.add(videoId);
+
+          triggerHaptic('error');
+          toast.error('Video playback failed', {
+            description: 'Unable to play this video. Please try again.'
           });
-        }, 5000);
+
+          // Clear error after 5 seconds so UI indicator goes away
+          setTimeout(() => {
+            setVideoErrors(current => {
+              const updated = new Set(current);
+              updated.delete(videoId);
+              return updated;
+            });
+          }, 5000);
+
+          return next;
+        });
       };
       
       const handleStalled = () => {
