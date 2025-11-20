@@ -6,6 +6,7 @@ import logo from "@/assets/voice2fire-logo-new.png";
 import { useState, useEffect } from "react";
 import { AdvertiseDialog } from "@/components/AdvertiseDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useUserRole } from "@/hooks/useUserRole";
 import {
   Drawer,
   DrawerContent,
@@ -24,7 +25,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const baseItems = [
+// Member items - visible to all authenticated users
+const memberItems = [
   { title: "Home", url: "/", icon: Home },
   { title: "Feed", url: "/feed", icon: Video },
   { title: "Go Live", url: "/live", icon: Radio },
@@ -38,6 +40,21 @@ const baseItems = [
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "Challenge History", url: "/challenge-history", icon: Trophy },
   { title: "Rewards Store", url: "/rewards-store", icon: Gift },
+  { title: "Shares", url: "/shares", icon: Share2 },
+  { title: "Gifts", url: "/gifts", icon: Gift },
+  { title: "Gift Leaderboard", url: "/gift-leaderboard", icon: Trophy },
+  { title: "Wallet", url: "/wallet", icon: Wallet },
+  { title: "Affiliate", url: "/affiliate", icon: Users },
+  { title: "Video Studio", url: "/makeup", icon: Palette },
+  { title: "Haptic Settings", url: "/haptic-settings", icon: Settings },
+  { title: "Notification Preferences", url: "/notification-preferences", icon: Bell },
+  { title: "About", url: "/about", icon: Info },
+  { title: "FAQ", url: "/faq", icon: HelpCircle },
+  { title: "Contact", url: "/contact", icon: Mail },
+];
+
+// Admin-only items - visible only to admins
+const adminItems = [
   { title: "Admin Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Flash Sales Admin", url: "/admin/flash-sales", icon: Shield },
   { title: "Role Management", url: "/admin/roles", icon: UserCog },
@@ -47,20 +64,9 @@ const baseItems = [
   { title: "Delivery Alerts", url: "/admin/delivery-alerts", icon: AlertTriangle },
   { title: "Escalation Rules", url: "/admin/escalation-config", icon: ArrowUp },
   { title: "Template Editor", url: "/admin/templates", icon: MailIcon },
-  { title: "Shares", url: "/shares", icon: Share2 },
-  { title: "Gifts", url: "/gifts", icon: Gift },
-  { title: "Gift Leaderboard", url: "/gift-leaderboard", icon: Trophy },
-  { title: "Wallet", url: "/wallet", icon: Wallet },
-  { title: "Affiliate", url: "/affiliate", icon: Users },
-  { title: "Video Studio", url: "/makeup", icon: Palette },
-  { title: "Haptic Settings", url: "/haptic-settings", icon: Settings },
-  { title: "Notification Preferences", url: "/notification-preferences", icon: Bell },
   { title: "Notification Analytics", url: "/notification-analytics", icon: TrendingUp },
   { title: "A/B Testing", url: "/notification-ab-tests", icon: FlaskConical },
   { title: "PII Audit Logs", url: "/pii-audit-logs", icon: FileText },
-  { title: "About", url: "/about", icon: Info },
-  { title: "FAQ", url: "/faq", icon: HelpCircle },
-  { title: "Contact", url: "/contact", icon: Mail },
 ];
 
 export function AppSidebar() {
@@ -70,6 +76,7 @@ export function AppSidebar() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [advertiseDialogOpen, setAdvertiseDialogOpen] = useState(false);
   const isMobile = useIsMobile();
+  const { isAdmin, isAdminOrModerator, loading: roleLoading } = useUserRole();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -83,12 +90,26 @@ export function AppSidebar() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const items = [
-    ...baseItems,
-    isAuthenticated 
-      ? { title: "Profile", url: "/profile", icon: User }
-      : { title: "Login", url: "/login", icon: LogIn }
-  ];
+  // Build menu items based on user role
+  const getMenuItems = () => {
+    const items = [...memberItems];
+    
+    // Add admin items if user is admin or moderator
+    if (isAdminOrModerator && !roleLoading) {
+      items.push(...adminItems);
+    }
+    
+    // Add profile or login
+    items.push(
+      isAuthenticated 
+        ? { title: "Profile", url: "/profile", icon: User }
+        : { title: "Login", url: "/login", icon: LogIn }
+    );
+    
+    return items;
+  };
+
+  const items = getMenuItems();
 
   const menuContent = (
     <SidebarMenu>
