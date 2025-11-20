@@ -15,9 +15,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useUndoableAction } from "@/hooks/useUndoableAction";
 import { Plus, Pencil, Trash2, Package, ShoppingCart, Truck, CheckSquare, Filter, X, Save, Calendar as CalendarIcon } from "lucide-react";
 import { PlaceOrderDialog } from "@/components/PlaceOrderDialog";
+import { PlaceOrderDialogCoins } from "@/components/PlaceOrderDialogCoins";
 import { StoreLeaseManager } from "@/components/StoreLeaseManager";
 import { StoreHeader } from "@/components/StoreHeader";
 import { format } from "date-fns";
+import coinImage from "@/assets/voice2fire-coin.png";
 import { BreadcrumbSchema } from "@/components/BreadcrumbSchema";
 
 type Store = {
@@ -45,6 +47,9 @@ type Product = {
   image_url: string | null;
   images: string[];
   is_active: boolean;
+  payment_method: 'coins' | 'external_link';
+  external_link: string | null;
+  price_in_coins: number;
   created_at: string;
   updated_at: string;
 };
@@ -54,6 +59,9 @@ type ProductFormData = {
   description: string;
   price: string;
   images: File[];
+  payment_method: 'coins' | 'external_link';
+  external_link: string;
+  price_in_coins: string;
 };
 
 type Order = {
@@ -131,6 +139,9 @@ export default function StorePage() {
     description: "",
     price: "",
     images: [],
+    payment_method: 'coins',
+    external_link: "",
+    price_in_coins: "",
   });
   const [uploading, setUploading] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -224,7 +235,8 @@ export default function StorePage() {
     if (e3) console.error(e3);
     setProducts((prods ?? []).map(p => ({
       ...p,
-      images: Array.isArray(p.images) ? (p.images as string[]) : []
+      images: Array.isArray(p.images) ? (p.images as string[]) : [],
+      payment_method: (p.payment_method as 'coins' | 'external_link') || 'coins'
     })));
     setLoading(false);
   };
@@ -804,6 +816,9 @@ export default function StorePage() {
         image_url: primaryImage,
         images: allImages,
         store_id: store.id,
+        payment_method: productForm.payment_method,
+        external_link: productForm.payment_method === 'external_link' ? productForm.external_link : null,
+        price_in_coins: productForm.payment_method === 'coins' ? parseFloat(productForm.price_in_coins) : 0,
       };
 
       if (editingProduct) {
@@ -833,7 +848,15 @@ export default function StorePage() {
 
       setDialogOpen(false);
       setEditingProduct(null);
-      setProductForm({ title: "", description: "", price: "", images: [] });
+      setProductForm({ 
+        title: "", 
+        description: "", 
+        price: "", 
+        images: [],
+        payment_method: 'coins',
+        external_link: "",
+        price_in_coins: "",
+      });
       loadStoreAndProducts();
     } catch (error: any) {
       toast({
@@ -858,6 +881,9 @@ export default function StorePage() {
       description: product.description || "",
       price: product.price.toString(),
       images: [],
+      payment_method: product.payment_method,
+      external_link: product.external_link || "",
+      price_in_coins: product.price_in_coins.toString(),
     });
     setDialogOpen(true);
   };
@@ -895,7 +921,15 @@ export default function StorePage() {
       return;
     }
     setEditingProduct(null);
-    setProductForm({ title: "", description: "", price: "", images: [] });
+    setProductForm({ 
+      title: "", 
+      description: "", 
+      price: "", 
+      images: [],
+      payment_method: 'coins',
+      external_link: "",
+      price_in_coins: "",
+    });
     setDialogOpen(true);
   };
 
@@ -971,6 +1005,60 @@ export default function StorePage() {
                           required
                         />
                       </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium">Payment Method</label>
+                        <Select
+                          value={productForm.payment_method}
+                          onValueChange={(value: 'coins' | 'external_link') =>
+                            setProductForm({ ...productForm, payment_method: value })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="coins">Voice2Fire Coins (In-House)</SelectItem>
+                            <SelectItem value="external_link">External Link</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {productForm.payment_method === 'coins' && (
+                        <div>
+                          <label className="text-sm font-medium">Price in Coins</label>
+                          <Input
+                            type="number"
+                            step="1"
+                            min="0"
+                            value={productForm.price_in_coins}
+                            onChange={(e) =>
+                              setProductForm({ ...productForm, price_in_coins: e.target.value })
+                            }
+                            required
+                            placeholder="Enter coin price"
+                          />
+                        </div>
+                      )}
+
+                      {productForm.payment_method === 'external_link' && (
+                        <div>
+                          <label className="text-sm font-medium">External Link</label>
+                          <Input
+                            type="url"
+                            value={productForm.external_link}
+                            onChange={(e) =>
+                              setProductForm({ ...productForm, external_link: e.target.value })
+                            }
+                            required
+                            placeholder="https://yourstore.com/product"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Customers will be redirected to this link to complete the purchase
+                          </p>
+                        </div>
+                      )}
+
                       <div>
                         <label className="text-sm font-medium">Product Image</label>
                         <Input
@@ -1036,7 +1124,20 @@ export default function StorePage() {
                         <p className="text-sm text-muted-foreground mb-2">
                           {product.description}
                         </p>
-                        <p className="text-lg font-bold mb-3">${product.price}</p>
+                        
+                        {product.payment_method === 'coins' && (
+                          <div className="flex items-center gap-1 mb-3">
+                            <img src={coinImage} alt="coin" className="h-5 w-5" />
+                            <span className="text-lg font-bold">{product.price_in_coins} Coins</span>
+                          </div>
+                        )}
+                        
+                        {product.payment_method === 'external_link' && (
+                          <div className="mb-3">
+                            <Badge variant="outline">External Store</Badge>
+                          </div>
+                        )}
+                        
                         <div className="flex gap-2">
                           <Button
                             variant="outline"
@@ -1052,18 +1153,30 @@ export default function StorePage() {
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="default"
-                            size="sm"
-                            className="ml-auto"
-                            onClick={() => {
-                              setSelectedProduct(product);
-                              setOrderDialogOpen(true);
-                            }}
-                          >
-                            <ShoppingCart className="h-4 w-4 mr-2" />
-                            Order
-                          </Button>
+                          
+                          {product.payment_method === 'coins' ? (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="ml-auto"
+                              onClick={() => {
+                                setSelectedProduct(product);
+                                setOrderDialogOpen(true);
+                              }}
+                            >
+                              <ShoppingCart className="h-4 w-4 mr-2" />
+                              Buy with Coins
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="ml-auto"
+                              onClick={() => window.open(product.external_link || '', '_blank')}
+                            >
+                              Visit Store
+                            </Button>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
@@ -1518,17 +1631,29 @@ export default function StorePage() {
     )}
   </div>
 
-  {selectedProduct && (
-        <PlaceOrderDialog
-          product={selectedProduct}
-          open={orderDialogOpen}
-          onOpenChange={setOrderDialogOpen}
-          onOrderCreated={() => {
-            loadStoreAndProducts();
-            loadOrders();
-          }}
-        />
-      )}
+  {selectedProduct && selectedProduct.payment_method === 'coins' && (
+    <PlaceOrderDialogCoins
+      product={selectedProduct}
+      open={orderDialogOpen}
+      onOpenChange={setOrderDialogOpen}
+      onOrderCreated={() => {
+        loadStoreAndProducts();
+        loadOrders();
+      }}
+    />
+  )}
+
+  {selectedProduct && selectedProduct.payment_method !== 'coins' && (
+    <PlaceOrderDialog
+      product={selectedProduct}
+      open={orderDialogOpen}
+      onOpenChange={setOrderDialogOpen}
+      onOrderCreated={() => {
+        loadStoreAndProducts();
+        loadOrders();
+      }}
+    />
+  )}
 
       <Dialog open={trackingDialogOpen} onOpenChange={setTrackingDialogOpen}>
         <DialogContent>
