@@ -56,6 +56,18 @@ export default function Live() {
 
   const startPreview = async () => {
     try {
+      // Check if running on HTTPS or localhost
+      if (window.location.protocol !== 'https:' && !window.location.hostname.includes('localhost')) {
+        toast.error("Camera access requires HTTPS connection");
+        return;
+      }
+
+      // Check if getUserMedia is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        toast.error("Camera access not supported in this browser");
+        return;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: 1280, height: 720 },
         audio: true
@@ -67,9 +79,19 @@ export default function Live() {
       }
       setIsPreparing(true);
       toast.success("Camera preview started");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error accessing camera:", error);
-      toast.error("Failed to access camera. Please check permissions.");
+      
+      // Provide specific error messages
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        toast.error("Camera permission denied. Please allow camera access in your browser settings.");
+      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        toast.error("No camera found. Please connect a camera and try again.");
+      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+        toast.error("Camera is already in use by another application.");
+      } else {
+        toast.error("Failed to access camera. Please check permissions and try again.");
+      }
     }
   };
 
