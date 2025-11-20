@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, ThumbsDown } from "lucide-react";
+import { Send, ThumbsDown, Heart } from "lucide-react";
 
 const commentSchema = z.object({
   comment_text: z
@@ -48,6 +48,7 @@ export default function CommentsDrawer({
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(false);
+  const [likedComments, setLikedComments] = useState<Set<string>>(new Set());
   const [dislikedComments, setDislikedComments] = useState<Set<string>>(new Set());
   const [currentUser, setCurrentUser] = useState<{
     id: string;
@@ -130,6 +131,20 @@ export default function CommentsDrawer({
     }
   };
 
+  const handleLike = (commentId: string) => {
+    setLikedComments(prev => {
+      const next = new Set(prev);
+      if (next.has(commentId)) {
+        next.delete(commentId);
+        toast.success("Like removed");
+      } else {
+        next.add(commentId);
+        toast.success("Comment liked");
+      }
+      return next;
+    });
+  };
+
   const handleDislike = (commentId: string) => {
     setDislikedComments(prev => {
       const next = new Set(prev);
@@ -173,20 +188,36 @@ export default function CommentsDrawer({
                           {new Date(comment.created_at).toLocaleDateString()}
                         </span>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDislike(comment.id)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <ThumbsDown 
-                          className={`h-4 w-4 ${
-                            dislikedComments.has(comment.id) 
-                              ? "fill-destructive text-destructive" 
-                              : "text-muted-foreground"
-                          }`} 
-                        />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleLike(comment.id)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Heart 
+                            className={`h-4 w-4 ${
+                              likedComments.has(comment.id) 
+                                ? "fill-red-500 text-red-500" 
+                                : "text-muted-foreground"
+                            }`} 
+                          />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDislike(comment.id)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <ThumbsDown 
+                            className={`h-4 w-4 ${
+                              dislikedComments.has(comment.id) 
+                                ? "fill-destructive text-destructive" 
+                                : "text-muted-foreground"
+                            }`} 
+                          />
+                        </Button>
+                      </div>
                     </div>
                     <p className="text-sm">{comment.comment_text}</p>
                   </div>
