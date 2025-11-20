@@ -1785,6 +1785,61 @@ export default function Feed() {
             {video.caption && (
               <p className="text-white/90 text-sm line-clamp-2">{video.caption}</p>
             )}
+            
+            {/* Action buttons below caption - only for own videos */}
+            {currentUser && video.user_id === currentUser && (
+              <div className="flex gap-2 mt-3 pointer-events-auto">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toast.info('Edit functionality coming soon');
+                  }}
+                  className="h-8 px-3 bg-white/20 hover:bg-white/30 text-white border-white/30"
+                >
+                  <Edit className="h-3.5 w-3.5 mr-1.5" />
+                  Edit
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleShare(video.id);
+                  }}
+                  className="h-8 px-3 bg-white/20 hover:bg-white/30 text-white border-white/30"
+                >
+                  <Share2 className="h-3.5 w-3.5 mr-1.5" />
+                  Share
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedPromoteVideo(video);
+                    setPromoteDialogOpen(true);
+                  }}
+                  className="h-8 px-3 bg-white/20 hover:bg-white/30 text-white border-white/30"
+                >
+                  <TrendingUp className="h-3.5 w-3.5 mr-1.5" />
+                  Promote
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteVideo(video.id);
+                  }}
+                  className="h-8 px-3 bg-red-500/80 hover:bg-red-600/80 text-white border-red-400/30"
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                  Delete
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
