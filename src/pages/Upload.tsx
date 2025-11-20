@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload as UploadIcon, Video } from "lucide-react";
+import { AICaptionGenerator } from "@/components/AICaptionGenerator";
 
 export default function Upload() {
   const [user, setUser] = useState<any>(null);
@@ -114,6 +115,8 @@ export default function Upload() {
 
   return (
     <div className="container max-w-2xl mx-auto p-4 space-y-6">
+      <AICaptionGenerator onCaptionGenerated={setCaption} />
+      
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
