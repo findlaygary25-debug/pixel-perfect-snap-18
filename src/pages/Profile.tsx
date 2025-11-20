@@ -260,17 +260,25 @@ const Profile = () => {
   const handleDeleteAccount = async () => {
     if (!user) return;
     
-    const { error } = await supabase.auth.admin.deleteUser(user.id);
-    
-    if (error) {
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-account');
+      
+      if (error) throw error;
+      
+      if (data?.success) {
+        toast({ title: "Account deleted successfully" });
+        await supabase.auth.signOut();
+        navigate("/login");
+      } else {
+        throw new Error(data?.error || "Failed to delete account");
+      }
+    } catch (error: any) {
+      console.error('Delete account error:', error);
       toast({ 
         title: "Error deleting account", 
-        description: "Please contact support for assistance.",
+        description: error.message || "Please contact support for assistance.",
         variant: "destructive" 
       });
-    } else {
-      toast({ title: "Account deleted" });
-      navigate("/login");
     }
   };
 
