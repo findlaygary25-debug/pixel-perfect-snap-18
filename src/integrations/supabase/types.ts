@@ -2155,6 +2155,7 @@ export type Database = {
           completion_rate: number
           created_at: string
           id: string
+          last_position_seconds: number | null
           session_id: string
           updated_at: string
           video_duration: number
@@ -2166,6 +2167,7 @@ export type Database = {
           completion_rate?: number
           created_at?: string
           id?: string
+          last_position_seconds?: number | null
           session_id: string
           updated_at?: string
           video_duration: number
@@ -2177,6 +2179,7 @@ export type Database = {
           completion_rate?: number
           created_at?: string
           id?: string
+          last_position_seconds?: number | null
           session_id?: string
           updated_at?: string
           video_duration?: number
@@ -2351,6 +2354,10 @@ export type Database = {
         Returns: boolean
       }
       claim_admin_bootstrap: { Args: { p_token: string }; Returns: Json }
+      clear_watch_history: {
+        Args: { user_id_param: string }
+        Returns: undefined
+      }
       create_order_with_encrypted_pii: {
         Args: {
           p_affiliate_id?: string
@@ -2491,6 +2498,18 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_recommended_videos: {
+        Args: { limit_param?: number; user_id_param: string }
+        Returns: {
+          caption: string
+          likes: number
+          relevance_score: number
+          username: string
+          video_id: string
+          video_url: string
+          views: number
+        }[]
+      }
       get_user_challenge_stats: {
         Args: never
         Returns: {
@@ -2502,6 +2521,30 @@ export type Database = {
           total_points_earned: number
           total_rewards_earned: number
         }[]
+      }
+      get_user_watch_history: {
+        Args: {
+          limit_param?: number
+          offset_param?: number
+          user_id_param: string
+        }
+        Returns: {
+          caption: string
+          completion_rate: number
+          last_position_seconds: number
+          last_watched_at: string
+          total_watch_time: number
+          user_id: string
+          username: string
+          video_duration: number
+          video_id: string
+          video_url: string
+          watch_count: number
+        }[]
+      }
+      get_watch_history_analytics: {
+        Args: { user_id_param: string }
+        Returns: Json
       }
       grant_user_role: {
         Args: {
@@ -2537,6 +2580,10 @@ export type Database = {
       purchase_reward_item: {
         Args: { points_to_spend: number; reward_item_id_param: string }
         Returns: Json
+      }
+      remove_from_watch_history: {
+        Args: { user_id_param: string; video_id_param: string }
+        Returns: undefined
       }
       revoke_user_role: {
         Args: {

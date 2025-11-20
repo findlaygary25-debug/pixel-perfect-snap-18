@@ -1,4 +1,4 @@
-import { Home, Video, Upload as UploadIcon, Store, Wallet, Users, Mail, Info, Palette, LogIn, User, Activity, BarChart3, Megaphone, HelpCircle, Share2, Youtube, CalendarClock, Radio, X, Settings, FolderHeart, Trophy, Gift, Shield, Bell, TrendingUp, FlaskConical, FileText, UserCog, KeyRound, LayoutDashboard, BellRing, ScrollText, AlertTriangle, ArrowUp, Mail as MailIcon, Menu } from "lucide-react";
+import { Home, Video, Upload as UploadIcon, Store, Wallet, Users, Mail, Info, Palette, LogIn, User, Activity, BarChart3, Megaphone, HelpCircle, Share2, Youtube, CalendarClock, Radio, X, Settings, FolderHeart, Trophy, Gift, Shield, Bell, TrendingUp, FlaskConical, FileText, UserCog, KeyRound, LayoutDashboard, BellRing, ScrollText, AlertTriangle, ArrowUp, Mail as MailIcon, Menu, History } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +31,7 @@ const memberItems = [
   { title: "Feed", url: "/feed", icon: Video },
   { title: "Go Live", url: "/live", icon: Radio },
   { title: "Activity", url: "/activity", icon: Activity },
+  { title: "Watch History", url: "/watch-history", icon: History },
   { title: "Upload", url: "/upload", icon: UploadIcon },
   { title: "Import Videos", url: "/import", icon: Youtube },
   { title: "Scheduled", url: "/scheduled", icon: CalendarClock },

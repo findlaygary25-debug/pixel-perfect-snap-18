@@ -49,6 +49,7 @@ import NotificationTemplates from "./pages/NotificationTemplates";
 import NotificationTemplateEditor from "./pages/NotificationTemplateEditor";
 import Gifts from "./pages/Gifts";
 import GiftLeaderboard from "./pages/GiftLeaderboard";
+import WatchHistory from "./pages/WatchHistory";
 import Advertise from "./pages/Advertise";
 import NotFound from "./pages/NotFound";
 
@@ -122,6 +123,7 @@ const App = () => (
           <Route path="/admin/templates/edit/:id" element={<NotificationTemplateEditor />} />
                   <Route path="/gifts" element={<Gifts />} />
                   <Route path="/gift-leaderboard" element={<GiftLeaderboard />} />
+                  <Route path="/watch-history" element={<WatchHistory />} />
                   <Route path="/advertise" element={<Advertise />} />
                   <Route path="*" element={<NotFound />} />
         </Routes>
