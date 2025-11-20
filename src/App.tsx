@@ -68,11 +68,13 @@ const App = () => (
               <header className="h-12 flex items-center justify-between border-b bg-background px-4">
                 <div className="flex items-center gap-3">
                   <SidebarTrigger />
-                  <img 
-                  src="/favicon.png" 
-                  alt="Voice2Fire"
-                    className="h-10 w-auto object-contain hover-scale"
-                  />
+                  <a href="/" className="flex items-center">
+                    <img 
+                      src="/favicon.png" 
+                      alt="Voice2Fire"
+                      className="h-10 w-auto object-contain hover-scale cursor-pointer"
+                    />
+                  </a>
                 </div>
                 <TopActionBar />
               </header>
