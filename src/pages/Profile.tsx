@@ -234,7 +234,7 @@ const Profile = () => {
         </TabsList>
 
         <TabsContent value="videos" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {videos.map((video) => (
               <Card key={video.id}>
                 <CardContent className="p-4">
@@ -256,7 +256,7 @@ const Profile = () => {
         </TabsContent>
 
         <TabsContent value="bookmarks" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {bookmarks.map((video) => (
               <Card key={video.id}>
                 <CardContent className="p-4">
