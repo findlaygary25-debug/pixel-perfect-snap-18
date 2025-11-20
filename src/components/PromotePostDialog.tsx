@@ -131,17 +131,17 @@ export function PromotePostDialog({
         return;
       }
 
-      // Get referrer info
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("referred_by")
+      // Get referrer info from affiliate_links
+      const { data: affiliateLink } = await supabase
+        .from("affiliate_links")
+        .select("sponsor_id")
         .eq("user_id", user.id)
         .single();
 
       // Create promotion as advertisement
-      const { error: adError } = await supabase.from("advertisements").insert({
+      const { data: ad, error: adError } = await supabase.from("advertisements").insert({
         advertiser_id: user.id,
-        referred_by: profile?.referred_by,
+        referred_by: affiliateLink?.sponsor_id,
         title: `Promoted Post - ${tier.name}`,
         description: caption || "Promoted video post",
         media_url: videoUrl,
@@ -150,7 +150,9 @@ export function PromotePostDialog({
         status: "pending",
         start_date: startDate?.toISOString(),
         end_date: endDate?.toISOString(),
-      });
+      })
+      .select()
+      .single();
 
       if (adError) throw adError;
 
@@ -161,6 +163,19 @@ export function PromotePostDialog({
         .eq("user_id", user.id);
 
       if (walletError) throw walletError;
+
+      // Calculate affiliate commissions if user has a sponsor
+      if (affiliateLink?.sponsor_id && ad?.id) {
+        try {
+          await supabase.functions.invoke("calculate-ad-commissions", {
+            body: { adId: ad.id },
+          });
+          console.log("Ad commissions calculated successfully");
+        } catch (commError) {
+          console.error("Error calculating ad commissions:", commError);
+          // Don't fail the promotion if commission calculation fails
+        }
+      }
 
       toast({
         title: "Post promoted!",
