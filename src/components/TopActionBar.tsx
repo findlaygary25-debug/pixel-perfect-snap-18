@@ -9,7 +9,7 @@ import { AdminNotificationBell } from "@/components/AdminNotificationBell";
 export function TopActionBar() {
   const navigate = useNavigate();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
+  
 
   useEffect(() => {
     checkUser();
@@ -18,7 +18,6 @@ export function TopActionBar() {
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      setUserId(user.id);
       // Fetch profile avatar
       const { data: profile } = await supabase
         .from("profiles")
@@ -32,7 +31,7 @@ export function TopActionBar() {
     }
   };
 
-  if (!userId) return null;
+  
 
   return (
     <div className="flex items-center gap-2">
