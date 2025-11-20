@@ -1385,11 +1385,14 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          external_link: string | null
           id: string
           image_url: string | null
           images: Json | null
           is_active: boolean
+          payment_method: string | null
           price: number
+          price_in_coins: number | null
           store_id: string
           title: string
           updated_at: string
@@ -1397,11 +1400,14 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          external_link?: string | null
           id?: string
           image_url?: string | null
           images?: Json | null
           is_active?: boolean
+          payment_method?: string | null
           price: number
+          price_in_coins?: number | null
           store_id: string
           title: string
           updated_at?: string
@@ -1409,11 +1415,14 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          external_link?: string | null
           id?: string
           image_url?: string | null
           images?: Json | null
           is_active?: boolean
+          payment_method?: string | null
           price?: number
+          price_in_coins?: number | null
           store_id?: string
           title?: string
           updated_at?: string
