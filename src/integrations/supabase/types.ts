@@ -283,6 +283,27 @@ export type Database = {
         }
         Relationships: []
       }
+      blocked_users: {
+        Row: {
+          blocked_user_id: string
+          created_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          blocked_user_id: string
+          created_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          blocked_user_id?: string
+          created_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bookmarks: {
         Row: {
           created_at: string
@@ -1400,10 +1421,12 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_region: string | null
           avatar_url: string | null
           bio: string | null
           created_at: string
           id: string
+          is_private: boolean | null
           referred_by: string | null
           social_links: Json | null
           updated_at: string
@@ -1412,10 +1435,12 @@ export type Database = {
           website_url: string | null
         }
         Insert: {
+          account_region?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           id?: string
+          is_private?: boolean | null
           referred_by?: string | null
           social_links?: Json | null
           updated_at?: string
@@ -1424,10 +1449,12 @@ export type Database = {
           website_url?: string | null
         }
         Update: {
+          account_region?: string | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           id?: string
+          is_private?: boolean | null
           referred_by?: string | null
           social_links?: Json | null
           updated_at?: string

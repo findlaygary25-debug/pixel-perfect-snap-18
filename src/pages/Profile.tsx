@@ -8,7 +8,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { Video, Bookmark, Settings, LogOut } from "lucide-react";
+import { Video, Bookmark, Settings, LogOut, Lock, Shield, Download, Trash2, Globe, UserX } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { BreadcrumbSchema } from "@/components/BreadcrumbSchema";
 import { PersonSchema } from "@/components/PersonSchema";
 
@@ -17,6 +30,8 @@ interface Profile {
   avatar_url: string | null;
   bio: string | null;
   website_url: string | null;
+  is_private: boolean;
+  account_region: string;
   social_links: {
     youtube?: string;
     tiktok?: string;
@@ -24,6 +39,15 @@ interface Profile {
     twitter?: string;
     facebook?: string;
   } | null;
+}
+
+interface BlockedUser {
+  id: string;
+  blocked_user_id: string;
+  profiles: {
+    username: string;
+    avatar_url: string | null;
+  };
 }
 
 interface Video {
@@ -45,6 +69,7 @@ const Profile = () => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [bookmarks, setBookmarks] = useState<BookmarkedVideo[]>([]);
   const [followingFollowerCounts, setFollowingFollowerCounts] = useState<Record<string, { followers: number; following: number }>>({});
+  const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -64,7 +89,8 @@ const Profile = () => {
       fetchProfile(session.user.id),
       fetchVideos(session.user.id),
       fetchBookmarks(session.user.id),
-      fetchFollowerCounts(session.user.id)
+      fetchFollowerCounts(session.user.id),
+      fetchBlockedUsers(session.user.id)
     ]);
     setLoading(false);
   };
@@ -152,6 +178,99 @@ const Profile = () => {
     } else {
       toast({ title: "Profile updated successfully" });
       setProfile({ ...profile, ...updates } as Profile);
+    }
+  };
+
+  const fetchBlockedUsers = async (userId: string) => {
+    const { data, error } = await supabase
+      .from("blocked_users")
+      .select(`
+        id,
+        blocked_user_id,
+        profiles!blocked_users_blocked_user_id_fkey (
+          username,
+          avatar_url
+        )
+      `)
+      .eq("user_id", userId);
+    
+    if (!error && data) {
+      setBlockedUsers(data as unknown as BlockedUser[]);
+    }
+  };
+
+  const handlePrivacyToggle = async (isPrivate: boolean) => {
+    if (!user) return;
+    
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_private: isPrivate })
+      .eq("user_id", user.id);
+    
+    if (error) {
+      toast({ title: "Error updating privacy setting", variant: "destructive" });
+    } else {
+      setProfile(prev => prev ? { ...prev, is_private: isPrivate } : null);
+      toast({ title: "Privacy setting updated" });
+    }
+  };
+
+  const handleUnblockUser = async (blockedUserId: string) => {
+    if (!user) return;
+    
+    const { error } = await supabase
+      .from("blocked_users")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("blocked_user_id", blockedUserId);
+    
+    if (error) {
+      toast({ title: "Error unblocking user", variant: "destructive" });
+    } else {
+      setBlockedUsers(prev => prev.filter(bu => bu.blocked_user_id !== blockedUserId));
+      toast({ title: "User unblocked" });
+    }
+  };
+
+  const handleDownloadData = async () => {
+    if (!user || !profile) return;
+    
+    const data = {
+      profile,
+      videos,
+      bookmarks,
+      followers: followingFollowerCounts[user.id]?.followers || 0,
+      following: followingFollowerCounts[user.id]?.following || 0,
+      exported_at: new Date().toISOString()
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `voice2fire_data_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({ title: "Data downloaded successfully" });
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    
+    const { error } = await supabase.auth.admin.deleteUser(user.id);
+    
+    if (error) {
+      toast({ 
+        title: "Error deleting account", 
+        description: "Please contact support for assistance.",
+        variant: "destructive" 
+      });
+    } else {
+      toast({ title: "Account deleted" });
+      navigate("/login");
     }
   };
 
@@ -280,7 +399,135 @@ const Profile = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="settings" className="mt-6">
+        <TabsContent value="settings" className="mt-6 space-y-6">
+          {/* Account Control */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trash2 className="h-5 w-5" />
+                Account Control
+              </CardTitle>
+              <CardDescription>Manage your account settings</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="w-full">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Account
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete your account
+                      and remove all your data from our servers.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </CardContent>
+          </Card>
+
+          {/* Account Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                Account Information
+              </CardTitle>
+              <CardDescription>Your account region is initially set based on the time and place of registration</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <Label>Account Region</Label>
+                <span className="text-muted-foreground">{profile?.account_region || 'New Zealand'}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Privacy */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Privacy
+              </CardTitle>
+              <CardDescription>Manage your privacy and discoverability settings</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label htmlFor="private-account">Private Account</Label>
+                  <p className="text-sm text-muted-foreground">
+                    With a private account, only users you approve can follow you and watch your videos
+                  </p>
+                </div>
+                <Switch
+                  id="private-account"
+                  checked={profile?.is_private || false}
+                  onCheckedChange={handlePrivacyToggle}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2">
+                  <UserX className="h-4 w-4" />
+                  Blocked Accounts
+                </Label>
+                {blockedUsers.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">You haven't blocked anyone yet</p>
+                ) : (
+                  <div className="space-y-2">
+                    {blockedUsers.map((blockedUser) => (
+                      <div key={blockedUser.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={blockedUser.profiles.avatar_url || undefined} />
+                            <AvatarFallback>{blockedUser.profiles.username.charAt(0).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{blockedUser.profiles.username}</span>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleUnblockUser(blockedUser.blocked_user_id)}
+                        >
+                          Unblock
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Data */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Download className="h-5 w-5" />
+                Data
+              </CardTitle>
+              <CardDescription>Download a copy of your Voice2Fire data</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={handleDownloadData} className="w-full">
+                <Download className="mr-2 h-4 w-4" />
+                Download Your Data
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Profile Settings */}
           <Card>
             <CardHeader>
               <CardTitle>Account Settings</CardTitle>
