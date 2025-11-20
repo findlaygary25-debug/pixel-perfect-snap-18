@@ -1781,7 +1781,13 @@ export default function Feed() {
         {/* Caption overlay */}
         <div className="absolute bottom-20 left-4 right-20 pointer-events-none z-10">
           <div className="bg-black/40 backdrop-blur-sm rounded-lg px-4 py-3 max-w-md">
-            <p className="text-white font-semibold text-sm mb-1">@{video.username}</p>
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-white font-semibold text-sm">@{video.username}</p>
+              <div className="flex items-center gap-1 text-white/80 text-xs">
+                <Play className="h-3 w-3 fill-white/80" />
+                <span>{video.views.toLocaleString()} views</span>
+              </div>
+            </div>
             {video.caption && (
               <p className="text-white/90 text-sm line-clamp-2">{video.caption}</p>
             )}
