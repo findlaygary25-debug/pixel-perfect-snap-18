@@ -189,45 +189,12 @@ const Profile = () => {
         />
       )}
       <div className="flex items-center gap-6 mb-8">
-        <div className="relative group cursor-pointer" onClick={() => document.getElementById('avatar-upload')?.click()}>
-          <Avatar className="h-24 w-24">
-            <AvatarImage src={profile?.avatar_url || undefined} />
-            <AvatarFallback className="text-2xl">
-              {profile?.username.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <div className="absolute inset-0 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <span className="text-white text-2xl font-bold">U</span>
-          </div>
-        </div>
-        <input
-          id="avatar-upload"
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={async (e) => {
-            const file = e.target.files?.[0];
-            if (!file || !user) return;
-            
-            const fileExt = file.name.split('.').pop();
-            const filePath = `${user.id}-${Math.random()}.${fileExt}`;
-            
-            const { error: uploadError } = await supabase.storage
-              .from('avatars')
-              .upload(filePath, file, { upsert: true });
-            
-            if (uploadError) {
-              toast({ title: "Error uploading image", variant: "destructive" });
-              return;
-            }
-            
-            const { data: { publicUrl } } = supabase.storage
-              .from('avatars')
-              .getPublicUrl(filePath);
-            
-            await updateProfile({ avatar_url: publicUrl });
-          }}
-        />
+        <Avatar className="h-24 w-24">
+          <AvatarImage src={profile?.avatar_url || undefined} />
+          <AvatarFallback className="text-2xl">
+            {profile?.username.charAt(0).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
         <div className="flex-1">
           <h1 className="text-3xl font-bold">{profile?.username}</h1>
           <p className="text-muted-foreground">{user?.email}</p>
@@ -310,6 +277,58 @@ const Profile = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
+                <label className="text-sm font-medium mb-2 block">Profile Picture</label>
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={profile?.avatar_url || undefined} />
+                    <AvatarFallback className="text-xl">
+                      {profile?.username.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <input
+                      id="avatar-upload-settings"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file || !user) return;
+                        
+                        const fileExt = file.name.split('.').pop();
+                        const filePath = `${user.id}-${Math.random()}.${fileExt}`;
+                        
+                        const { error: uploadError } = await supabase.storage
+                          .from('avatars')
+                          .upload(filePath, file, { upsert: true });
+                        
+                        if (uploadError) {
+                          toast({ title: "Error uploading image", variant: "destructive", description: uploadError.message });
+                          return;
+                        }
+                        
+                        const { data: { publicUrl } } = supabase.storage
+                          .from('avatars')
+                          .getPublicUrl(filePath);
+                        
+                        await updateProfile({ avatar_url: publicUrl });
+                      }}
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => document.getElementById('avatar-upload-settings')?.click()}
+                    >
+                      Upload New Picture
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      JPG, PNG or GIF. Max size 5MB.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
                 <label className="text-sm font-medium">Username</label>
                 <Input
                   value={profile?.username || ""}
@@ -317,15 +336,7 @@ const Profile = () => {
                   onBlur={(e) => updateProfile({ username: e.target.value })}
                 />
               </div>
-              <div>
-                <label className="text-sm font-medium">Avatar URL</label>
-                <Input
-                  value={profile?.avatar_url || ""}
-                  onChange={(e) => setProfile({ ...profile!, avatar_url: e.target.value })}
-                  onBlur={(e) => updateProfile({ avatar_url: e.target.value })}
-                  placeholder="https://..."
-                />
-              </div>
+              
               <div>
                 <label className="text-sm font-medium">Bio</label>
                 <Textarea
@@ -333,8 +344,10 @@ const Profile = () => {
                   onChange={(e) => setProfile({ ...profile!, bio: e.target.value })}
                   onBlur={(e) => updateProfile({ bio: e.target.value })}
                   placeholder="Tell us about yourself"
+                  rows={4}
                 />
               </div>
+              
               <Button onClick={handleLogout} variant="destructive" className="w-full">
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
