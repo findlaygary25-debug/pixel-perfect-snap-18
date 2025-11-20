@@ -16,11 +16,11 @@ interface CoinPackage {
 }
 
 const COIN_PACKAGES: CoinPackage[] = [
-  { id: "p1", coins: 100, price: 0.99, icon: Coins },
-  { id: "p2", coins: 500, price: 4.99, bonus: 50, icon: Sparkles },
-  { id: "p3", coins: 1000, price: 9.99, bonus: 150, popular: true, icon: Star },
-  { id: "p4", coins: 2500, price: 24.99, bonus: 500, icon: Zap },
-  { id: "p5", coins: 5000, price: 49.99, bonus: 1200, icon: Crown },
+  { id: "p1", coins: 30, price: 0.65, icon: Coins },
+  { id: "p2", coins: 100, price: 2.15, bonus: 10, icon: Sparkles },
+  { id: "p3", coins: 500, price: 9.99, bonus: 50, popular: true, icon: Star },
+  { id: "p4", coins: 1000, price: 18.99, bonus: 150, icon: Zap },
+  { id: "p5", coins: 5000, price: 89.99, bonus: 1000, icon: Crown },
 ];
 
 export default function Wallet() {
