@@ -6,14 +6,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Coin packages configuration
+// Coin packages configuration (matching TikTok pricing at ~$0.021 per coin)
 const COIN_PACKAGES: Record<string, { coins: number; bonus: number; price: number }> = {
-  'starter': { coins: 100, bonus: 0, price: 0.99 },
-  'popular': { coins: 500, bonus: 50, price: 4.99 },
-  'best-value': { coins: 1200, bonus: 200, price: 9.99 },
-  'mega': { coins: 2500, bonus: 500, price: 19.99 },
-  'ultimate': { coins: 6500, bonus: 1500, price: 49.99 },
-  'legendary': { coins: 13000, bonus: 3500, price: 99.99 },
+  'p1': { coins: 30, bonus: 0, price: 0.65 },
+  'p2': { coins: 100, bonus: 10, price: 2.15 },
+  'p3': { coins: 500, bonus: 50, price: 9.99 },
+  'p4': { coins: 1000, bonus: 150, price: 18.99 },
+  'p5': { coins: 5000, bonus: 1000, price: 89.99 },
 };
 
 Deno.serve(async (req) => {
