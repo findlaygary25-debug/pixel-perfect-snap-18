@@ -167,7 +167,7 @@ const handler = async (req: Request): Promise<Response> => {
     `;
 
     const emailResponse = await resend.emails.send({
-      from: "Voice2Fire <onboarding@resend.dev>",
+      from: "Voice2Fire <accounts@voice2fire.com>",
       to: [customerEmail],
       subject: `${getEmailSubject(status)} - Order #${orderId.slice(0, 8)}`,
       html: emailHtml,

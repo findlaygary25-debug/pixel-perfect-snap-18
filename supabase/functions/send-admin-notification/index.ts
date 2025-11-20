@@ -161,7 +161,7 @@ const handler = async (req: Request): Promise<Response> => {
         // Send Email Notification
         if (shouldSendEmail && prefs?.notification_email) {
           const emailResult = await resend.emails.send({
-            from: "Voice2Fire Admin <onboarding@resend.dev>",
+            from: "Voice2Fire Admin <support@voice2fire.com>",
             to: [prefs.notification_email],
             subject: `[${priority.toUpperCase()}] ${title}`,
             html: `

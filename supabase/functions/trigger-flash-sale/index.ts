@@ -276,7 +276,7 @@ Deno.serve(async (req) => {
               if (!user.email) return Promise.resolve();
               
               return resend.emails.send({
-                from: 'Voice2Fire <notifications@resend.dev>',
+                from: 'Voice2Fire <sales@voice2fire.com>',
                 to: [user.email],
                 subject: `⚡ FLASH SALE: ${config.discount_percentage}% OFF!`,
                 html: `
