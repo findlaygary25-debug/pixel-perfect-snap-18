@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -1108,80 +1109,82 @@ export default function StorePage() {
                   No products yet. Add your first product!
                 </p>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {products.map((product) => (
-                    <Card key={product.id}>
-                      {/* Display first image or fallback */}
-                      {(product.images?.[0] || product.image_url) && (
-                        <img
-                          src={product.images?.[0] || product.image_url || ""}
-                          alt={product.title}
-                          className="w-full h-48 object-cover rounded-t-lg"
-                        />
-                      )}
-                      <CardContent className="p-4">
-                        <h3 className="font-semibold mb-2">{product.title}</h3>
-                        <p className="text-sm text-muted-foreground mb-2">
-                          {product.description}
-                        </p>
-                        
-                        {product.payment_method === 'coins' && (
-                          <div className="flex items-center gap-1 mb-3">
-                            <img src={coinImage} alt="coin" className="h-5 w-5" />
-                            <span className="text-lg font-bold">{product.price_in_coins} Coins</span>
-                          </div>
+                <ScrollArea className="h-[600px] pr-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {products.map((product) => (
+                      <Card key={product.id}>
+                        {/* Display first image or fallback */}
+                        {(product.images?.[0] || product.image_url) && (
+                          <img
+                            src={product.images?.[0] || product.image_url || ""}
+                            alt={product.title}
+                            className="w-full h-48 object-cover rounded-t-lg"
+                          />
                         )}
-                        
-                        {product.payment_method === 'external_link' && (
-                          <div className="mb-3">
-                            <Badge variant="outline">External Store</Badge>
-                          </div>
-                        )}
-                        
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditProduct(product)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteProduct(product.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                        <CardContent className="p-4">
+                          <h3 className="font-semibold mb-2">{product.title}</h3>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            {product.description}
+                          </p>
                           
-                          {product.payment_method === 'coins' ? (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="ml-auto"
-                              onClick={() => {
-                                setSelectedProduct(product);
-                                setOrderDialogOpen(true);
-                              }}
-                            >
-                              <ShoppingCart className="h-4 w-4 mr-2" />
-                              Buy with Coins
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="ml-auto"
-                              onClick={() => window.open(product.external_link || '', '_blank')}
-                            >
-                              Visit Store
-                            </Button>
+                          {product.payment_method === 'coins' && (
+                            <div className="flex items-center gap-1 mb-3">
+                              <img src={coinImage} alt="coin" className="h-5 w-5" />
+                              <span className="text-lg font-bold">{product.price_in_coins} Coins</span>
+                            </div>
                           )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                          
+                          {product.payment_method === 'external_link' && (
+                            <div className="mb-3">
+                              <Badge variant="outline">External Store</Badge>
+                            </div>
+                          )}
+                          
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditProduct(product)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteProduct(product.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                            
+                            {product.payment_method === 'coins' ? (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="ml-auto"
+                                onClick={() => {
+                                  setSelectedProduct(product);
+                                  setOrderDialogOpen(true);
+                                }}
+                              >
+                                <ShoppingCart className="h-4 w-4 mr-2" />
+                                Buy with Coins
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="ml-auto"
+                                onClick={() => window.open(product.external_link || '', '_blank')}
+                              >
+                                Visit Store
+                              </Button>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </ScrollArea>
               )}
             </CardContent>
           </Card>
