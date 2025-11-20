@@ -133,17 +133,6 @@ export function AppSidebar() {
 
   return (
     <>
-      {/* Always-visible toggle when closed */}
-      {!open && (
-        <button
-          onClick={() => setOpen(true)}
-          className="fixed left-0 top-4 z-50 bg-primary text-primary-foreground p-2 rounded-r-lg shadow-md hover:bg-primary/90 transition-colors"
-          aria-label="Open menu"
-        >
-          <Home className="h-5 w-5" />
-        </button>
-      )}
-
       {/* Dark overlay */}
       {open && (
         <div
@@ -158,11 +147,11 @@ export function AppSidebar() {
           fixed top-0 left-0 h-full z-50
           bg-sidebar text-sidebar-foreground border-r border-sidebar-border
           transition-transform duration-300
-          w-[320px]
+          w-[240px]
           ${open ? "translate-x-0" : "-translate-x-full"}
         `}
       >
-        {/* Close button inside menu */}
+        {/* Header with menu icon and logo */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-sidebar-border">
           <button
             onClick={() => setOpen(false)}
@@ -176,13 +165,6 @@ export function AppSidebar() {
             alt="Voice2Fire" 
             className="h-10 w-auto"
           />
-          <button
-            onClick={() => setOpen(false)}
-            className="p-2 rounded-md hover:bg-sidebar-accent transition-colors ml-auto"
-            aria-label="Close menu"
-          >
-            <X className="h-4 w-4" />
-          </button>
         </div>
 
         {/* Menu content */}
