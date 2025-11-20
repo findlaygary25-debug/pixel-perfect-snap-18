@@ -39,6 +39,7 @@ import NotificationPreferences from "./pages/NotificationPreferences";
 import NotificationAnalytics from "./pages/NotificationAnalytics";
 import NotificationABTests from "./pages/NotificationABTests";
 import PIIAuditLogs from "./pages/PIIAuditLogs";
+import AIMonitor from "./pages/AIMonitor";
 import AdminRoles from "./pages/AdminRoles";
 import AdminBootstrap from "./pages/AdminBootstrap";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -119,6 +120,7 @@ const App = () => (
           <Route path="/admin/notification-logs" element={<NotificationDeliveryLogs />} />
           <Route path="/admin/delivery-alerts" element={<DeliveryAlerts />} />
           <Route path="/admin/escalation-config" element={<EscalationConfig />} />
+          <Route path="/admin/ai-monitor" element={<AIMonitor />} />
           <Route path="/admin/templates" element={<NotificationTemplates />} />
           <Route path="/admin/templates/new" element={<NotificationTemplateEditor />} />
           <Route path="/admin/templates/edit/:id" element={<NotificationTemplateEditor />} />

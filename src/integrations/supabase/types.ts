@@ -250,6 +250,45 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_monitor_logs: {
+        Row: {
+          action_taken: string | null
+          action_type: string
+          auto_fixed: boolean | null
+          created_at: string | null
+          id: string
+          issue_detected: string | null
+          metadata: Json | null
+          severity: string | null
+          target_id: string | null
+          target_table: string | null
+        }
+        Insert: {
+          action_taken?: string | null
+          action_type: string
+          auto_fixed?: boolean | null
+          created_at?: string | null
+          id?: string
+          issue_detected?: string | null
+          metadata?: Json | null
+          severity?: string | null
+          target_id?: string | null
+          target_table?: string | null
+        }
+        Update: {
+          action_taken?: string | null
+          action_type?: string
+          auto_fixed?: boolean | null
+          created_at?: string | null
+          id?: string
+          issue_detected?: string | null
+          metadata?: Json | null
+          severity?: string | null
+          target_id?: string | null
+          target_table?: string | null
+        }
+        Relationships: []
+      }
       alert_escalation_config: {
         Row: {
           alert_type: string
@@ -424,7 +463,10 @@ export type Database = {
         Row: {
           comment_text: string
           created_at: string
+          flagged: boolean | null
           id: string
+          moderated_at: string | null
+          moderation_reason: string | null
           updated_at: string
           user_id: string
           username: string
@@ -433,7 +475,10 @@ export type Database = {
         Insert: {
           comment_text: string
           created_at?: string
+          flagged?: boolean | null
           id?: string
+          moderated_at?: string | null
+          moderation_reason?: string | null
           updated_at?: string
           user_id: string
           username: string
@@ -442,7 +487,10 @@ export type Database = {
         Update: {
           comment_text?: string
           created_at?: string
+          flagged?: boolean | null
           id?: string
+          moderated_at?: string | null
+          moderation_reason?: string | null
           updated_at?: string
           user_id?: string
           username?: string
