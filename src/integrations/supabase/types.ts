@@ -1261,6 +1261,7 @@ export type Database = {
       orders: {
         Row: {
           affiliate_id: string | null
+          coins_paid: number | null
           created_at: string
           customer_email: string
           customer_email_encrypted: string | null
@@ -1271,6 +1272,7 @@ export type Database = {
           delivered_at: string | null
           encryption_key_id: string | null
           id: string
+          payment_method: string | null
           shipped_at: string | null
           shipping_address: string
           shipping_address_encrypted: string | null
@@ -1282,6 +1284,7 @@ export type Database = {
         }
         Insert: {
           affiliate_id?: string | null
+          coins_paid?: number | null
           created_at?: string
           customer_email: string
           customer_email_encrypted?: string | null
@@ -1292,6 +1295,7 @@ export type Database = {
           delivered_at?: string | null
           encryption_key_id?: string | null
           id?: string
+          payment_method?: string | null
           shipped_at?: string | null
           shipping_address: string
           shipping_address_encrypted?: string | null
@@ -1303,6 +1307,7 @@ export type Database = {
         }
         Update: {
           affiliate_id?: string | null
+          coins_paid?: number | null
           created_at?: string
           customer_email?: string
           customer_email_encrypted?: string | null
@@ -1313,6 +1318,7 @@ export type Database = {
           delivered_at?: string | null
           encryption_key_id?: string | null
           id?: string
+          payment_method?: string | null
           shipped_at?: string | null
           shipping_address?: string
           shipping_address_encrypted?: string | null
@@ -1381,6 +1387,7 @@ export type Database = {
           description: string | null
           id: string
           image_url: string | null
+          images: Json | null
           is_active: boolean
           price: number
           store_id: string
@@ -1392,6 +1399,7 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          images?: Json | null
           is_active?: boolean
           price: number
           store_id: string
@@ -1403,6 +1411,7 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          images?: Json | null
           is_active?: boolean
           price?: number
           store_id?: string
@@ -1699,9 +1708,12 @@ export type Database = {
       stores: {
         Row: {
           created_at: string
+          daily_lease_price: number | null
           description: string | null
           email: string | null
           id: string
+          is_active: boolean | null
+          lease_expiry: string | null
           logo_url: string | null
           name: string
           phone: string | null
@@ -1710,9 +1722,12 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          daily_lease_price?: number | null
           description?: string | null
           email?: string | null
           id?: string
+          is_active?: boolean | null
+          lease_expiry?: string | null
           logo_url?: string | null
           name: string
           phone?: string | null
@@ -1721,9 +1736,12 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          daily_lease_price?: number | null
           description?: string | null
           email?: string | null
           id?: string
+          is_active?: boolean | null
+          lease_expiry?: string | null
           logo_url?: string | null
           name?: string
           phone?: string | null
@@ -2319,6 +2337,10 @@ export type Database = {
       }
     }
     Functions: {
+      check_store_lease_valid: {
+        Args: { store_id_param: string }
+        Returns: boolean
+      }
       claim_admin_bootstrap: { Args: { p_token: string }; Returns: Json }
       create_order_with_encrypted_pii: {
         Args: {
