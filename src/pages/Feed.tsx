@@ -1449,6 +1449,35 @@ export default function Feed() {
       case 'notInterested':
         toast.success('Marked as not interested');
         break;
+      case 'delete':
+        await handleDeleteVideo(videoId);
+        break;
+    }
+  };
+
+  const handleDeleteVideo = async (videoId: string) => {
+    if (!currentUser) {
+      toast.error("Please login to delete videos");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("videos")
+        .delete()
+        .eq("id", videoId)
+        .eq("user_id", currentUser);
+
+      if (error) throw error;
+
+      // Remove from state
+      setVideos(prev => prev.filter(v => v.id !== videoId));
+      setFollowingVideos(prev => prev.filter(v => v.id !== videoId));
+
+      toast.success("Video deleted successfully");
+    } catch (error) {
+      console.error("Error deleting video:", error);
+      toast.error("Failed to delete video");
     }
   };
 
@@ -2406,6 +2435,21 @@ export default function Feed() {
                   {bookmarkedVideos.has(contextMenu.videoId) ? 'Remove Bookmark' : 'Save to Collection'}
                 </span>
               </button>
+
+              {/* Delete (only for own videos) */}
+              {(() => {
+                const video = videos.find(v => v.id === contextMenu.videoId) || 
+                              followingVideos.find(v => v.id === contextMenu.videoId);
+                return video?.user_id === currentUser && (
+                  <button
+                    onClick={() => handleContextMenuAction('delete', contextMenu.videoId)}
+                    className="w-full px-4 py-3 flex items-center gap-3 hover:bg-destructive/10 transition-colors"
+                  >
+                    <Trash2 className="h-5 w-5 text-destructive" />
+                    <span className="text-sm font-medium text-destructive">Delete</span>
+                  </button>
+                );
+              })()}
 
               {/* Report */}
               <button
