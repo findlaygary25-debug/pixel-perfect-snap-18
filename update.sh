@@ -1,45 +1,66 @@
 #!/bin/bash
 
-# Quick Update Script for Lovable App
+# Enhanced Update Script for Voice2Fire App
 # Run this after pushing changes to GitHub
 
 set -e
 
 APP_DIR="/var/www/lovable-app"
+LOG_FILE="/var/log/voice2fire-update.log"
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 
-echo "🚀 Starting update process..."
+# Function to log messages
+log_message() {
+    echo "[$TIMESTAMP] $1" | tee -a "$LOG_FILE"
+}
 
-cd $APP_DIR
+# Function to handle errors
+handle_error() {
+    log_message "❌ ERROR: $1"
+    exit 1
+}
 
-echo "📥 Pulling latest changes from GitHub..."
-git pull origin main
+log_message "🚀 Starting update process..."
 
-echo "📦 Installing dependencies..."
-npm install
+# Check if directory exists
+if [ ! -d "$APP_DIR" ]; then
+    handle_error "Application directory not found: $APP_DIR"
+fi
 
-echo "🔨 Building application..."
-npm run build
+cd $APP_DIR || handle_error "Failed to change to application directory"
 
-echo "🔄 Restarting services..."
+# Stash any local changes
+log_message "💾 Stashing local changes..."
+git stash || handle_error "Failed to stash changes"
+
+# Pull latest changes
+log_message "📥 Pulling latest changes from GitHub..."
+git pull origin main || handle_error "Failed to pull from GitHub"
+
+# Install dependencies
+log_message "📦 Installing dependencies..."
+npm install || handle_error "Failed to install dependencies"
+
+# Build application
+log_message "🔨 Building application..."
+npm run build || handle_error "Failed to build application"
 
 # Reload nginx
+log_message "🔄 Restarting services..."
 if command -v nginx &> /dev/null; then
-    sudo systemctl reload nginx
-    echo "✅ Nginx reloaded"
+    sudo systemctl reload nginx && log_message "✅ Nginx reloaded" || log_message "⚠️  Nginx reload failed"
 fi
 
-# Check if PM2 is being used
+# Restart application
 if command -v pm2 &> /dev/null && pm2 list | grep -q "online"; then
-    pm2 restart all
-    echo "✅ Application restarted with PM2"
-# Check if systemd service exists
+    pm2 restart all && log_message "✅ Application restarted with PM2" || handle_error "PM2 restart failed"
 elif systemctl list-units --full -all | grep -q lovable-app.service; then
-    sudo systemctl restart lovable-app
-    echo "✅ Application restarted with systemd"
+    sudo systemctl restart lovable-app && log_message "✅ Application restarted with systemd" || handle_error "Systemd restart failed"
 else
-    echo "⚠️  No Node.js service manager detected. If using a process manager, restart manually."
+    log_message "⚠️  No Node.js service manager detected. Manual restart may be required."
 fi
 
-echo ""
-echo "✨ Update complete! Your app is now running the latest version."
-echo "🌐 Visit: http://voice2fire.com"
+log_message ""
+log_message "✨ Update complete! Your app is now running the latest version."
+log_message "🌐 Visit: http://voice2fire.com"
+log_message "📋 Full logs available at: $LOG_FILE"
