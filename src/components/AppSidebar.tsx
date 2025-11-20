@@ -34,6 +34,7 @@ const baseItems = [
   { title: "Scheduled", url: "/scheduled", icon: CalendarClock },
   { title: "Collections", url: "/collections", icon: FolderHeart },
   { title: "Store", url: "/store", icon: Store },
+  { title: "Advertise", url: "/advertise", icon: Megaphone },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "Challenge History", url: "/challenge-history", icon: Trophy },
   { title: "Rewards Store", url: "/rewards-store", icon: Gift },
