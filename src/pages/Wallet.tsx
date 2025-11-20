@@ -1,192 +1,245 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DollarSign, TrendingUp, Clock, Award } from "lucide-react";
+import { Coins, Sparkles, Star, Zap, Crown, Check } from "lucide-react";
+import { toast } from "sonner";
 
-interface WalletData {
-  balance: number;
+interface CoinPackage {
+  id: string;
+  coins: number;
+  price: number;
+  bonus?: number;
+  popular?: boolean;
+  icon: any;
 }
 
-interface CommissionStats {
-  totalEarned: number;
-  pendingAmount: number;
-  commissionsByLevel: Array<{ level: number; amount: number; count: number }>;
-}
+const COIN_PACKAGES: CoinPackage[] = [
+  { id: "p1", coins: 100, price: 0.99, icon: Coins },
+  { id: "p2", coins: 500, price: 4.99, bonus: 50, icon: Sparkles },
+  { id: "p3", coins: 1000, price: 9.99, bonus: 150, popular: true, icon: Star },
+  { id: "p4", coins: 2500, price: 24.99, bonus: 500, icon: Zap },
+  { id: "p5", coins: 5000, price: 49.99, bonus: 1200, icon: Crown },
+];
 
 export default function Wallet() {
-  const [wallet, setWallet] = useState<WalletData | null>(null);
-  const [commissionStats, setCommissionStats] = useState<CommissionStats | null>(null);
+  const [coinBalance, setCoinBalance] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [purchasing, setPurchasing] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      const user = (await supabase.auth.getUser()).data.user;
-      if (!user) {
-        setLoading(false);
-        return;
-      }
+    fetchBalance();
+  }, []);
 
-      // Fetch wallet balance
-      const { data: walletData } = await supabase
+  const fetchBalance = async () => {
+    const user = (await supabase.auth.getUser()).data.user;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    const { data } = await supabase
+      .from("wallets")
+      .select("balance")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    setCoinBalance(data?.balance || 0);
+    setLoading(false);
+  };
+
+  const handlePurchase = async (pkg: CoinPackage) => {
+    setPurchasing(true);
+    try {
+      const user = (await supabase.auth.getUser()).data.user;
+      if (!user) throw new Error("Not authenticated");
+
+      const totalCoins = pkg.coins + (pkg.bonus || 0);
+      
+      // Update wallet balance
+      const { data: currentWallet } = await supabase
         .from("wallets")
         .select("balance")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      setWallet(walletData);
+      const newBalance = (currentWallet?.balance || 0) + totalCoins;
 
-      // Fetch commission statistics
-      const { data: commissionsData } = await supabase
-        .from("commissions")
-        .select("amount, status, level")
-        .eq("affiliate_id", user.id);
-
-      if (commissionsData) {
-        const totalEarned = commissionsData.reduce((sum, c) => sum + Number(c.amount), 0);
-        const pendingAmount = commissionsData
-          .filter(c => c.status === 'pending')
-          .reduce((sum, c) => sum + Number(c.amount), 0);
-
-        // Group by level
-        const levelMap = new Map<number, { amount: number; count: number }>();
-        commissionsData.forEach(c => {
-          const existing = levelMap.get(c.level) || { amount: 0, count: 0 };
-          levelMap.set(c.level, {
-            amount: existing.amount + Number(c.amount),
-            count: existing.count + 1
-          });
+      const { error } = await supabase
+        .from("wallets")
+        .upsert({ 
+          user_id: user.id, 
+          balance: newBalance,
+          updated_at: new Date().toISOString()
         });
 
-        const commissionsByLevel = Array.from(levelMap.entries())
-          .map(([level, data]) => ({ level, ...data }))
-          .sort((a, b) => a.level - b.level);
+      if (error) throw error;
 
-        setCommissionStats({
-          totalEarned,
-          pendingAmount,
-          commissionsByLevel
-        });
-      }
-
-      setLoading(false);
-    })();
-  }, []);
+      await fetchBalance();
+      toast.success(`🎉 Successfully purchased ${totalCoins} coins!`);
+    } catch (error: any) {
+      toast.error(error.message || "Purchase failed");
+    } finally {
+      setPurchasing(false);
+    }
+  };
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-6">Wallet & Earnings</h1>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
-          {[1, 2, 3, 4].map(i => (
-            <Card key={i}>
-              <CardHeader>
-                <Skeleton className="h-4 w-24" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-32" />
-              </CardContent>
-            </Card>
-          ))}
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 p-6">
+        <div className="max-w-6xl mx-auto">
+          <Skeleton className="h-12 w-48 mb-8" />
+          <Skeleton className="h-32 w-full mb-8" />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-64" />)}
+          </div>
         </div>
       </div>
     );
   }
 
-  const balance = wallet?.balance || 0;
-  const totalEarned = commissionStats?.totalEarned || 0;
-  const pendingAmount = commissionStats?.pendingAmount || 0;
-  const paidAmount = totalEarned - pendingAmount;
-
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Wallet & Earnings</h1>
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 p-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-2">Coins</h1>
+          <p className="text-muted-foreground">
+            Get Coins to send Gifts and support creators
+          </p>
+        </div>
 
-      {/* Summary Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Wallet Balance</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${balance.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Available funds</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Earned</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">${totalEarned.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-1">All-time commissions</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">${pendingAmount.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Processing</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Paid Out</CardTitle>
-            <Award className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">${paidAmount.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Completed</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Commission Breakdown by Level */}
-      {commissionStats && commissionStats.commissionsByLevel.length > 0 && (
-        <Card>
+        {/* Balance Card */}
+        <Card className="mb-8 bg-gradient-to-br from-primary/10 via-background to-primary/5 border-primary/20">
           <CardHeader>
-            <CardTitle>Commission Breakdown by Level</CardTitle>
-            <CardDescription>Your earnings across all 5 affiliate levels</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <Coins className="h-5 w-5 text-primary" />
+              Your Balance
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {commissionStats.commissionsByLevel.map(({ level, amount, count }) => (
-                <div key={level} className="flex items-center justify-between border-b pb-3 last:border-0">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="font-bold text-primary">L{level}</span>
+            <div className="text-4xl font-bold text-primary">
+              {coinBalance.toLocaleString()} Coins
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              Available to send as gifts
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Coin Packages */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-4">Recharge Coins</h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {COIN_PACKAGES.map((pkg) => {
+              const Icon = pkg.icon;
+              const totalCoins = pkg.coins + (pkg.bonus || 0);
+              
+              return (
+                <Card 
+                  key={pkg.id}
+                  className={`relative hover:shadow-lg transition-all ${
+                    pkg.popular 
+                      ? 'border-primary ring-2 ring-primary/20' 
+                      : 'hover:border-primary/50'
+                  }`}
+                >
+                  {pkg.popular && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full">
+                      MOST POPULAR
                     </div>
-                    <div>
-                      <p className="font-medium">Level {level}</p>
-                      <p className="text-sm text-muted-foreground">{count} commission{count !== 1 ? 's' : ''}</p>
+                  )}
+                  
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <Icon className="h-8 w-8 text-primary" />
+                      {pkg.bonus && (
+                        <span className="px-2 py-1 bg-accent text-accent-foreground text-xs font-semibold rounded">
+                          +{pkg.bonus} Bonus
+                        </span>
+                      )}
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-lg">${amount.toFixed(2)}</p>
-                  </div>
-                </div>
-              ))}
+                    <CardTitle className="text-2xl mt-4">
+                      {totalCoins.toLocaleString()} Coins
+                    </CardTitle>
+                    {pkg.bonus && (
+                      <p className="text-sm text-muted-foreground">
+                        {pkg.coins.toLocaleString()} + {pkg.bonus} bonus
+                      </p>
+                    )}
+                  </CardHeader>
+                  
+                  <CardContent>
+                    <div className="mb-4">
+                      <div className="text-3xl font-bold">
+                        ${pkg.price}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        ${(pkg.price / totalCoins).toFixed(4)} per coin
+                      </p>
+                    </div>
+                    
+                    <Button
+                      onClick={() => handlePurchase(pkg)}
+                      disabled={purchasing}
+                      className="w-full"
+                      variant={pkg.popular ? "default" : "outline"}
+                    >
+                      {purchasing ? "Processing..." : "Buy Now"}
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Benefits Section */}
+        <Card className="bg-muted/50">
+          <CardHeader>
+            <CardTitle>Why Buy Coins?</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-2">
+            <div className="flex gap-3">
+              <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">Support Creators</p>
+                <p className="text-sm text-muted-foreground">
+                  Send gifts to your favorite creators during LIVE streams
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">Bonus Coins</p>
+                <p className="text-sm text-muted-foreground">
+                  Get extra coins with larger packages
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">Secure Payment</p>
+                <p className="text-sm text-muted-foreground">
+                  Safe and encrypted payment processing
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">Instant Delivery</p>
+                <p className="text-sm text-muted-foreground">
+                  Coins are added to your account immediately
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
-      )}
-
-      {commissionStats && commissionStats.commissionsByLevel.length === 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>No Commissions Yet</CardTitle>
-            <CardDescription>Start referring users to earn commissions!</CardDescription>
-          </CardHeader>
-        </Card>
-      )}
+      </div>
     </div>
   );
 }
