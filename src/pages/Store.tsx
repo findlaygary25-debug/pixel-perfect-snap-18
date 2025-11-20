@@ -15,6 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useUndoableAction } from "@/hooks/useUndoableAction";
 import { Plus, Pencil, Trash2, Package, ShoppingCart, Truck, CheckSquare, Filter, X, Save, Calendar as CalendarIcon } from "lucide-react";
 import { PlaceOrderDialog } from "@/components/PlaceOrderDialog";
+import { StoreLeaseManager } from "@/components/StoreLeaseManager";
+import { StoreHeader } from "@/components/StoreHeader";
 import { format } from "date-fns";
 import { BreadcrumbSchema } from "@/components/BreadcrumbSchema";
 
@@ -28,6 +30,10 @@ type Store = {
   description: string | null;
   created_at: string;
   updated_at: string;
+  lease_expiry: string | null;
+  daily_lease_price: number;
+  is_active: boolean;
+  website_url?: string;
 };
 
 type Product = {
@@ -37,6 +43,7 @@ type Product = {
   description: string | null;
   price: number;
   image_url: string | null;
+  images: string[];
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -46,7 +53,7 @@ type ProductFormData = {
   title: string;
   description: string;
   price: string;
-  image: File | null;
+  images: File[];
 };
 
 type Order = {
@@ -123,7 +130,7 @@ export default function StorePage() {
     title: "",
     description: "",
     price: "",
-    image: null,
+    images: [],
   });
   const [uploading, setUploading] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -215,7 +222,10 @@ export default function StorePage() {
       .order("created_at", { ascending: false });
 
     if (e3) console.error(e3);
-    setProducts(prods ?? []);
+    setProducts((prods ?? []).map(p => ({
+      ...p,
+      images: Array.isArray(p.images) ? (p.images as string[]) : []
+    })));
     setLoading(false);
   };
 
@@ -772,26 +782,27 @@ export default function StorePage() {
     setUploading(true);
 
     try {
-      let imageUrl = editingProduct?.image_url || null;
-
-      if (productForm.image) {
-        imageUrl = await uploadProductImage(productForm.image);
-        if (!imageUrl) {
-          toast({
-            title: "Error",
-            description: "Failed to upload image",
-            variant: "destructive",
-          });
-          setUploading(false);
-          return;
-        }
+      // Upload all images
+      const imageUrls: string[] = [];
+      for (const file of productForm.images) {
+        const url = await uploadProductImage(file);
+        if (url) imageUrls.push(url);
       }
+
+      // Keep existing images if editing
+      const allImages = editingProduct 
+        ? [...(editingProduct.images || []), ...imageUrls]
+        : imageUrls;
+
+      // Use first image as primary
+      const primaryImage = allImages[0] || editingProduct?.image_url || null;
 
       const productData = {
         title: productForm.title,
         description: productForm.description,
         price: parseFloat(productForm.price),
-        image_url: imageUrl,
+        image_url: primaryImage,
+        images: allImages,
         store_id: store.id,
       };
 
@@ -822,7 +833,7 @@ export default function StorePage() {
 
       setDialogOpen(false);
       setEditingProduct(null);
-      setProductForm({ title: "", description: "", price: "", image: null });
+      setProductForm({ title: "", description: "", price: "", images: [] });
       loadStoreAndProducts();
     } catch (error: any) {
       toast({
@@ -846,7 +857,7 @@ export default function StorePage() {
       title: product.title,
       description: product.description || "",
       price: product.price.toString(),
-      image: null,
+      images: [],
     });
     setDialogOpen(true);
   };
@@ -875,8 +886,16 @@ export default function StorePage() {
   };
 
   const handleAddNewProduct = () => {
+    if (products.length >= 6) {
+      toast({
+        title: "Limit Reached",
+        description: "You can only have up to 6 products per store.",
+        variant: "destructive",
+      });
+      return;
+    }
     setEditingProduct(null);
-    setProductForm({ title: "", description: "", price: "", image: null });
+    setProductForm({ title: "", description: "", price: "", images: [] });
     setDialogOpen(true);
   };
 
@@ -888,14 +907,17 @@ export default function StorePage() {
           { name: "Store", url: "https://voice2fire.com/store" }
         ]}
       />
-      <h1 className="text-3xl font-bold mb-6">Store Management</h1>
-      
-      <Tabs defaultValue="products" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="products">Products</TabsTrigger>
-          <TabsTrigger value="orders">Orders</TabsTrigger>
-          <TabsTrigger value="settings">Store Settings</TabsTrigger>
-        </TabsList>
+
+      {store && <StoreHeader store={store} />}
+
+      <div className="mt-6 grid md:grid-cols-3 gap-6">
+        <div className="md:col-span-2">
+          <Tabs defaultValue="products" className="space-y-6">
+            <TabsList>
+              <TabsTrigger value="products">Products</TabsTrigger>
+              <TabsTrigger value="orders">Orders</TabsTrigger>
+              <TabsTrigger value="settings">Store Settings</TabsTrigger>
+            </TabsList>
 
         <TabsContent value="products" className="space-y-6">
           <Card>
@@ -954,13 +976,31 @@ export default function StorePage() {
                         <Input
                           type="file"
                           accept="image/*"
-                          onChange={(e) =>
+                          multiple
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files || []);
+                            const currentTotal = (editingProduct?.images?.length || 0) + productForm.images.length;
+                            const remaining = 6 - currentTotal;
+                            
+                            if (files.length > remaining) {
+                              toast({
+                                title: "Too Many Images",
+                                description: `You can only upload ${remaining} more image(s). Maximum 6 per product.`,
+                                variant: "destructive",
+                              });
+                              return;
+                            }
+                            
                             setProductForm({
                               ...productForm,
-                              image: e.target.files?.[0] || null,
-                            })
-                          }
+                              images: files.slice(0, 6),
+                            });
+                          }}
                         />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {productForm.images.length} / 6 images selected
+                          {editingProduct?.images?.length ? ` (${editingProduct.images.length} existing)` : ""}
+                        </p>
                       </div>
                       <Button type="submit" className="w-full" disabled={uploading}>
                         {uploading
@@ -983,9 +1023,10 @@ export default function StorePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {products.map((product) => (
                     <Card key={product.id}>
-                      {product.image_url && (
+                      {/* Display first image or fallback */}
+                      {(product.images?.[0] || product.image_url) && (
                         <img
-                          src={product.image_url}
+                          src={product.images?.[0] || product.image_url || ""}
                           alt={product.title}
                           className="w-full h-48 object-cover rounded-t-lg"
                         />
@@ -1448,6 +1489,15 @@ export default function StorePage() {
                 />
               </div>
               <div className="md:col-span-2">
+                <label className="text-sm font-medium mb-2 block">Website URL</label>
+                <Input
+                  type="url"
+                  placeholder="https://yourwebsite.com"
+                  value={store?.website_url ?? ""}
+                  onChange={(e) => store && setStore({ ...store, website_url: e.target.value })}
+                />
+              </div>
+              <div className="md:col-span-2">
                 <Button onClick={saveStore} disabled={uploading}>
                   {uploading ? "Saving..." : "Save Store"}
                 </Button>
@@ -1456,8 +1506,19 @@ export default function StorePage() {
           </Card>
         </TabsContent>
       </Tabs>
+    </div>
 
-      {selectedProduct && (
+    {store && (
+      <div>
+        <StoreLeaseManager 
+          store={store}
+          onLeaseUpdate={loadStoreAndProducts}
+        />
+      </div>
+    )}
+  </div>
+
+  {selectedProduct && (
         <PlaceOrderDialog
           product={selectedProduct}
           open={orderDialogOpen}
