@@ -1,8 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.81.1';
+import { validateRequest } from 'https://esm.sh/twilio@4.19.0/lib/webhooks/webhooks.js';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-twilio-signature',
 };
 
 interface TwilioWebhookData {
@@ -40,8 +41,46 @@ Deno.serve(async (req) => {
   try {
     console.log('Twilio webhook received');
 
+    // Validate Twilio signature
+    const twilioSignature = req.headers.get('x-twilio-signature');
+    const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+    
+    if (!twilioSignature || !twilioAuthToken) {
+      console.error('Missing Twilio signature or auth token');
+      return new Response(
+        JSON.stringify({ error: 'Missing authentication' }),
+        { 
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
     // Parse form-encoded data from Twilio
     const formData = await req.formData();
+    const params: Record<string, string> = {};
+    formData.forEach((value, key) => {
+      params[key] = value.toString();
+    });
+
+    // Construct the full URL for signature validation
+    const url = req.url;
+
+    // Validate the request signature
+    const isValid = validateRequest(twilioAuthToken, twilioSignature, url, params);
+
+    if (!isValid) {
+      console.error('Invalid Twilio signature');
+      return new Response(
+        JSON.stringify({ error: 'Invalid signature' }),
+        { 
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    console.log('Twilio signature validated successfully');
     const webhookData: TwilioWebhookData = {
       MessageSid: formData.get('MessageSid') as string,
       MessageStatus: formData.get('MessageStatus') as string,

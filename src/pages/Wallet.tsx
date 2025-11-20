@@ -55,30 +55,22 @@ export default function Wallet() {
       const user = (await supabase.auth.getUser()).data.user;
       if (!user) throw new Error("Not authenticated");
 
-      const totalCoins = pkg.coins + (pkg.bonus || 0);
-      
-      // Update wallet balance
-      const { data: currentWallet } = await supabase
-        .from("wallets")
-        .select("balance")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      const newBalance = (currentWallet?.balance || 0) + totalCoins;
-
-      const { error } = await supabase
-        .from("wallets")
-        .upsert({ 
-          user_id: user.id, 
-          balance: newBalance,
-          updated_at: new Date().toISOString()
-        });
+      // Create Stripe checkout session
+      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+        body: { packageId: pkg.id }
+      });
 
       if (error) throw error;
 
-      await fetchBalance();
-      toast.success(`🎉 Successfully purchased ${totalCoins} coins!`);
+      if (data?.url) {
+        // Redirect to Stripe checkout
+        window.open(data.url, '_blank');
+        toast.success("Redirecting to secure payment...");
+      } else {
+        throw new Error("Failed to create checkout session");
+      }
     } catch (error: any) {
+      console.error('Purchase error:', error);
       toast.error(error.message || "Purchase failed");
     } finally {
       setPurchasing(false);
