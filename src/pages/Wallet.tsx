@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Coins, Sparkles, Star, Zap, Crown, Check } from "lucide-react";
 import { toast } from "sonner";
+import coinImage from "@/assets/voice2fire-coin.png";
 
 interface CoinPackage {
   id: string;
@@ -106,13 +107,16 @@ export default function Wallet() {
         <Card className="mb-8 bg-gradient-to-br from-primary/10 via-background to-primary/5 border-primary/20">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Coins className="h-5 w-5 text-primary" />
+              <img src={coinImage} alt="Coin" className="h-6 w-6" />
               Your Balance
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold text-primary">
-              {coinBalance.toLocaleString()} Coins
+            <div className="flex items-center gap-3">
+              <img src={coinImage} alt="Coin" className="h-12 w-12" />
+              <div className="text-4xl font-bold text-primary">
+                {coinBalance.toLocaleString()}
+              </div>
             </div>
             <p className="text-sm text-muted-foreground mt-2">
               Available to send as gifts
@@ -145,15 +149,16 @@ export default function Wallet() {
                   
                   <CardHeader>
                     <div className="flex items-center justify-between">
-                      <Icon className="h-8 w-8 text-primary" />
+                      <img src={coinImage} alt="Coin" className="h-12 w-12" />
                       {pkg.bonus && (
                         <span className="px-2 py-1 bg-accent text-accent-foreground text-xs font-semibold rounded">
                           +{pkg.bonus} Bonus
                         </span>
                       )}
                     </div>
-                    <CardTitle className="text-2xl mt-4">
-                      {totalCoins.toLocaleString()} Coins
+                    <CardTitle className="text-2xl mt-4 flex items-center gap-2">
+                      <img src={coinImage} alt="Coin" className="h-6 w-6" />
+                      {totalCoins.toLocaleString()}
                     </CardTitle>
                     {pkg.bonus && (
                       <p className="text-sm text-muted-foreground">
