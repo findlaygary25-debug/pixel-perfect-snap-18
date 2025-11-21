@@ -1651,7 +1651,7 @@ export default function Feed() {
             ref={(el) => setVideoRef(video.id, el as HTMLVideoElement | null)}
             data-video-id={video.id}
             src={video.video_url}
-            className="h-screen md:h-auto md:max-h-[85vh] w-full md:w-auto md:max-w-full object-contain md:rounded-2xl"
+            className="h-screen md:h-auto md:max-h-[85vh] w-full md:w-auto md:max-w-full object-contain md:rounded-2xl bg-black"
             muted={mutedVideos.has(video.id)}
             playsInline
             loop
@@ -1663,12 +1663,19 @@ export default function Feed() {
                 networkState: e.currentTarget.networkState,
                 readyState: e.currentTarget.readyState
               });
+              // Set a black background on error to prevent white screen
+              e.currentTarget.style.backgroundColor = 'black';
             }}
             onLoadedData={(e) => {
               console.log(`[Feed] Video ${video.id} loaded:`, {
                 duration: e.currentTarget.duration,
                 readyState: e.currentTarget.readyState
               });
+            }}
+            onLoadStart={() => {
+              // Ensure black background during loading
+              const videoEl = videoRefs.current.get(video.id);
+              if (videoEl) videoEl.style.backgroundColor = 'black';
             }}
           />
         )}
@@ -1693,20 +1700,20 @@ export default function Feed() {
                 setPlayingVideos((prev) => new Set(prev).add(video.id));
               }
             }}
-            className="absolute inset-0 z-[5] cursor-pointer pointer-events-auto"
+            className="absolute inset-0 z-[5] cursor-pointer"
           >
             {/* PLAY BUTTON - Centered, only shown when paused */}
             {!playingVideos.has(video.id) && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="bg-black/20 rounded-full p-4">
-                  <Play className="h-16 w-16 text-white/80 fill-white/80" />
+                <div className="bg-black/30 backdrop-blur-sm rounded-full p-4">
+                  <Play className="h-16 w-16 text-white/90 fill-white/90" />
                 </div>
               </div>
             )}
           </div>
         )}
 
-        {/* MUTE BUTTON - Bottom Left - only for regular videos, not YouTube */}
+        {/* MUTE BUTTON - Top Left - only for regular videos, not YouTube */}
         {!(video.video_url.includes('youtube.com/embed') || video.video_url.includes('youtu.be')) && (
           <button
             onClick={(e) => {
@@ -1727,7 +1734,7 @@ export default function Feed() {
                 setMutedVideos((prev) => new Set(prev).add(video.id));
               }
             }}
-            className="absolute bottom-4 left-4 bg-black/60 p-2 rounded-full backdrop-blur-sm hover:bg-black/80 transition-colors z-[50] pointer-events-auto"
+            className="absolute top-4 left-4 bg-black/60 p-2 rounded-full backdrop-blur-sm hover:bg-black/80 transition-colors z-[50]"
           >
             {mutedVideos.has(video.id) ? (
               <VolumeX className="h-5 w-5 text-white" />
