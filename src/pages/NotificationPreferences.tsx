@@ -241,14 +241,13 @@ export default function NotificationPreferences() {
               <MessageSquare className="h-5 w-5 text-primary" />
               <div>
                 <Label htmlFor="sms-global" className="font-medium">SMS Notifications</Label>
-                <p className="text-sm text-muted-foreground">Get text message alerts (coming soon)</p>
+                <p className="text-sm text-muted-foreground">Get text message alerts</p>
               </div>
             </div>
             <Switch
               id="sms-global"
               checked={preferences.sms_enabled}
               onCheckedChange={(checked) => updatePreference('sms_enabled', checked)}
-              disabled
             />
           </div>
         </CardContent>
@@ -305,7 +304,7 @@ export default function NotificationPreferences() {
                     onCheckedChange={(checked) =>
                       updatePreference(`${type.id}_sms` as keyof NotificationPreferences, checked)
                     }
-                    disabled={!preferences.sms_enabled || true}
+                    disabled={!preferences.sms_enabled}
                   />
                 </div>
               </div>
