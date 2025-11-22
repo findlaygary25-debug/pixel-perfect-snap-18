@@ -567,6 +567,56 @@ export type Database = {
           },
         ]
       }
+      creator_subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean | null
+          created_at: string
+          creator_id: string
+          current_period_end: string
+          current_period_start: string
+          id: string
+          plan_id: string
+          status: string
+          stripe_subscription_id: string | null
+          subscriber_id: string
+          updated_at: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean | null
+          created_at?: string
+          creator_id: string
+          current_period_end: string
+          current_period_start?: string
+          id?: string
+          plan_id: string
+          status?: string
+          stripe_subscription_id?: string | null
+          subscriber_id: string
+          updated_at?: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean | null
+          created_at?: string
+          creator_id?: string
+          current_period_end?: string
+          current_period_start?: string
+          id?: string
+          plan_id?: string
+          status?: string
+          stripe_subscription_id?: string | null
+          subscriber_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       delivery_alerts: {
         Row: {
           affected_period_end: string | null
@@ -1807,6 +1857,95 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_plans: {
+        Row: {
+          benefits: string | null
+          created_at: string
+          creator_id: string
+          duration_months: number
+          id: string
+          is_active: boolean | null
+          platform_fee_percentage: number
+          price_usd: number
+          stripe_price_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          benefits?: string | null
+          created_at?: string
+          creator_id: string
+          duration_months: number
+          id?: string
+          is_active?: boolean | null
+          platform_fee_percentage?: number
+          price_usd: number
+          stripe_price_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          benefits?: string | null
+          created_at?: string
+          creator_id?: string
+          duration_months?: number
+          id?: string
+          is_active?: boolean | null
+          platform_fee_percentage?: number
+          price_usd?: number
+          stripe_price_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subscription_transactions: {
+        Row: {
+          amount_paid: number
+          created_at: string
+          creator_earnings: number
+          creator_id: string
+          id: string
+          payment_date: string
+          platform_fee: number
+          stripe_payment_intent_id: string | null
+          stripe_payment_status: string | null
+          subscriber_id: string
+          subscription_id: string
+        }
+        Insert: {
+          amount_paid: number
+          created_at?: string
+          creator_earnings: number
+          creator_id: string
+          id?: string
+          payment_date?: string
+          platform_fee: number
+          stripe_payment_intent_id?: string | null
+          stripe_payment_status?: string | null
+          subscriber_id: string
+          subscription_id: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string
+          creator_earnings?: number
+          creator_id?: string
+          id?: string
+          payment_date?: string
+          platform_fee?: number
+          stripe_payment_intent_id?: string | null
+          stripe_payment_status?: string | null
+          subscriber_id?: string
+          subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_transactions_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "creator_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       supported_languages: {
         Row: {
           code: string
@@ -2291,6 +2430,7 @@ export type Database = {
           id: string
           is_active: boolean
           likes: number
+          thumbnail_url: string | null
           updated_at: string
           user_id: string
           username: string
@@ -2307,6 +2447,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           likes?: number
+          thumbnail_url?: string | null
           updated_at?: string
           user_id: string
           username: string
@@ -2323,6 +2464,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           likes?: number
+          thumbnail_url?: string | null
           updated_at?: string
           user_id?: string
           username?: string
