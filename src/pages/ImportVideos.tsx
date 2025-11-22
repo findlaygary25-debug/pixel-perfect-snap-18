@@ -36,6 +36,8 @@ type ScheduleRecommendation = {
 };
 
 export default function ImportVideos() {
+  const IMPORT_ENABLED = false;
+
   const [searchQuery, setSearchQuery] = useState("Christian shorts");
   const [videos, setVideos] = useState<YouTubeVideo[]>([]);
   const [loading, setLoading] = useState(false);
@@ -49,6 +51,15 @@ export default function ImportVideos() {
   const { toast } = useToast();
 
   const searchVideos = async () => {
+    if (!IMPORT_ENABLED) {
+      toast({
+        title: "YouTube import disabled",
+        description: "Importing from YouTube is temporarily turned off while we fix playback issues.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('search-youtube-shorts', {
@@ -62,7 +73,7 @@ export default function ImportVideos() {
         title: "Search complete",
         description: `Found ${data.videos?.length || 0} Christian short videos`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error searching videos:', error);
       toast({
         title: "Search failed",
@@ -201,6 +212,15 @@ export default function ImportVideos() {
   };
 
   const importVideo = async (video: YouTubeVideo, immediate: boolean = true) => {
+    if (!IMPORT_ENABLED) {
+      toast({
+        title: "YouTube import disabled",
+        description: "Importing from YouTube is temporarily turned off while we fix playback issues.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       toast({
@@ -239,7 +259,7 @@ export default function ImportVideos() {
         title: "Video imported!",
         description: "Go to Import Manager to convert and publish this video",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error importing video:', error);
       toast({
         title: "Import failed",
