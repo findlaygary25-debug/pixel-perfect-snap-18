@@ -1638,10 +1638,28 @@ export default function Feed() {
           <iframe
             ref={(el) => setVideoRef(video.id, el as any)}
             data-video-id={video.id}
-            src={playingVideos.has(video.id) 
-              ? `${video.video_url}${video.video_url.includes('?') ? '&' : '?'}autoplay=1&mute=${mutedVideos.has(video.id) ? '1' : '0'}&loop=1&playlist=${video.video_url.split('/').pop()}`
-              : `${video.video_url}${video.video_url.includes('?') ? '&' : '?'}autoplay=0&mute=${mutedVideos.has(video.id) ? '1' : '0'}&loop=1&playlist=${video.video_url.split('/').pop()}`
-            }
+            src={(() => {
+              // Extract video ID from URL
+              let videoId = '';
+              if (video.video_url.includes('youtube.com/embed/')) {
+                videoId = video.video_url.split('youtube.com/embed/')[1].split('?')[0];
+              } else if (video.video_url.includes('youtu.be/')) {
+                videoId = video.video_url.split('youtu.be/')[1].split('?')[0];
+              }
+              
+              // Build proper YouTube embed URL
+              const baseUrl = `https://www.youtube.com/embed/${videoId}`;
+              const params = new URLSearchParams({
+                autoplay: playingVideos.has(video.id) ? '1' : '0',
+                mute: mutedVideos.has(video.id) ? '1' : '0',
+                loop: '1',
+                playlist: videoId,
+                controls: '1',
+                modestbranding: '1',
+                rel: '0'
+              });
+              return `${baseUrl}?${params.toString()}`;
+            })()}
             className="h-screen md:h-auto md:max-h-[85vh] w-full md:w-auto md:max-w-full object-contain md:rounded-2xl"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
