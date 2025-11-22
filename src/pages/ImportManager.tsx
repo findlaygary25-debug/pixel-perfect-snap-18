@@ -227,8 +227,14 @@ export default function ImportManager() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Import Manager</h1>
         <p className="text-muted-foreground mt-1">
-          Transform and publish your YouTube imports to Voice2Fire
+          Convert YouTube imports to Voice2Fire format before publishing
         </p>
+        <div className="mt-2 p-3 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-lg">
+          <p className="text-sm text-orange-800 dark:text-orange-200 flex items-center gap-2">
+            <Edit className="h-4 w-4" />
+            <span><strong>Required:</strong> All YouTube imports must be converted to Voice2Fire format before publishing</span>
+          </p>
+        </div>
       </div>
 
       <Tabs defaultValue="pending" className="space-y-4">
@@ -246,8 +252,14 @@ export default function ImportManager() {
             <Card>
               <CardContent className="py-12 text-center text-muted-foreground">
                 <Youtube className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No pending imports</p>
-                <p className="text-sm mt-2">Import videos from the Import Videos page</p>
+                <p>No pending conversions</p>
+                <p className="text-sm mt-2">Import YouTube Shorts to get started</p>
+                <Button 
+                  className="mt-4"
+                  onClick={() => window.location.href = '/import'}
+                >
+                  Go to Import Videos
+                </Button>
               </CardContent>
             </Card>
           ) : (
@@ -260,9 +272,9 @@ export default function ImportManager() {
                       alt={video.youtube_title}
                       className="w-full h-48 object-cover"
                     />
-                    <Badge className="absolute top-2 right-2 bg-yellow-600">
-                      <Clock className="h-3 w-3 mr-1" />
-                      {video.scheduled_time ? format(new Date(video.scheduled_time), "MMM d, h:mm a") : 'Pending'}
+                    <Badge className="absolute top-2 right-2 bg-orange-600 animate-pulse">
+                      <Edit className="h-3 w-3 mr-1" />
+                      Needs Conversion
                     </Badge>
                   </div>
                   <CardContent className="pt-4 space-y-3">
@@ -278,30 +290,15 @@ export default function ImportManager() {
                     <div className="flex gap-2">
                       <Button
                         size="sm"
-                        variant="outline"
-                        className="flex-1"
+                        className="flex-1 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
                         onClick={() => openEditDialog(video)}
                       >
                         <Edit className="h-3 w-3 mr-1" />
-                        Transform
+                        Convert to Voice2Fire
                       </Button>
                       <Button
                         size="sm"
-                        onClick={() => publishVideo(video, true)}
-                        disabled={publishing === video.id}
-                      >
-                        {publishing === video.id ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <>
-                            <Send className="h-3 w-3 mr-1" />
-                            Publish
-                          </>
-                        )}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
+                        variant="ghost"
                         onClick={() => deleteVideo(video.id)}
                         disabled={deleting === video.id}
                       >
@@ -360,9 +357,9 @@ export default function ImportManager() {
         <Dialog open={!!editingVideo} onOpenChange={() => setEditingVideo(null)}>
           <DialogContent className="max-w-2xl max-h-[90vh]">
             <DialogHeader>
-              <DialogTitle>Transform Video for Voice2Fire</DialogTitle>
+              <DialogTitle>Convert to Voice2Fire Format</DialogTitle>
               <DialogDescription>
-                Optimize this YouTube import before publishing to your feed
+                Transform this YouTube import to match Voice2Fire style and add your custom touches
               </DialogDescription>
             </DialogHeader>
 

@@ -236,8 +236,8 @@ export default function ImportVideos() {
       if (error) throw error;
 
       toast({
-        title: "Video imported to staging",
-        description: "Go to Import Manager to transform and publish",
+        title: "Video imported!",
+        description: "Go to Import Manager to convert and publish this video",
       });
     } catch (error) {
       console.error('Error importing video:', error);
@@ -273,7 +273,7 @@ export default function ImportVideos() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Import YouTube Shorts</h1>
         <p className="text-muted-foreground mt-1">
-          Search and import Christian short videos from YouTube
+          Search and import Christian short videos - all imports require conversion before publishing
         </p>
       </div>
 
@@ -356,7 +356,7 @@ export default function ImportVideos() {
                     disabled={importing.has(video.id)}
                   >
                     <Download className="h-3 w-3 mr-1" />
-                    {importing.has(video.id) ? 'Adding to Staging...' : 'Import to Staging'}
+                    {importing.has(video.id) ? 'Importing...' : 'Import for Conversion'}
                   </Button>
                   <Button
                     size="sm"
