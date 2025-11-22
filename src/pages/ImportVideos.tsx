@@ -255,6 +255,66 @@ export default function ImportVideos() {
     }
   };
 
+  const convertAndPublish = async (video: YouTubeVideo) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to publish videos",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('username')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!profile) {
+      toast({
+        title: "Profile not found",
+        description: "Please complete your profile first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setImporting(prev => new Set(prev).add(video.id));
+    try {
+      const { error } = await supabase
+        .from('videos')
+        .insert({
+          user_id: user.id,
+          username: profile.username,
+          video_url: video.embedUrl,
+          caption: `${video.title}\n\n${video.description}`,
+          is_active: true,
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Video published!",
+        description: "Your video is now live on the feed",
+      });
+    } catch (error) {
+      console.error('Error publishing video:', error);
+      toast({
+        title: "Publish failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setImporting(prev => {
+        const next = new Set(prev);
+        next.delete(video.id);
+        return next;
+      });
+    }
+  };
+
   const formatDuration = (seconds: number) => {
     if (seconds < 60) return `${seconds}s`;
     const mins = Math.floor(seconds / 60);
@@ -348,30 +408,43 @@ export default function ImportVideos() {
                   {formatDistanceToNow(new Date(video.publishedAt), { addSuffix: true })}
                 </p>
 
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => importVideo(video, true)}
-                    disabled={importing.has(video.id)}
-                  >
-                    <Download className="h-3 w-3 mr-1" />
-                    {importing.has(video.id) ? 'Importing...' : 'Import for Conversion'}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => importVideo(video, false)}
-                  >
-                    <Timer className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => window.open(video.videoUrl, '_blank')}
-                  >
-                    <Youtube className="h-3 w-3" />
-                  </Button>
+                <div className="flex flex-col gap-2">
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => importVideo(video, true)}
+                      disabled={importing.has(video.id)}
+                    >
+                      <Download className="h-3 w-3 mr-1" />
+                      {importing.has(video.id) ? 'Importing...' : 'Import for Conversion'}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => importVideo(video, false)}
+                    >
+                      <Timer className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      className="flex-1"
+                      variant="secondary"
+                      onClick={() => convertAndPublish(video)}
+                      disabled={importing.has(video.id)}
+                    >
+                      {importing.has(video.id) ? 'Publishing...' : 'Convert & Publish'}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => window.open(video.videoUrl, '_blank')}
+                    >
+                      <Youtube className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
