@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Remote Update Script for Voice2Fire App
-# Run this from your local computer to update the Hetzner server
+# Usage: ./remote-update.sh
+# This script connects to your Hetzner server and updates the application
 
 set -e
 
@@ -9,10 +10,15 @@ SERVER_IP="5.223.76.26"
 SERVER_USER="root"
 APP_DIR="/var/www/lovable-app"
 
-echo "🚀 Starting remote update process..."
-echo "📡 Connecting to server: $SERVER_USER@$SERVER_IP"
+echo "=================================="
+echo "  Voice2Fire Remote Update"
+echo "=================================="
+echo ""
+echo "📡 Connecting to: $SERVER_USER@$SERVER_IP"
+echo ""
 
-ssh $SERVER_USER@$SERVER_IP << 'ENDSSH'
+# Execute update commands on remote server
+ssh -t $SERVER_USER@$SERVER_IP << 'ENDSSH'
 set -e
 
 APP_DIR="/var/www/lovable-app"
