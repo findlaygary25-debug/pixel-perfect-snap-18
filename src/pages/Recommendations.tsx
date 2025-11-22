@@ -217,6 +217,7 @@ const toolsByLetter: Record<string, Tool[]> = {
       description: "The AI-powered full-stack development platform that lets you build production-ready web applications through conversation. Create beautiful UIs, manage databases, add authentication, and deploy—all without writing code manually.",
       category: "Development Platform",
       url: "https://lovable.dev",
+      affiliateUrl: "https://lovable.dev/?via=vf555-88",
       tags: ["AI", "No-Code", "Full-Stack", "Development"],
       recommended: true,
       imageUrl: "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=100&h=100&fit=crop",
