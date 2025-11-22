@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, Heart, Sparkles } from "lucide-react";
+import { ExternalLink, Heart, Sparkles, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import PromoteRecommendationDialog from "@/components/PromoteRecommendationDialog";
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
@@ -133,6 +134,11 @@ const toolsByLetter: Record<string, Tool[]> = {
 
 export default function Recommendations() {
   const [activeLetter, setActiveLetter] = useState("L");
+  const [promoteDialog, setPromoteDialog] = useState<{ open: boolean; toolName: string; toolCategory: string }>({
+    open: false,
+    toolName: "",
+    toolCategory: "",
+  });
 
   const hasContent = (letter: string) => {
     return toolsByLetter[letter] && toolsByLetter[letter].length > 0;
@@ -209,7 +215,7 @@ export default function Recommendations() {
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm text-muted-foreground mb-4">{tool.description}</p>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2 mb-4">
                         {tool.tags.map((tag) => (
                           <Badge key={tag} variant="secondary">
                             #{tag}
@@ -217,12 +223,27 @@ export default function Recommendations() {
                         ))}
                       </div>
                       {tool.recommended && (
-                        <div className="mt-4 p-3 bg-primary/10 rounded-lg">
+                        <div className="mb-4 p-3 bg-primary/10 rounded-lg">
                           <p className="text-sm font-medium text-primary">
                             ⭐ Highly Recommended by Voice2Fire
                           </p>
                         </div>
                       )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() =>
+                          setPromoteDialog({
+                            open: true,
+                            toolName: tool.name,
+                            toolCategory: tool.category,
+                          })
+                        }
+                      >
+                        <TrendingUp className="w-4 h-4 mr-2" />
+                        Promote This
+                      </Button>
                     </CardContent>
                   </Card>
                 ))}
@@ -265,6 +286,13 @@ export default function Recommendations() {
           </p>
         </div>
       </div>
+
+      <PromoteRecommendationDialog
+        open={promoteDialog.open}
+        onOpenChange={(open) => setPromoteDialog({ ...promoteDialog, open })}
+        toolName={promoteDialog.toolName}
+        toolCategory={promoteDialog.toolCategory}
+      />
     </div>
   );
 }
