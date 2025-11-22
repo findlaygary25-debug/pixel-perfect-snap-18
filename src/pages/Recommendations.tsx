@@ -13,6 +13,7 @@ interface Tool {
   description: string;
   category: string;
   url?: string;
+  affiliateUrl?: string;
   tags: string[];
   recommended?: boolean;
   imageUrl?: string;
@@ -463,14 +464,14 @@ export default function Recommendations() {
                           </CardTitle>
                           <CardDescription className="mt-1">{tool.category}</CardDescription>
                         </div>
-                        {tool.url && (
+                        {(tool.affiliateUrl || tool.url) && (
                           <Button
                             size="sm"
                             variant="ghost"
                             asChild
                             className="flex-shrink-0"
                           >
-                            <a href={tool.url} target="_blank" rel="noopener noreferrer">
+                            <a href={tool.affiliateUrl || tool.url} target="_blank" rel="noopener noreferrer">
                               <ExternalLink className="w-4 h-4" />
                             </a>
                           </Button>
