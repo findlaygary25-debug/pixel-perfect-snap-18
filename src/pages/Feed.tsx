@@ -1663,6 +1663,31 @@ export default function Feed() {
                 networkState: e.currentTarget.networkState,
                 readyState: e.currentTarget.readyState
               });
+              
+              // Track error state and notify user
+              setVideoErrors(prev => {
+                if (prev.has(video.id)) return prev;
+                
+                const next = new Set(prev);
+                next.add(video.id);
+                
+                triggerHaptic('error', 'errors');
+                toast.error('Video playback failed', {
+                  description: 'Unable to play this video. Please try again or try a different browser.'
+                });
+                
+                // Clear error after 5 seconds
+                setTimeout(() => {
+                  setVideoErrors(current => {
+                    const updated = new Set(current);
+                    updated.delete(video.id);
+                    return updated;
+                  });
+                }, 5000);
+                
+                return next;
+              });
+              
               // Set a black background on error to prevent white screen
               e.currentTarget.style.backgroundColor = 'black';
             }}
