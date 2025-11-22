@@ -43,6 +43,7 @@ import NotificationAnalytics from "./pages/NotificationAnalytics";
 import NotificationABTests from "./pages/NotificationABTests";
 import PIIAuditLogs from "./pages/PIIAuditLogs";
 import AIMonitor from "./pages/AIMonitor";
+import Recommendations from "./pages/Recommendations";
 import AdminRoles from "./pages/AdminRoles";
 import AdminBootstrap from "./pages/AdminBootstrap";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -136,6 +137,7 @@ const App = () => (
                   <Route path="/gift-leaderboard" element={<GiftLeaderboard />} />
                   <Route path="/watch-history" element={<WatchHistory />} />
                   <Route path="/advertise" element={<Advertise />} />
+                  <Route path="/recommendations" element={<Recommendations />} />
                   <Route path="*" element={<NotFound />} />
         </Routes>
               </main>
