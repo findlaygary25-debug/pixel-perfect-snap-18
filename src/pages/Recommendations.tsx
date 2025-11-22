@@ -25,12 +25,16 @@ const toolsByLetter: Record<string, Tool[]> = {
       description: "Artificial Intelligence platforms for content generation, automation, and intelligent features.",
       category: "Technology",
       tags: ["AI", "Automation", "Machine Learning"],
+      imageUrl: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=100&h=100&fit=crop",
+      imageAlt: "#AI #ArtificialIntelligence #MachineLearning #Automation #Voice2Fire #AITools #TechInnovation",
     },
     {
       name: "Analytics",
       description: "Track your app performance, user behavior, and gain insights to improve your platform.",
       category: "Business",
       tags: ["Analytics", "Metrics", "Insights"],
+      imageUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=100&h=100&fit=crop",
+      imageAlt: "#Analytics #DataAnalytics #Metrics #BusinessIntelligence #Voice2Fire #DataScience #Insights",
     },
   ],
   C: [
@@ -39,6 +43,8 @@ const toolsByLetter: Record<string, Tool[]> = {
       description: "Backend infrastructure and cloud computing platforms for scalable applications.",
       category: "Infrastructure",
       tags: ["Cloud", "Backend", "Hosting"],
+      imageUrl: "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=100&h=100&fit=crop",
+      imageAlt: "#Cloud #CloudComputing #Backend #Infrastructure #Voice2Fire #Hosting #Scalability",
     },
   ],
   D: [
@@ -47,6 +53,8 @@ const toolsByLetter: Record<string, Tool[]> = {
       description: "Tools for managing, querying, and optimizing your application databases.",
       category: "Development",
       tags: ["Database", "SQL", "Storage"],
+      imageUrl: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=100&h=100&fit=crop",
+      imageAlt: "#Database #SQL #DataManagement #Storage #Voice2Fire #DatabaseAdmin #DataStorage",
     },
   ],
   L: [
@@ -67,6 +75,8 @@ const toolsByLetter: Record<string, Tool[]> = {
       description: "Multi-channel notification delivery systems for email, SMS, and in-app alerts.",
       category: "Communication",
       tags: ["Notifications", "Email", "SMS"],
+      imageUrl: "https://images.unsplash.com/photo-1526628953301-3e589a6a8b74?w=100&h=100&fit=crop",
+      imageAlt: "#Notifications #Email #SMS #Communication #Voice2Fire #Alerts #Messaging",
     },
   ],
   P: [
@@ -75,6 +85,8 @@ const toolsByLetter: Record<string, Tool[]> = {
       description: "Secure payment gateways and transaction processing for e-commerce applications.",
       category: "Finance",
       tags: ["Payments", "Stripe", "E-commerce"],
+      imageUrl: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=100&h=100&fit=crop",
+      imageAlt: "#Payments #Stripe #PaymentProcessing #Ecommerce #Voice2Fire #FinTech #Transactions",
     },
   ],
   R: [
@@ -83,6 +95,8 @@ const toolsByLetter: Record<string, Tool[]> = {
       description: "Enable live updates, chat, and collaborative features in your applications.",
       category: "Technology",
       tags: ["Real-time", "WebSockets", "Live Updates"],
+      imageUrl: "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=100&h=100&fit=crop",
+      imageAlt: "#Realtime #WebSockets #LiveUpdates #Collaboration #Voice2Fire #InstantMessaging #Chat",
     },
   ],
   S: [
@@ -91,6 +105,8 @@ const toolsByLetter: Record<string, Tool[]> = {
       description: "File storage and content delivery networks for media-rich applications.",
       category: "Infrastructure",
       tags: ["Storage", "CDN", "Media"],
+      imageUrl: "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=100&h=100&fit=crop",
+      imageAlt: "#Storage #CDN #MediaStorage #FileStorage #Voice2Fire #ContentDelivery #CloudStorage",
     },
   ],
   V: [
@@ -99,6 +115,8 @@ const toolsByLetter: Record<string, Tool[]> = {
       description: "Video hosting, streaming, and processing services for content creators.",
       category: "Media",
       tags: ["Video", "Streaming", "Content"],
+      imageUrl: "https://images.unsplash.com/photo-1492619375914-88005aa9e8fb?w=100&h=100&fit=crop",
+      imageAlt: "#Video #Streaming #VideoHosting #ContentCreators #Voice2Fire #LiveStreaming #VideoProduction",
     },
   ],
   W: [
@@ -107,6 +125,8 @@ const toolsByLetter: Record<string, Tool[]> = {
       description: "Modern frameworks and tools for building responsive, fast web applications.",
       category: "Development",
       tags: ["Web", "React", "Frontend"],
+      imageUrl: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=100&h=100&fit=crop",
+      imageAlt: "#WebDevelopment #React #Frontend #WebDesign #Voice2Fire #Coding #WebApps",
     },
   ],
 };
