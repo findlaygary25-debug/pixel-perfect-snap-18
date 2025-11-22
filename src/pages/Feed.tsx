@@ -1647,8 +1647,8 @@ export default function Feed() {
                 videoId = video.video_url.split('youtu.be/')[1].split('?')[0];
               }
               
-              // Build proper YouTube embed URL
-              const baseUrl = `https://www.youtube.com/embed/${videoId}`;
+              // Build privacy-enhanced YouTube embed URL
+              const baseUrl = `https://www.youtube-nocookie.com/embed/${videoId}`;
               const params = new URLSearchParams({
                 autoplay: playingVideos.has(video.id) ? '1' : '0',
                 mute: mutedVideos.has(video.id) ? '1' : '0',
@@ -1656,7 +1656,8 @@ export default function Feed() {
                 playlist: videoId,
                 controls: '1',
                 modestbranding: '1',
-                rel: '0'
+                rel: '0',
+                playsinline: '1',
               });
               return `${baseUrl}?${params.toString()}`;
             })()}
