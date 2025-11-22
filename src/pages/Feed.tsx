@@ -346,7 +346,7 @@ export default function Feed() {
       
       currentVideos.forEach(video => {
         const videoElement = videoRefs.current.get(video.id);
-        if (!videoElement || videoElement.paused) return;
+        if (!videoElement || !(videoElement instanceof HTMLVideoElement) || videoElement.paused) return;
 
         const availableQualities = getAvailableQualities(video);
         if (availableQualities.length === 0) return; // No quality variants available
@@ -538,7 +538,7 @@ export default function Feed() {
       const videoId = currentVideos[i].id;
       const videoElement = videoRefs.current.get(videoId);
       
-      if (videoElement) {
+      if (videoElement && videoElement instanceof HTMLVideoElement) {
         // Set preload to 'auto' for current and next videos
         if (i === currentIndex) {
           videoElement.preload = 'auto';
@@ -558,7 +558,7 @@ export default function Feed() {
     for (let i = 0; i < currentIndex - 1; i++) {
       const videoId = currentVideos[i]?.id;
       const videoElement = videoRefs.current.get(videoId);
-      if (videoElement) {
+      if (videoElement && videoElement instanceof HTMLVideoElement) {
         videoElement.preload = 'none';
       }
     }
@@ -567,7 +567,7 @@ export default function Feed() {
     for (let i = currentIndex + preloadCount + 1; i < currentVideos.length; i++) {
       const videoId = currentVideos[i]?.id;
       const videoElement = videoRefs.current.get(videoId);
-      if (videoElement) {
+      if (videoElement && videoElement instanceof HTMLVideoElement) {
         videoElement.preload = 'none';
       }
     }
@@ -755,21 +755,29 @@ export default function Feed() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentVisibleVideoId, showShortcuts, playingVideos, fullscreenVideoId, mutedVideos, videos, followingVideos, activeTab]);
 
-  const setVideoRef = useCallback((videoId: string, element: HTMLVideoElement | null) => {
+  const setVideoRef = useCallback((videoId: string, element: HTMLVideoElement | HTMLIFrameElement | null) => {
     if (element) {
-      videoRefs.current.set(videoId, element);
+      // Always store the element so observers and layout logic can use it
+      videoRefs.current.set(videoId, element as any);
+
+      // Only attach time/progress/error handlers to real HTMLVideoElements
+      if (!(element instanceof HTMLVideoElement)) {
+        return;
+      }
+
+      const videoElement = element as HTMLVideoElement;
       
       // Add event listeners for progress tracking
       const handleTimeUpdate = () => {
-        const currentTime = element.currentTime;
-        const duration = element.duration;
+        const currentTime = videoElement.currentTime;
+        const duration = videoElement.duration;
         
         setVideoProgress(prev => ({
           ...prev,
           [videoId]: {
             current: currentTime,
             duration: duration,
-            buffered: element.buffered.length > 0 ? element.buffered.end(element.buffered.length - 1) : 0
+            buffered: videoElement.buffered.length > 0 ? videoElement.buffered.end(videoElement.buffered.length - 1) : 0
           }
         }));
 
@@ -796,12 +804,12 @@ export default function Feed() {
       };
       
       const handleProgress = () => {
-        if (element.buffered.length > 0) {
+        if (videoElement.buffered.length > 0) {
           setVideoProgress(prev => ({
             ...prev,
             [videoId]: {
               ...prev[videoId],
-              buffered: element.buffered.end(element.buffered.length - 1)
+              buffered: videoElement.buffered.end(videoElement.buffered.length - 1)
             }
           }));
         }
@@ -815,7 +823,7 @@ export default function Feed() {
           ...prev,
           [videoId]: {
             current: 0,
-            duration: element.duration,
+            duration: videoElement.duration,
             buffered: 0
           }
         }));
@@ -859,11 +867,11 @@ export default function Feed() {
         setBufferingVideos(prev => new Set(prev).add(videoId));
         
         // Trigger warning haptic for buffering (with debouncing to avoid too many triggers)
-        const lastWarning = (element as any)._lastBufferingWarning || 0;
+        const lastWarning = (videoElement as any)._lastBufferingWarning || 0;
         const now = Date.now();
         if (now - lastWarning > 2000) { // Only trigger once every 2 seconds
           triggerHaptic('warning');
-          (element as any)._lastBufferingWarning = now;
+          (videoElement as any)._lastBufferingWarning = now;
         }
       };
       
@@ -885,30 +893,30 @@ export default function Feed() {
         });
       };
       
-      element.addEventListener('timeupdate', handleTimeUpdate);
-      element.addEventListener('progress', handleProgress);
-      element.addEventListener('loadedmetadata', handleLoadedMetadata);
-      element.addEventListener('error', handleError);
-      element.addEventListener('stalled', handleStalled);
-      element.addEventListener('waiting', handleWaiting);
-      element.addEventListener('playing', handlePlaying);
-      element.addEventListener('canplay', handleCanPlay);
+      videoElement.addEventListener('timeupdate', handleTimeUpdate);
+      videoElement.addEventListener('progress', handleProgress);
+      videoElement.addEventListener('loadedmetadata', handleLoadedMetadata);
+      videoElement.addEventListener('error', handleError);
+      videoElement.addEventListener('stalled', handleStalled);
+      videoElement.addEventListener('waiting', handleWaiting);
+      videoElement.addEventListener('playing', handlePlaying);
+      videoElement.addEventListener('canplay', handleCanPlay);
       
       // Store cleanup function
-      (element as any)._cleanup = () => {
-        element.removeEventListener('timeupdate', handleTimeUpdate);
-        element.removeEventListener('progress', handleProgress);
-        element.removeEventListener('loadedmetadata', handleLoadedMetadata);
-        element.removeEventListener('error', handleError);
-        element.removeEventListener('stalled', handleStalled);
-        element.removeEventListener('waiting', handleWaiting);
-        element.removeEventListener('playing', handlePlaying);
-        element.removeEventListener('canplay', handleCanPlay);
+      (videoElement as any)._cleanup = () => {
+        videoElement.removeEventListener('timeupdate', handleTimeUpdate);
+        videoElement.removeEventListener('progress', handleProgress);
+        videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        videoElement.removeEventListener('error', handleError);
+        videoElement.removeEventListener('stalled', handleStalled);
+        videoElement.removeEventListener('waiting', handleWaiting);
+        videoElement.removeEventListener('playing', handlePlaying);
+        videoElement.removeEventListener('canplay', handleCanPlay);
       };
     } else {
-      const video = videoRefs.current.get(videoId);
-      if (video && (video as any)._cleanup) {
-        (video as any)._cleanup();
+      const video = videoRefs.current.get(videoId) as any;
+      if (video && video._cleanup) {
+        video._cleanup();
       }
       videoRefs.current.delete(videoId);
     }
