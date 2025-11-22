@@ -216,30 +216,28 @@ export default function ImportVideos() {
       return;
     }
 
+    // Import to staging (scheduled_videos table) instead of directly to feed
     setImporting(prev => new Set(prev).add(video.id));
     try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('user_id', user.id)
-        .single();
-
-      // Insert video into database
       const { error } = await supabase
-        .from('videos')
+        .from('scheduled_videos')
         .insert({
           user_id: user.id,
-          username: profile?.username || 'Anonymous',
-          video_url: video.embedUrl,
-          caption: `${video.title}\n\nSource: ${video.channelTitle} on YouTube\n${video.description.slice(0, 200)}${video.description.length > 200 ? '...' : ''}`,
-          is_active: true,
+          youtube_video_id: video.id,
+          youtube_title: video.title,
+          youtube_description: video.description,
+          youtube_thumbnail: video.thumbnail,
+          youtube_channel: video.channelTitle,
+          youtube_embed_url: video.embedUrl,
+          scheduled_time: new Date().toISOString(), // Immediate import
+          status: 'pending',
         });
 
       if (error) throw error;
 
       toast({
-        title: "Video imported",
-        description: "The video has been added to your collection",
+        title: "Video imported to staging",
+        description: "Go to Import Manager to transform and publish",
       });
     } catch (error) {
       console.error('Error importing video:', error);
@@ -358,7 +356,7 @@ export default function ImportVideos() {
                     disabled={importing.has(video.id)}
                   >
                     <Download className="h-3 w-3 mr-1" />
-                    {importing.has(video.id) ? 'Importing...' : 'Import Now'}
+                    {importing.has(video.id) ? 'Adding to Staging...' : 'Import to Staging'}
                   </Button>
                   <Button
                     size="sm"

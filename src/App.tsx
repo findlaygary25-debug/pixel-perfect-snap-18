@@ -29,6 +29,7 @@ import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import Shares from "./pages/Shares";
 import ImportVideos from "./pages/ImportVideos";
+import ImportManager from "./pages/ImportManager";
 import ScheduledVideos from "./pages/ScheduledVideos";
 import Live from "./pages/Live";
 import HapticSettings from "./pages/HapticSettings";
@@ -103,6 +104,7 @@ const App = () => (
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/shares" element={<Shares />} />
           <Route path="/import" element={<ImportVideos />} />
+          <Route path="/import-manager" element={<ImportManager />} />
           <Route path="/scheduled" element={<ScheduledVideos />} />
           <Route path="/live" element={<Live />} />
           <Route path="/haptic-settings" element={<HapticSettings />} />
