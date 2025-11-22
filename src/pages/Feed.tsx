@@ -474,15 +474,15 @@ export default function Feed() {
         } else {
           // Pause all videos when they leave viewport
           if (videoId) {
+            // Check if video was playing before pausing using state
+            const wasPlaying = playingVideos.has(videoId);
+
             // Remove from playing set first
             setPlayingVideos((prev) => {
               const newSet = new Set(prev);
               newSet.delete(videoId);
               return newSet;
             });
-            
-            // Check if video was playing before pausing
-            const wasPlaying = video.tagName === 'VIDEO' ? !(video as HTMLVideoElement).paused : prev => prev.has(videoId);
             
             // For native video elements, pause them
             if (video.tagName === 'VIDEO') {
