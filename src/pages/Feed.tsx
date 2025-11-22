@@ -457,10 +457,17 @@ export default function Feed() {
                 });
               }
             } else if (video.tagName === 'IFRAME') {
-              // For iframes (YouTube), just add to playing set
-              // The src URL will automatically update with autoplay=1
+              // For iframes (YouTube), use postMessage API for reliable control
               if (videoId) {
                 setPlayingVideos((prev) => new Set(prev).add(videoId));
+                
+                // Use YouTube iframe API to play video
+                try {
+                  const iframe = video as HTMLIFrameElement;
+                  iframe.contentWindow?.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+                } catch (err) {
+                  console.error(`[Feed] Failed to play YouTube iframe ${videoId}:`, err);
+                }
               }
             }
           }
@@ -480,8 +487,15 @@ export default function Feed() {
             // For native video elements, pause them
             if (video.tagName === 'VIDEO') {
               (video as HTMLVideoElement).pause();
+            } else if (video.tagName === 'IFRAME') {
+              // Use YouTube iframe API to pause video
+              try {
+                const iframe = video as HTMLIFrameElement;
+                iframe.contentWindow?.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+              } catch (err) {
+                console.error(`[Feed] Failed to pause YouTube iframe ${videoId}:`, err);
+              }
             }
-            // For iframes, the src will update automatically due to playingVideos state change
             
             // Show mini player if video was playing and scrolled away
             if (wasPlaying && !miniPlayerVideo) {
@@ -1647,7 +1661,7 @@ export default function Feed() {
                 videoId = video.video_url.split('youtu.be/')[1].split('?')[0];
               }
               
-              // Build privacy-enhanced YouTube embed URL
+              // Build privacy-enhanced YouTube embed URL with enablejsapi for programmatic control
               const baseUrl = `https://www.youtube-nocookie.com/embed/${videoId}`;
               const params = new URLSearchParams({
                 autoplay: playingVideos.has(video.id) ? '1' : '0',
@@ -1658,6 +1672,8 @@ export default function Feed() {
                 modestbranding: '1',
                 rel: '0',
                 playsinline: '1',
+                enablejsapi: '1',
+                origin: window.location.origin,
               });
               return `${baseUrl}?${params.toString()}`;
             })()}
