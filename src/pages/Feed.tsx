@@ -1046,6 +1046,9 @@ export default function Feed() {
     }
   };
 
+  const isYouTubeUrl = (url: string) =>
+    url.includes("youtube.com") || url.includes("youtu.be");
+
   const fetchVideos = async () => {
     try {
       const { data, error } = await supabase
@@ -1056,9 +1059,12 @@ export default function Feed() {
 
       if (error) throw error;
       
+      // Filter out YouTube-imported videos temporarily to avoid playback issues
+      const nonYouTubeVideos = (data || []).filter(v => !isYouTubeUrl(v.video_url));
+      
       // Fetch profiles for all video creators
-      if (data && data.length > 0) {
-        const userIds = [...new Set(data.map(v => v.user_id))];
+      if (nonYouTubeVideos.length > 0) {
+        const userIds = [...new Set(nonYouTubeVideos.map(v => v.user_id))];
         const { data: profilesData } = await supabase
           .from("profiles")
           .select("user_id, avatar_url")
@@ -1077,21 +1083,21 @@ export default function Feed() {
         
         const profilesMap = new Map(profilesData?.map(p => [p.user_id, p.avatar_url]) || []);
         
-        const videosWithAvatars = data.map(video => ({
+        const videosWithAvatars = nonYouTubeVideos.map(video => ({
           ...video,
           avatar_url: profilesMap.get(video.user_id)
         }));
         
         setVideos(videosWithAvatars);
       } else {
-        setVideos(data || []);
+        setVideos(nonYouTubeVideos);
       }
       
       // Initialize all videos as muted by default
-      if (data) {
-        setMutedVideos(new Set(data.map(v => v.id)));
-        fetchCommentCounts(data.map(v => v.id));
-        fetchVideoChapters(data.map(v => v.id));
+      if (nonYouTubeVideos.length > 0) {
+        setMutedVideos(new Set(nonYouTubeVideos.map(v => v.id)));
+        fetchCommentCounts(nonYouTubeVideos.map(v => v.id));
+        fetchVideoChapters(nonYouTubeVideos.map(v => v.id));
       }
     } catch (error) {
       console.error("Error fetching videos:", error);
@@ -1127,9 +1133,12 @@ export default function Feed() {
 
       if (error) throw error;
       
+      // Filter out YouTube-imported videos temporarily
+      const nonYouTubeVideos = (data || []).filter(v => !isYouTubeUrl(v.video_url));
+      
       // Fetch profiles for all video creators
-      if (data && data.length > 0) {
-        const userIds = [...new Set(data.map(v => v.user_id))];
+      if (nonYouTubeVideos.length > 0) {
+        const userIds = [...new Set(nonYouTubeVideos.map(v => v.user_id))];
         const { data: profilesData } = await supabase
           .from("profiles")
           .select("user_id, avatar_url")
@@ -1148,21 +1157,21 @@ export default function Feed() {
         
         const profilesMap = new Map(profilesData?.map(p => [p.user_id, p.avatar_url]) || []);
         
-        const videosWithAvatars = data.map(video => ({
+        const videosWithAvatars = nonYouTubeVideos.map(video => ({
           ...video,
           avatar_url: profilesMap.get(video.user_id)
         }));
         
         setFollowingVideos(videosWithAvatars);
       } else {
-        setFollowingVideos(data || []);
+        setFollowingVideos(nonYouTubeVideos);
       }
       
       // Initialize all videos as muted by default
-      if (data) {
-        setMutedVideos((prev) => new Set([...prev, ...data.map(v => v.id)]));
-        fetchCommentCounts(data.map(v => v.id));
-        fetchVideoChapters(data.map(v => v.id));
+      if (nonYouTubeVideos.length > 0) {
+        setMutedVideos((prev) => new Set([...prev, ...nonYouTubeVideos.map(v => v.id)]));
+        fetchCommentCounts(nonYouTubeVideos.map(v => v.id));
+        fetchVideoChapters(nonYouTubeVideos.map(v => v.id));
       }
     } catch (error) {
       console.error("Error fetching following videos:", error);
