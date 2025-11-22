@@ -365,7 +365,16 @@ const Profile = () => {
             {videos.map((video) => (
               <Card key={video.id}>
                 <CardContent className="p-4">
-                  <video src={video.video_url} className="w-full rounded-md mb-2" controls />
+                  {video.video_url.includes('youtube.com/embed') || video.video_url.includes('youtu.be') ? (
+                    <iframe
+                      src={video.video_url}
+                      className="w-full aspect-video rounded-md mb-2"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <video src={video.video_url} className="w-full rounded-md mb-2" controls />
+                  )}
                   <p className="text-sm mb-2">{video.caption}</p>
                   <div className="flex gap-4 text-xs text-muted-foreground">
                     <span>👁 {video.views}</span>
@@ -387,7 +396,16 @@ const Profile = () => {
             {bookmarks.map((video) => (
               <Card key={video.id}>
                 <CardContent className="p-4">
-                  <video src={video.video_url} className="w-full rounded-md mb-2" controls />
+                  {video.video_url.includes('youtube.com/embed') || video.video_url.includes('youtu.be') ? (
+                    <iframe
+                      src={video.video_url}
+                      className="w-full aspect-video rounded-md mb-2"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <video src={video.video_url} className="w-full rounded-md mb-2" controls />
+                  )}
                   <p className="text-sm mb-2">{video.caption}</p>
                   <Button
                     variant="outline"
