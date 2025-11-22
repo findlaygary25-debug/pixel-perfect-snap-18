@@ -2022,6 +2022,45 @@ export type Database = {
           },
         ]
       }
+      user_recommendations: {
+        Row: {
+          affiliate_url: string
+          category: string
+          created_at: string
+          description: string
+          id: string
+          letter: string
+          name: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          affiliate_url: string
+          category: string
+          created_at?: string
+          description: string
+          id?: string
+          letter: string
+          name: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          affiliate_url?: string
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          letter?: string
+          name?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           granted_at: string
