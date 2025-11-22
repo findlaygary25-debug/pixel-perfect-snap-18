@@ -14,6 +14,8 @@ interface Tool {
   url?: string;
   tags: string[];
   recommended?: boolean;
+  imageUrl?: string;
+  imageAlt?: string;
 }
 
 const toolsByLetter: Record<string, Tool[]> = {
@@ -55,6 +57,8 @@ const toolsByLetter: Record<string, Tool[]> = {
       url: "https://lovable.dev",
       tags: ["AI", "No-Code", "Full-Stack", "Development"],
       recommended: true,
+      imageUrl: "https://lovable.dev/og-image.png",
+      imageAlt: "#Lovable #AI #NoCode #FullStack #WebDevelopment #DevTools #BuildFaster #Voice2Fire",
     },
   ],
   N: [
@@ -144,8 +148,15 @@ export default function Recommendations() {
                 {toolsByLetter[letter].map((tool, index) => (
                   <Card key={index} className={tool.recommended ? "border-primary shadow-lg" : ""}>
                     <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
+                      <div className="flex items-start justify-between gap-4">
+                        {tool.imageUrl && (
+                          <img 
+                            src={tool.imageUrl} 
+                            alt={tool.imageAlt || `${tool.name} #Voice2Fire #${tool.tags.map(t => t.replace(/\s+/g, '')).join(' #')}`}
+                            className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
+                          />
+                        )}
+                        <div className="flex-1 min-w-0">
                           <CardTitle className="flex items-center gap-2">
                             {tool.name}
                             {tool.recommended && (
@@ -159,6 +170,7 @@ export default function Recommendations() {
                             size="sm"
                             variant="ghost"
                             asChild
+                            className="flex-shrink-0"
                           >
                             <a href={tool.url} target="_blank" rel="noopener noreferrer">
                               <ExternalLink className="w-4 h-4" />
@@ -172,7 +184,7 @@ export default function Recommendations() {
                       <div className="flex flex-wrap gap-2">
                         {tool.tags.map((tag) => (
                           <Badge key={tag} variant="secondary">
-                            {tag}
+                            #{tag}
                           </Badge>
                         ))}
                       </div>
