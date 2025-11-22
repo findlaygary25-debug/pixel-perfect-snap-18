@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { Menu } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { TopActionBar } from "@/components/TopActionBar";
 import { BottomNav } from "@/components/BottomNav";
 import { LoadingScreen } from "@/components/LoadingScreen";
@@ -71,7 +73,11 @@ const App = () => (
             <div className="flex-1 flex flex-col w-full">
               <header className="h-12 flex items-center justify-between border-b bg-background px-4">
                 <div className="flex items-center gap-3">
-                  <SidebarTrigger />
+                  <SidebarTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <Menu className="h-5 w-5" />
+                    </Button>
+                  </SidebarTrigger>
                   <a href="/" className="flex items-center">
                     <img 
                       src="/favicon.png" 
