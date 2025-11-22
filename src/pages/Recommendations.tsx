@@ -37,6 +37,32 @@ const toolsByLetter: Record<string, Tool[]> = {
       imageUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=100&h=100&fit=crop",
       imageAlt: "#Analytics #DataAnalytics #Metrics #BusinessIntelligence #Voice2Fire #DataScience #Insights",
     },
+    {
+      name: "API Development",
+      description: "RESTful and GraphQL API development tools for building scalable backend services.",
+      category: "Development",
+      tags: ["API", "REST", "GraphQL"],
+      imageUrl: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=100&h=100&fit=crop",
+      imageAlt: "#API #RESTful #GraphQL #BackendDevelopment #Voice2Fire #WebServices #APIDesign",
+    },
+  ],
+  B: [
+    {
+      name: "Blockchain Technology",
+      description: "Decentralized platforms and tools for building blockchain-based applications.",
+      category: "Technology",
+      tags: ["Blockchain", "Crypto", "Web3"],
+      imageUrl: "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=100&h=100&fit=crop",
+      imageAlt: "#Blockchain #Crypto #Web3 #Decentralized #Voice2Fire #SmartContracts #DeFi",
+    },
+    {
+      name: "Business Intelligence",
+      description: "Data visualization and reporting tools for making informed business decisions.",
+      category: "Business",
+      tags: ["BI", "Reports", "Dashboards"],
+      imageUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=100&h=100&fit=crop",
+      imageAlt: "#BusinessIntelligence #DataVisualization #Dashboards #Reports #Voice2Fire #Analytics #DataInsights",
+    },
   ],
   C: [
     {
@@ -47,6 +73,14 @@ const toolsByLetter: Record<string, Tool[]> = {
       imageUrl: "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=100&h=100&fit=crop",
       imageAlt: "#Cloud #CloudComputing #Backend #Infrastructure #Voice2Fire #Hosting #Scalability",
     },
+    {
+      name: "CRM Systems",
+      description: "Customer relationship management platforms for managing sales and customer data.",
+      category: "Business",
+      tags: ["CRM", "Sales", "Customer Management"],
+      imageUrl: "https://images.unsplash.com/photo-1553484771-371a605b060b?w=100&h=100&fit=crop",
+      imageAlt: "#CRM #CustomerRelationshipManagement #Sales #CustomerData #Voice2Fire #BusinessTools #SalesManagement",
+    },
   ],
   D: [
     {
@@ -56,6 +90,124 @@ const toolsByLetter: Record<string, Tool[]> = {
       tags: ["Database", "SQL", "Storage"],
       imageUrl: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=100&h=100&fit=crop",
       imageAlt: "#Database #SQL #DataManagement #Storage #Voice2Fire #DatabaseAdmin #DataStorage",
+    },
+    {
+      name: "DevOps Tools",
+      description: "CI/CD pipelines, deployment automation, and infrastructure as code platforms.",
+      category: "Infrastructure",
+      tags: ["DevOps", "CI/CD", "Automation"],
+      imageUrl: "https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?w=100&h=100&fit=crop",
+      imageAlt: "#DevOps #CICD #Automation #Deployment #Voice2Fire #Infrastructure #ContinuousIntegration",
+    },
+  ],
+  E: [
+    {
+      name: "E-commerce Platforms",
+      description: "Complete online store solutions with shopping carts, payments, and inventory management.",
+      category: "Business",
+      tags: ["E-commerce", "Shopping", "Retail"],
+      imageUrl: "https://images.unsplash.com/photo-1556742111-a301076d9d18?w=100&h=100&fit=crop",
+      imageAlt: "#Ecommerce #OnlineShopping #Retail #ShoppingCart #Voice2Fire #OnlineStore #DigitalCommerce",
+    },
+    {
+      name: "Email Marketing",
+      description: "Email campaign management, automation, and analytics for digital marketing.",
+      category: "Marketing",
+      tags: ["Email", "Marketing", "Campaigns"],
+      imageUrl: "https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?w=100&h=100&fit=crop",
+      imageAlt: "#EmailMarketing #Campaigns #DigitalMarketing #Automation #Voice2Fire #EmailAutomation #MarketingTools",
+    },
+  ],
+  F: [
+    {
+      name: "Frontend Frameworks",
+      description: "Modern JavaScript frameworks for building interactive user interfaces.",
+      category: "Development",
+      tags: ["Frontend", "JavaScript", "React"],
+      imageUrl: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=100&h=100&fit=crop",
+      imageAlt: "#Frontend #JavaScript #React #WebDevelopment #Voice2Fire #UI #UserInterface",
+    },
+    {
+      name: "File Management",
+      description: "Document storage, versioning, and collaboration platforms for teams.",
+      category: "Productivity",
+      tags: ["Files", "Documents", "Collaboration"],
+      imageUrl: "https://images.unsplash.com/photo-1568667256549-094345857637?w=100&h=100&fit=crop",
+      imageAlt: "#FileManagement #DocumentStorage #Collaboration #Cloud #Voice2Fire #FileSharing #TeamWork",
+    },
+  ],
+  G: [
+    {
+      name: "Graphics Design",
+      description: "Professional design tools for creating logos, graphics, and visual content.",
+      category: "Design",
+      tags: ["Design", "Graphics", "Creative"],
+      imageUrl: "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=100&h=100&fit=crop",
+      imageAlt: "#GraphicDesign #DesignTools #Creative #VisualContent #Voice2Fire #Branding #LogoDesign",
+    },
+    {
+      name: "Gaming Platforms",
+      description: "Game development engines and platforms for creating interactive experiences.",
+      category: "Entertainment",
+      tags: ["Gaming", "Game Dev", "Interactive"],
+      imageUrl: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=100&h=100&fit=crop",
+      imageAlt: "#Gaming #GameDevelopment #Interactive #Entertainment #Voice2Fire #GameEngine #VideoGames",
+    },
+  ],
+  H: [
+    {
+      name: "Hosting Services",
+      description: "Web hosting and server management solutions for deploying applications.",
+      category: "Infrastructure",
+      tags: ["Hosting", "Servers", "Deployment"],
+      imageUrl: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=100&h=100&fit=crop",
+      imageAlt: "#WebHosting #Servers #Deployment #Infrastructure #Voice2Fire #CloudHosting #ServerManagement",
+    },
+    {
+      name: "Healthcare Tech",
+      description: "Digital health platforms, telemedicine, and patient management systems.",
+      category: "Healthcare",
+      tags: ["Healthcare", "Medical", "Telemedicine"],
+      imageUrl: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=100&h=100&fit=crop",
+      imageAlt: "#Healthcare #HealthTech #Telemedicine #DigitalHealth #Voice2Fire #MedicalTech #PatientCare",
+    },
+  ],
+  I: [
+    {
+      name: "IoT Platforms",
+      description: "Internet of Things platforms for connecting and managing smart devices.",
+      category: "Technology",
+      tags: ["IoT", "Smart Devices", "Connected"],
+      imageUrl: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=100&h=100&fit=crop",
+      imageAlt: "#IoT #InternetOfThings #SmartDevices #Connected #Voice2Fire #SmartHome #IoTPlatform",
+    },
+    {
+      name: "Image Processing",
+      description: "AI-powered image editing, optimization, and manipulation tools.",
+      category: "Media",
+      tags: ["Images", "Photo Editing", "AI"],
+      imageUrl: "https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?w=100&h=100&fit=crop",
+      imageAlt: "#ImageProcessing #PhotoEditing #AIImages #MediaTools #Voice2Fire #ImageOptimization #VisualContent",
+    },
+  ],
+  J: [
+    {
+      name: "JavaScript Libraries",
+      description: "Popular JavaScript libraries and utilities for modern web development.",
+      category: "Development",
+      tags: ["JavaScript", "Libraries", "Web Dev"],
+      imageUrl: "https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?w=100&h=100&fit=crop",
+      imageAlt: "#JavaScript #Libraries #WebDev #Coding #Voice2Fire #FrontendDev #JSLibraries",
+    },
+  ],
+  K: [
+    {
+      name: "Knowledge Management",
+      description: "Documentation, wiki, and knowledge base platforms for organizing information.",
+      category: "Productivity",
+      tags: ["Knowledge", "Documentation", "Wiki"],
+      imageUrl: "https://images.unsplash.com/photo-1456324504439-367cee3b3c32?w=100&h=100&fit=crop",
+      imageAlt: "#KnowledgeManagement #Documentation #Wiki #Information #Voice2Fire #KnowledgeBase #TeamDocs",
     },
   ],
   L: [
@@ -69,6 +221,32 @@ const toolsByLetter: Record<string, Tool[]> = {
       imageUrl: "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=100&h=100&fit=crop",
       imageAlt: "#Lovable #AI #NoCode #FullStack #WebDevelopment #DevTools #BuildFaster #Voice2Fire",
     },
+    {
+      name: "Learning Platforms",
+      description: "Online education and e-learning platforms for courses and training.",
+      category: "Education",
+      tags: ["Learning", "Education", "E-learning"],
+      imageUrl: "https://images.unsplash.com/photo-1501504905252-473c47e087f8?w=100&h=100&fit=crop",
+      imageAlt: "#Learning #Education #Elearning #OnlineCourses #Voice2Fire #Training #EdTech",
+    },
+  ],
+  M: [
+    {
+      name: "Marketing Automation",
+      description: "Automated marketing campaigns, lead generation, and customer engagement tools.",
+      category: "Marketing",
+      tags: ["Marketing", "Automation", "Campaigns"],
+      imageUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=100&h=100&fit=crop",
+      imageAlt: "#MarketingAutomation #DigitalMarketing #Campaigns #LeadGeneration #Voice2Fire #MarketingTools #Automation",
+    },
+    {
+      name: "Mobile Development",
+      description: "Cross-platform mobile app development frameworks and tools.",
+      category: "Development",
+      tags: ["Mobile", "iOS", "Android"],
+      imageUrl: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=100&h=100&fit=crop",
+      imageAlt: "#MobileDevelopment #iOS #Android #AppDevelopment #Voice2Fire #CrossPlatform #MobileApps",
+    },
   ],
   N: [
     {
@@ -80,6 +258,16 @@ const toolsByLetter: Record<string, Tool[]> = {
       imageAlt: "#Notifications #Email #SMS #Communication #Voice2Fire #Alerts #Messaging",
     },
   ],
+  O: [
+    {
+      name: "Observability Tools",
+      description: "Monitoring, logging, and performance tracking for production applications.",
+      category: "Infrastructure",
+      tags: ["Monitoring", "Logging", "Performance"],
+      imageUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=100&h=100&fit=crop",
+      imageAlt: "#Observability #Monitoring #Logging #Performance #Voice2Fire #APM #SystemMonitoring",
+    },
+  ],
   P: [
     {
       name: "Payment Processing",
@@ -88,6 +276,24 @@ const toolsByLetter: Record<string, Tool[]> = {
       tags: ["Payments", "Stripe", "E-commerce"],
       imageUrl: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=100&h=100&fit=crop",
       imageAlt: "#Payments #Stripe #PaymentProcessing #Ecommerce #Voice2Fire #FinTech #Transactions",
+    },
+    {
+      name: "Project Management",
+      description: "Task tracking, team collaboration, and project planning software.",
+      category: "Productivity",
+      tags: ["Project Management", "Tasks", "Collaboration"],
+      imageUrl: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=100&h=100&fit=crop",
+      imageAlt: "#ProjectManagement #TaskTracking #Collaboration #Productivity #Voice2Fire #TeamWork #ProjectPlanning",
+    },
+  ],
+  Q: [
+    {
+      name: "Quality Assurance",
+      description: "Automated testing, QA tools, and bug tracking platforms for software quality.",
+      category: "Development",
+      tags: ["QA", "Testing", "Bug Tracking"],
+      imageUrl: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=100&h=100&fit=crop",
+      imageAlt: "#QualityAssurance #Testing #BugTracking #SoftwareQuality #Voice2Fire #AutomatedTesting #QA",
     },
   ],
   R: [
@@ -109,6 +315,34 @@ const toolsByLetter: Record<string, Tool[]> = {
       imageUrl: "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=100&h=100&fit=crop",
       imageAlt: "#Storage #CDN #MediaStorage #FileStorage #Voice2Fire #ContentDelivery #CloudStorage",
     },
+    {
+      name: "Security Tools",
+      description: "Cybersecurity platforms for protecting applications and user data.",
+      category: "Security",
+      tags: ["Security", "Cybersecurity", "Protection"],
+      imageUrl: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=100&h=100&fit=crop",
+      imageAlt: "#Security #Cybersecurity #DataProtection #InfoSec #Voice2Fire #SecurityTools #ThreatProtection",
+    },
+  ],
+  T: [
+    {
+      name: "Testing Frameworks",
+      description: "Unit testing, integration testing, and end-to-end testing tools.",
+      category: "Development",
+      tags: ["Testing", "QA", "Automation"],
+      imageUrl: "https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=100&h=100&fit=crop",
+      imageAlt: "#Testing #TestingFrameworks #QA #Automation #Voice2Fire #UnitTesting #E2ETesting",
+    },
+  ],
+  U: [
+    {
+      name: "UI/UX Design",
+      description: "Design systems, prototyping, and user experience tools for creating intuitive interfaces.",
+      category: "Design",
+      tags: ["UI", "UX", "Design"],
+      imageUrl: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=100&h=100&fit=crop",
+      imageAlt: "#UIDesign #UXDesign #UserExperience #DesignSystems #Voice2Fire #InterfaceDesign #Prototyping",
+    },
   ],
   V: [
     {
@@ -128,6 +362,36 @@ const toolsByLetter: Record<string, Tool[]> = {
       tags: ["Web", "React", "Frontend"],
       imageUrl: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=100&h=100&fit=crop",
       imageAlt: "#WebDevelopment #React #Frontend #WebDesign #Voice2Fire #Coding #WebApps",
+    },
+  ],
+  X: [
+    {
+      name: "XML & Data Exchange",
+      description: "Data interchange formats, APIs, and integration tools for system communication.",
+      category: "Development",
+      tags: ["XML", "API", "Integration"],
+      imageUrl: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=100&h=100&fit=crop",
+      imageAlt: "#XML #DataExchange #API #Integration #Voice2Fire #DataFormats #SystemIntegration",
+    },
+  ],
+  Y: [
+    {
+      name: "YouTube Integration",
+      description: "Tools and APIs for integrating YouTube content, analytics, and live streaming.",
+      category: "Media",
+      tags: ["YouTube", "Video", "Content"],
+      imageUrl: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=100&h=100&fit=crop",
+      imageAlt: "#YouTube #VideoContent #Streaming #ContentCreation #Voice2Fire #VideoMarketing #YouTubeAPI",
+    },
+  ],
+  Z: [
+    {
+      name: "Zero-Trust Security",
+      description: "Modern security architecture for protecting distributed applications and remote teams.",
+      category: "Security",
+      tags: ["Security", "Zero-Trust", "Network"],
+      imageUrl: "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=100&h=100&fit=crop",
+      imageAlt: "#ZeroTrust #Security #NetworkSecurity #Cybersecurity #Voice2Fire #SecureAccess #ModernSecurity",
     },
   ],
 };
