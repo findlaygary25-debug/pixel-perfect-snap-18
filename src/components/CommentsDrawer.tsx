@@ -161,7 +161,7 @@ export default function CommentsDrawer({
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose}>
-      <DrawerContent className="h-[80vh]">
+      <DrawerContent className="h-[50vh]">
         <DrawerHeader>
           <DrawerTitle>Comments</DrawerTitle>
           <DrawerDescription>
@@ -231,8 +231,8 @@ export default function CommentsDrawer({
               placeholder="Add a comment..."
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              className="resize-none"
-              rows={2}
+              className="resize-none min-h-[40px]"
+              rows={1}
             />
             <Button
               onClick={handleAddComment}

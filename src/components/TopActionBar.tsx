@@ -1,10 +1,16 @@
 import { useState, useEffect } from "react";
-import { Coins, Smartphone, User } from "lucide-react";
+import { Coins, Smartphone, User, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { NotificationBell } from "@/components/NotificationBell";
 import { AdminNotificationBell } from "@/components/AdminNotificationBell";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function TopActionBar() {
   const navigate = useNavigate();
@@ -65,24 +71,37 @@ export function TopActionBar() {
       {/* User Notifications */}
       <NotificationBell />
 
-      {/* Profile Avatar Button */}
-      <Button
-        variant="secondary"
-        size="icon"
-        onClick={() => navigate("/profile")}
-        className="relative rounded-full h-8 w-8 p-0 overflow-hidden"
-        aria-label="Profile"
-      >
-        {avatarUrl ? (
-          <img 
-            src={avatarUrl} 
-            alt="Profile" 
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <User className="h-4 w-4" />
-        )}
-      </Button>
+      {/* Profile Avatar Button with Dropdown */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="secondary"
+            size="icon"
+            className="relative rounded-full h-8 w-8 p-0 overflow-hidden"
+            aria-label="Profile"
+          >
+            {avatarUrl ? (
+              <img 
+                src={avatarUrl} 
+                alt="Profile" 
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <User className="h-4 w-4" />
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => navigate("/upload")}>
+            <Plus className="mr-2 h-4 w-4" />
+            Upload Video
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate("/profile")}>
+            <User className="mr-2 h-4 w-4" />
+            View Profile
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
