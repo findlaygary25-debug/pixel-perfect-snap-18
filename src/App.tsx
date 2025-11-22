@@ -74,7 +74,11 @@ const App = () => (
             <div className="flex-1 flex flex-col w-full">
               <header className="h-12 flex items-center justify-between border-b bg-background px-4">
                 <div className="flex items-center gap-3">
-                  <SidebarTrigger />
+                  <Button variant="ghost" size="icon" asChild>
+                    <SidebarTrigger>
+                      <Menu className="h-5 w-5" />
+                    </SidebarTrigger>
+                  </Button>
                   <a href="/" className="flex items-center">
                     <img 
                       src="/favicon.png" 
