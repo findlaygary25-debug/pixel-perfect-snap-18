@@ -29,6 +29,7 @@ import {
 const memberItems = [
   { title: "Home", url: "/", icon: Home },
   { title: "Recommendations", url: "/recommendations", icon: BookOpen },
+  { title: "Lovable Store", url: "/lovable-store", icon: Store },
   { title: "Feed", url: "/feed", icon: Video },
   { title: "Go Live", url: "/live", icon: Radio },
   { title: "Activity", url: "/activity", icon: Activity },
