@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { Video, Bookmark, Settings, LogOut, Lock, Shield, Download, Trash2, Globe, UserX } from "lucide-react";
+import { Video, Bookmark, Settings, LogOut, Lock, Shield, Download, Trash2, Globe, UserX, Camera } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
@@ -563,12 +563,23 @@ const Profile = () => {
               <div>
                 <label className="text-sm font-medium mb-2 block">Profile Picture</label>
                 <div className="flex items-center gap-4">
-                  <Avatar className="h-20 w-20">
-                    <AvatarImage src={profile?.avatar_url || undefined} />
-                    <AvatarFallback className="text-xl">
-                      {profile?.username.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                  <div 
+                    className="relative h-20 w-20 cursor-pointer group"
+                    onClick={() => document.getElementById('avatar-upload-settings')?.click()}
+                  >
+                    <Avatar className="h-20 w-20">
+                      <AvatarImage src={profile?.avatar_url || undefined} />
+                      <AvatarFallback className="text-xl">
+                        {profile?.username.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="absolute inset-0 bg-background/60 rounded-full flex flex-col items-center justify-center opacity-70 group-hover:opacity-90 transition-opacity">
+                      <Camera className="h-5 w-5 text-muted-foreground mb-1" />
+                      <span className="text-[10px] text-muted-foreground text-center px-1">
+                        {profile?.avatar_url ? 'Edit' : 'Add'} Image
+                      </span>
+                    </div>
+                  </div>
                   <div className="flex-1">
                     <input
                       id="avatar-upload-settings"
