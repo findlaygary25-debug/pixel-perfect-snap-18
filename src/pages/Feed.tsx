@@ -338,8 +338,11 @@ export default function Feed() {
       return currentQualityLevel;
     };
 
-    // ABR monitoring loop
+    // ABR monitoring loop - DISABLED to prevent flashing/crashing
     const checkBufferHealth = () => {
+      // ABR temporarily disabled - quality switching was causing video flashing and crashes
+      return;
+      
       if (!autoQualityEnabled || videoQuality !== 'auto') return;
 
       const currentVideos = activeTab === "following" ? followingVideos : videos;
@@ -401,11 +404,7 @@ export default function Feed() {
       });
     };
 
-    // Start monitoring
-    if (autoQualityEnabled && videoQuality === 'auto') {
-      abrCheckInterval.current = setInterval(checkBufferHealth, 2000); // Check every 2 seconds
-    }
-
+    // ABR monitoring disabled to prevent video flashing
     return () => {
       if (abrCheckInterval.current) {
         clearInterval(abrCheckInterval.current);
@@ -522,7 +521,7 @@ export default function Feed() {
     };
   }, [videos, followingVideos, activeTab, miniPlayerVideo, autoPlay]);
 
-  // Smart video preloading - preload next 2-3 videos based on current visible video
+  // Smart video preloading - only load current video to prevent crashes
   useEffect(() => {
     const currentVideos = activeTab === "following" ? followingVideos : videos;
     if (currentVideos.length === 0 || !currentVisibleVideoId) return;
@@ -530,48 +529,45 @@ export default function Feed() {
     const currentIndex = currentVideos.findIndex(v => v.id === currentVisibleVideoId);
     if (currentIndex === -1) return;
     
-    // Determine how many videos to preload based on network speed
-    const preloadCount = networkSpeed === 'fast' ? 3 : networkSpeed === 'medium' ? 2 : 1;
+    // Only preload current video and next video (minimal approach to prevent memory issues)
+    const preloadCount = 1;
     
-    // Preload current + next videos
+    // Preload current + next video only
     for (let i = currentIndex; i <= currentIndex + preloadCount && i < currentVideos.length; i++) {
       const videoId = currentVideos[i].id;
       const videoElement = videoRefs.current.get(videoId);
       
       if (videoElement && videoElement instanceof HTMLVideoElement) {
-        // Set preload to 'auto' for current and next videos
+        // Only 'auto' for current video, 'metadata' for next
         if (i === currentIndex) {
           videoElement.preload = 'auto';
+          // Trigger load for current video
+          if (videoElement.readyState < 2) {
+            videoElement.load();
+          }
         } else {
-          // For upcoming videos, use 'metadata' on slow connections, 'auto' on fast
-          videoElement.preload = networkSpeed === 'slow' ? 'metadata' : 'auto';
-        }
-        
-        // Trigger load if not already loading
-        if (videoElement.readyState < 2) {
-          videoElement.load();
+          videoElement.preload = 'metadata';
         }
       }
     }
     
-    // Clean up: set videos far behind to preload='none' to save bandwidth
-    for (let i = 0; i < currentIndex - 1; i++) {
-      const videoId = currentVideos[i]?.id;
-      const videoElement = videoRefs.current.get(videoId);
-      if (videoElement && videoElement instanceof HTMLVideoElement) {
-        videoElement.preload = 'none';
+    // Set all other videos to preload='none' to prevent excessive memory usage
+    for (let i = 0; i < currentVideos.length; i++) {
+      if (i < currentIndex || i > currentIndex + preloadCount) {
+        const videoId = currentVideos[i]?.id;
+        const videoElement = videoRefs.current.get(videoId);
+        if (videoElement && videoElement instanceof HTMLVideoElement) {
+          videoElement.preload = 'none';
+          // Pause and unload videos that are far from view
+          if (Math.abs(i - currentIndex) > 2) {
+            videoElement.pause();
+            videoElement.src = '';
+            videoElement.load();
+          }
+        }
       }
     }
-    
-    // Clean up: set videos far ahead to preload='none' to save bandwidth
-    for (let i = currentIndex + preloadCount + 1; i < currentVideos.length; i++) {
-      const videoId = currentVideos[i]?.id;
-      const videoElement = videoRefs.current.get(videoId);
-      if (videoElement && videoElement instanceof HTMLVideoElement) {
-        videoElement.preload = 'none';
-      }
-    }
-  }, [currentVisibleVideoId, videos, followingVideos, activeTab, networkSpeed]);
+  }, [currentVisibleVideoId, videos, followingVideos, activeTab]);
 
   // Handle fullscreen change events
   useEffect(() => {
@@ -1707,7 +1703,7 @@ export default function Feed() {
             muted={mutedVideos.has(video.id)}
             playsInline
             loop
-            preload="auto"
+            preload="none"
             onError={(e) => {
               console.error(`[Feed] Video error for ${video.id}:`, {
                 error: e.currentTarget.error,
@@ -1716,7 +1712,11 @@ export default function Feed() {
                 readyState: e.currentTarget.readyState
               });
               
-              // Track error state and notify user
+              // Set a black background on error to prevent white screen
+              e.currentTarget.style.backgroundColor = 'black';
+              e.currentTarget.style.opacity = '0';
+              
+              // Track error state (debounced)
               setVideoErrors(prev => {
                 if (prev.has(video.id)) return prev;
                 
@@ -1724,9 +1724,6 @@ export default function Feed() {
                 next.add(video.id);
                 
                 triggerHaptic('error', 'errors');
-                toast.error('Video playback failed', {
-                  description: 'Unable to play this video. Please try again or try a different browser.'
-                });
                 
                 // Clear error after 5 seconds
                 setTimeout(() => {
@@ -1739,20 +1736,19 @@ export default function Feed() {
                 
                 return next;
               });
-              
-              // Set a black background on error to prevent white screen
-              e.currentTarget.style.backgroundColor = 'black';
             }}
             onLoadedData={(e) => {
-              console.log(`[Feed] Video ${video.id} loaded:`, {
-                duration: e.currentTarget.duration,
-                readyState: e.currentTarget.readyState
-              });
+              // Ensure video is visible once loaded
+              e.currentTarget.style.opacity = '1';
+              console.log(`[Feed] Video ${video.id} loaded successfully`);
             }}
             onLoadStart={() => {
               // Ensure black background during loading
               const videoEl = videoRefs.current.get(video.id);
-              if (videoEl) videoEl.style.backgroundColor = 'black';
+              if (videoEl) {
+                videoEl.style.backgroundColor = 'black';
+                videoEl.style.transition = 'opacity 0.3s ease-in-out';
+              }
             }}
           />
         )}
