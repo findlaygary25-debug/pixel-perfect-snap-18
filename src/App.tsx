@@ -48,6 +48,7 @@ import LovableStore from "./pages/LovableStore";
 import AdminRoles from "./pages/AdminRoles";
 import AdminBootstrap from "./pages/AdminBootstrap";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminUsers from "./pages/AdminUsers";
 import AdminNotificationPreferences from "./pages/AdminNotificationPreferences";
 import NotificationDeliveryLogs from "./pages/NotificationDeliveryLogs";
 import DeliveryAlerts from "./pages/DeliveryAlerts";
@@ -119,6 +120,7 @@ const App = () => (
           <Route path="/challenge-history" element={<ChallengeHistory />} />
           <Route path="/rewards-store" element={<RewardsStore />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
           <Route path="/admin/flash-sales" element={<AdminFlashSales />} />
           <Route path="/notification-preferences" element={<NotificationPreferences />} />
           <Route path="/notification-analytics" element={<NotificationAnalytics />} />
