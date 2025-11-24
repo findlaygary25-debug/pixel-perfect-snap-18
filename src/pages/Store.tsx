@@ -146,8 +146,17 @@ export default function StorePage() {
   });
   const [uploading, setUploading] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [useCoinPayment, setUseCoinPayment] = useState(false);
+  const [defaultPriceUSD, setDefaultPriceUSD] = useState("");
+  const [leaseStartDate, setLeaseStartDate] = useState<Date | undefined>();
+  const [leaseEndDate, setLeaseEndDate] = useState<Date | undefined>();
+  const [payingLease, setPayingLease] = useState(false);
   const { toast } = useToast();
   const { performUndoableAction } = useUndoableAction();
+
+  // Coin conversion rate: $0.65 = 30 coins, so 1 coin = $0.021428514285
+  const COIN_RATE = 0.021428514285;
+  const calculatedCoins = defaultPriceUSD ? Math.round(parseFloat(defaultPriceUSD) / COIN_RATE) : 0;
 
   // Load filter presets from localStorage
   useEffect(() => {
@@ -1619,6 +1628,184 @@ export default function StorePage() {
                   onChange={(e) => store && setStore({ ...store, website_url: e.target.value })}
                 />
               </div>
+              
+              <div className="md:col-span-2 pt-4 border-t">
+                <h3 className="text-lg font-semibold mb-4">Product Payment Settings</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="use-coins"
+                      checked={useCoinPayment}
+                      onCheckedChange={(checked) => setUseCoinPayment(checked as boolean)}
+                    />
+                    <label 
+                      htmlFor="use-coins" 
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Use Voice2Fire Coins for all products (in-house)
+                    </label>
+                  </div>
+                  
+                  {useCoinPayment && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Default Product Price (USD)</label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={defaultPriceUSD}
+                        onChange={(e) => setDefaultPriceUSD(e.target.value)}
+                      />
+                      {defaultPriceUSD && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span>≈ {calculatedCoins}</span>
+                          <img src={coinImage} alt="coin" className="h-4 w-4" />
+                          <span>Voice2Fire Coins</span>
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Enter USD amount and it will automatically calculate Voice2Fire coin value
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="md:col-span-2 pt-4 border-t">
+                <h3 className="text-lg font-semibold mb-4">Store Lease Period</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Lease Start Date</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-start text-left font-normal">
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {leaseStartDate ? format(leaseStartDate, "PPP") : "Pick a date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={leaseStartDate}
+                          onSelect={setLeaseStartDate}
+                          initialFocus
+                          className="p-3 pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Lease End Date</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-start text-left font-normal">
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {leaseEndDate ? format(leaseEndDate, "PPP") : "Pick a date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={leaseEndDate}
+                          onSelect={setLeaseEndDate}
+                          initialFocus
+                          disabled={(date) => leaseStartDate ? date < leaseStartDate : false}
+                          className="p-3 pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+                
+                {leaseStartDate && leaseEndDate && store && (
+                  <div className="mt-4">
+                    <Button 
+                      onClick={async () => {
+                        const days = Math.ceil((leaseEndDate.getTime() - leaseStartDate.getTime()) / (1000 * 60 * 60 * 24));
+                        if (days <= 0) {
+                          toast({
+                            title: "Invalid date range",
+                            description: "End date must be after start date",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                        
+                        setPayingLease(true);
+                        try {
+                          const totalCost = store.daily_lease_price * days;
+                          const { data: { user } } = await supabase.auth.getUser();
+                          
+                          if (!user) {
+                            toast({
+                              title: "Authentication required",
+                              description: "Please log in to purchase lease",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+
+                          const { data: wallet } = await supabase
+                            .from("wallets")
+                            .select("balance")
+                            .eq("user_id", user.id)
+                            .single();
+
+                          if (!wallet || wallet.balance < totalCost) {
+                            toast({
+                              title: "Insufficient funds",
+                              description: `You need ${totalCost} coins. Current balance: ${wallet?.balance || 0} coins.`,
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+
+                          const { error: walletError } = await supabase
+                            .from("wallets")
+                            .update({ balance: wallet.balance - totalCost })
+                            .eq("user_id", user.id);
+
+                          if (walletError) throw walletError;
+
+                          const { error: storeError } = await supabase
+                            .from("stores")
+                            .update({ 
+                              lease_expiry: leaseEndDate.toISOString(),
+                              is_active: true 
+                            })
+                            .eq("id", store.id);
+
+                          if (storeError) throw storeError;
+
+                          toast({
+                            title: "Lease purchased",
+                            description: `Your store lease has been extended for ${days} days!`,
+                          });
+
+                          loadStoreAndProducts();
+                          setLeaseStartDate(undefined);
+                          setLeaseEndDate(undefined);
+                        } catch (error: any) {
+                          toast({
+                            title: "Error",
+                            description: error.message,
+                            variant: "destructive",
+                          });
+                        } finally {
+                          setPayingLease(false);
+                        }
+                      }}
+                      disabled={payingLease}
+                      className="w-full"
+                    >
+                      {payingLease ? "Processing..." : `Buy Lease Now (${Math.ceil((leaseEndDate.getTime() - leaseStartDate.getTime()) / (1000 * 60 * 60 * 24))} days)`}
+                    </Button>
+                  </div>
+                )}
+              </div>
+              
               <div className="md:col-span-2">
                 <Button onClick={saveStore} disabled={uploading}>
                   {uploading ? "Saving..." : "Save Store"}
