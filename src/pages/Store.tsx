@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { useUndoableAction } from "@/hooks/useUndoableAction";
-import { Plus, Pencil, Trash2, Package, ShoppingCart, Truck, CheckSquare, Filter, X, Save, Calendar as CalendarIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, ShoppingCart, Truck, CheckSquare, Filter, X, Save, Calendar as CalendarIcon, Sparkles } from "lucide-react";
 import { PlaceOrderDialog } from "@/components/PlaceOrderDialog";
 import { PlaceOrderDialogCoins } from "@/components/PlaceOrderDialogCoins";
 import { StoreLeaseManager } from "@/components/StoreLeaseManager";
@@ -948,11 +948,17 @@ export default function StorePage() {
       <div className="mt-6 grid md:grid-cols-3 gap-6">
         <div className="md:col-span-2">
           <Tabs defaultValue="products" className="space-y-6">
-            <TabsList>
-              <TabsTrigger value="products">Products</TabsTrigger>
-              <TabsTrigger value="orders">Orders</TabsTrigger>
-              <TabsTrigger value="settings">Store Settings</TabsTrigger>
-            </TabsList>
+            <div className="flex items-center justify-between gap-4">
+              <TabsList>
+                <TabsTrigger value="products">Products</TabsTrigger>
+                <TabsTrigger value="orders">Orders</TabsTrigger>
+                <TabsTrigger value="settings">Store Settings</TabsTrigger>
+              </TabsList>
+              <Button variant="default" size="sm">
+                <Sparkles className="mr-2 h-4 w-4" />
+                Promote Store
+              </Button>
+            </div>
 
         <TabsContent value="products" className="space-y-6">
           <Card>
