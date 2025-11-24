@@ -49,6 +49,7 @@ import AdminRoles from "./pages/AdminRoles";
 import AdminBootstrap from "./pages/AdminBootstrap";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
+import AdminAffiliate from "./pages/AdminAffiliate";
 import AdminNotificationPreferences from "./pages/AdminNotificationPreferences";
 import NotificationDeliveryLogs from "./pages/NotificationDeliveryLogs";
 import DeliveryAlerts from "./pages/DeliveryAlerts";
@@ -121,6 +122,7 @@ const App = () => (
           <Route path="/rewards-store" element={<RewardsStore />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/affiliate" element={<AdminAffiliate />} />
           <Route path="/admin/flash-sales" element={<AdminFlashSales />} />
           <Route path="/notification-preferences" element={<NotificationPreferences />} />
           <Route path="/notification-analytics" element={<NotificationAnalytics />} />
