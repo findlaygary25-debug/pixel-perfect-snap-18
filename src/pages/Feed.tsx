@@ -1860,7 +1860,7 @@ export default function Feed() {
         {/* ========================== */}
         {/*     DESKTOP RIGHT RAIL      */}
         {/* ========================== */}
-        <div className="hidden md:flex flex-col gap-3 absolute right-[-72px] bottom-24 z-20">
+        <div className="hidden md:flex flex-col gap-1.5 absolute right-[-72px] bottom-24 z-20">
           {/* PROFILE / FOLLOW BUTTON */}
           <button
             type="button"
@@ -1993,7 +1993,7 @@ export default function Feed() {
       {/*   MOBILE ACTIONS OVERLAY    */}
       {/* =========================== */}
       <div className="absolute inset-0 md:hidden pointer-events-none flex flex-col justify-between px-4 py-6">
-        <div className="pointer-events-auto ml-auto flex flex-col items-center gap-2">
+        <div className="pointer-events-auto ml-auto flex flex-col items-center gap-1">
           {/* PROFILE / FOLLOW BUTTON */}
           <button
             type="button"
