@@ -26,7 +26,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { FeedSettingsDialog } from "@/components/FeedSettingsDialog";
 import { SendGiftDialog } from "@/components/SendGiftDialog";
 import { Gift } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type VideoPost = {
   id: string;
@@ -1879,91 +1878,6 @@ export default function Feed() {
           </div>
         </div>
 
-        {/* Action buttons overlaid on video - only for own videos */}
-        {currentUser && video.user_id === currentUser && (
-          <TooltipProvider>
-            <div className="absolute top-4 right-4 flex flex-col gap-2 z-[45] pointer-events-auto">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant="secondary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toast.info('Edit functionality coming soon');
-                    }}
-                    className="h-9 w-9 rounded-full bg-black/60 hover:bg-black/80 text-white border-white/30 backdrop-blur-sm"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="left">
-                  <p>Edit</p>
-                </TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant="secondary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedPromoteVideo(video);
-                      setPromoteDialogOpen(true);
-                    }}
-                    className="h-9 w-9 rounded-full bg-black/60 hover:bg-black/80 text-white border-white/30 backdrop-blur-sm"
-                  >
-                    <TrendingUp className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="left">
-                  <p>Promote</p>
-                </TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant="secondary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedGiftVideo(video);
-                      setGiftDialogOpen(true);
-                    }}
-                    className="h-9 w-9 rounded-full bg-black/60 hover:bg-black/80 text-white border-white/30 backdrop-blur-sm"
-                  >
-                    <Gift className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="left">
-                  <p>Gift</p>
-                </TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant="destructive"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteVideo(video.id);
-                    }}
-                    className="h-9 w-9 rounded-full bg-red-500/80 hover:bg-red-600/80 text-white border-red-400/30 backdrop-blur-sm"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="left">
-                  <p>Delete</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-          </TooltipProvider>
-        )}
-
         {/* ========================== */}
         {/*     DESKTOP RIGHT RAIL      */}
         {/* ========================== */}
@@ -2033,6 +1947,66 @@ export default function Feed() {
           >
             <Share2 className="h-7 w-7" />
           </button>
+
+          {/* MORE ACTIONS DROPDOWN - only for own videos */}
+          {currentUser && video.user_id === currentUser && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-3 rounded-full bg-black/40 backdrop-blur-sm text-white hover:scale-105 transition-transform">
+                  <MoreHorizontal className="h-7 w-7" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent 
+                align="end" 
+                side="left"
+                className="w-48 bg-background border-border z-[60]"
+              >
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toast.info('Edit functionality coming soon');
+                  }}
+                  className="cursor-pointer"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedPromoteVideo(video);
+                    setPromoteDialogOpen(true);
+                  }}
+                  className="cursor-pointer"
+                >
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Promote
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedGiftVideo(video);
+                    setGiftDialogOpen(true);
+                  }}
+                  className="cursor-pointer"
+                >
+                  <Gift className="h-4 w-4 mr-2" />
+                  Gift
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteVideo(video.id);
+                  }}
+                  className="cursor-pointer text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
 
@@ -2104,6 +2078,66 @@ export default function Feed() {
           >
             <Share2 className="h-6 w-6" />
           </button>
+
+          {/* MORE ACTIONS DROPDOWN - only for own videos */}
+          {currentUser && video.user_id === currentUser && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-2 rounded-full bg-black/40 backdrop-blur-sm text-white">
+                  <MoreHorizontal className="h-6 w-6" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent 
+                align="end" 
+                side="left"
+                className="w-48 bg-background border-border z-[60]"
+              >
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toast.info('Edit functionality coming soon');
+                  }}
+                  className="cursor-pointer"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedPromoteVideo(video);
+                    setPromoteDialogOpen(true);
+                  }}
+                  className="cursor-pointer"
+                >
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Promote
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedGiftVideo(video);
+                    setGiftDialogOpen(true);
+                  }}
+                  className="cursor-pointer"
+                >
+                  <Gift className="h-4 w-4 mr-2" />
+                  Gift
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteVideo(video.id);
+                  }}
+                  className="cursor-pointer text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
     </div>
