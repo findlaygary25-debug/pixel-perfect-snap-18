@@ -167,7 +167,9 @@ export default function CommentsDrawer({
 
   return (
     <Drawer open={isOpen} onOpenChange={onClose}>
-      <DrawerContent className="h-[calc(100vh-80px)] max-h-[calc(100vh-80px)]">
+    <DrawerContent
+      className="h-[calc(100vh-80px)] max-h-[calc(100vh-80px)] md:h-[80vh] md:max-h-[80vh] md:bottom-6 md:right-6 md:inset-x-auto md:w-full md:max-w-md md:rounded-2xl md:mt-0"
+    >
         <DrawerHeader>
           <DrawerTitle>Comments</DrawerTitle>
           <DrawerDescription>
