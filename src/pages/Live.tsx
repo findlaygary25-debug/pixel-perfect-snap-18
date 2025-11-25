@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Video, VideoOff, Mic, MicOff, Radio, StopCircle, Users } from "lucide-react";
+import { Video, VideoOff, Mic, MicOff, Radio, StopCircle, Users, Image } from "lucide-react";
 import { motion } from "framer-motion";
 import LiveChat from "@/components/LiveChat";
 import ViewerList from "@/components/ViewerList";
@@ -25,9 +25,12 @@ export default function Live() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [currentUsername, setCurrentUsername] = useState("");
   const [currentAvatar, setCurrentAvatar] = useState<string | undefined>();
+  const [streamImage, setStreamImage] = useState<string | null>(null);
+  const [showImage, setShowImage] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const liveStreamId = useRef<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     checkAuth();
@@ -192,6 +195,43 @@ export default function Live() {
     }
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image must be less than 5MB");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setStreamImage(reader.result as string);
+        toast.success("Image uploaded");
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const toggleImageDisplay = () => {
+    if (!streamImage) {
+      toast.error("Please upload an image first");
+      return;
+    }
+    setShowImage(!showImage);
+    if (!showImage) {
+      setCameraEnabled(false);
+      if (streamRef.current) {
+        const videoTrack = streamRef.current.getVideoTracks()[0];
+        if (videoTrack) videoTrack.enabled = false;
+      }
+    } else {
+      setCameraEnabled(true);
+      if (streamRef.current) {
+        const videoTrack = streamRef.current.getVideoTracks()[0];
+        if (videoTrack) videoTrack.enabled = true;
+      }
+    }
+  };
+
   if (!isAuthenticated) {
     return null;
   }
@@ -216,14 +256,22 @@ export default function Live() {
           </CardHeader>
           <CardContent>
             <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
-              <video
-                ref={videoRef}
-                autoPlay
-                muted
-                playsInline
-                className="w-full h-full object-cover"
-              />
-              {!isPreparing && !isLive && (
+              {showImage && streamImage ? (
+                <img
+                  src={streamImage}
+                  alt="Stream display"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover"
+                />
+              )}
+              {!isPreparing && !isLive && !showImage && (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center">
                     <Video className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
@@ -252,12 +300,12 @@ export default function Live() {
             {/* Controls */}
             <div className="flex gap-2 mt-4">
               <Button
-                variant={cameraEnabled ? "default" : "destructive"}
+                variant={cameraEnabled && !showImage ? "default" : "destructive"}
                 size="sm"
                 onClick={toggleCamera}
-                disabled={!isPreparing && !isLive}
+                disabled={!isPreparing && !isLive || showImage}
               >
-                {cameraEnabled ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
+                {cameraEnabled && !showImage ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
               </Button>
               <Button
                 variant={micEnabled ? "default" : "destructive"}
@@ -267,6 +315,16 @@ export default function Live() {
               >
                 {micEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
               </Button>
+              {streamImage && (
+                <Button
+                  variant={showImage ? "default" : "outline"}
+                  size="sm"
+                  onClick={toggleImageDisplay}
+                  disabled={!isPreparing && !isLive}
+                >
+                  <Image className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -303,6 +361,22 @@ export default function Live() {
                 rows={4}
                 maxLength={500}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="stream-image">Stream Image (for audio-only)</Label>
+              <Input
+                ref={fileInputRef}
+                id="stream-image"
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={isLive}
+                className="cursor-pointer"
+              />
+              <p className="text-xs text-muted-foreground">
+                Upload an image to show during voice-only streams (max 5MB)
+              </p>
             </div>
 
             <div className="space-y-2 pt-4">
