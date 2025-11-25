@@ -15,12 +15,34 @@ export default function Upload() {
   const [preview, setPreview] = useState<string>("");
   const [caption, setCaption] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [maxFileSize, setMaxFileSize] = useState(100 * 1024 * 1024); // Default 100MB
+  const [maxDuration, setMaxDuration] = useState(300); // Default 5 minutes
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     checkUser();
+    loadUploadSettings();
   }, []);
+
+  const loadUploadSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('*')
+        .in('setting_key', ['upload_max_file_size_mb', 'upload_max_video_duration_seconds']);
+
+      if (!error && data) {
+        const maxSize = data.find(s => s.setting_key === 'upload_max_file_size_mb');
+        const maxDur = data.find(s => s.setting_key === 'upload_max_video_duration_seconds');
+
+        if (maxSize) setMaxFileSize(Number(maxSize.setting_value) * 1024 * 1024);
+        if (maxDur) setMaxDuration(Number(maxDur.setting_value));
+      }
+    } catch (error) {
+      console.error("Error loading upload settings:", error);
+    }
+  };
 
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -48,10 +70,10 @@ export default function Upload() {
         return;
       }
       
-      if (selectedFile.size > 100 * 1024 * 1024) {
+      if (selectedFile.size > maxFileSize) {
         toast({
           title: "File too large",
-          description: "Video must be less than 100MB",
+          description: `Video must be less than ${maxFileSize / (1024 * 1024)}MB`,
           variant: "destructive",
         });
         return;
@@ -140,7 +162,8 @@ export default function Upload() {
             </div>
             <div className="text-xs text-muted-foreground mt-2 space-y-1">
               <p className="font-medium">Upload Guidelines:</p>
-              <p>• Maximum file size: 100MB</p>
+              <p>• Maximum file size: {maxFileSize / (1024 * 1024)}MB</p>
+              <p>• Maximum duration: {Math.floor(maxDuration / 60)} minutes</p>
               <p>• Recommended: 1080x1920 (9:16 vertical)</p>
               <p>• Supported formats: MP4, MOV, AVI, WebM</p>
             </div>
