@@ -1936,9 +1936,9 @@ export default function Feed() {
                     e.stopPropagation();
                     handleDeleteVideo(video.id);
                   }}
-                  className="h-7 px-2 bg-red-500/80 hover:bg-red-600/80 text-white border-red-400/30 text-xs"
+                  className="h-6 px-1.5 bg-red-500/80 hover:bg-red-600/80 text-white border-red-400/30 text-[10px]"
                 >
-                  <Trash2 className="h-3 w-3 mr-0.5" />
+                  <Trash2 className="h-2.5 w-2.5 mr-0.5" />
                   Delete
                 </Button>
               </div>
