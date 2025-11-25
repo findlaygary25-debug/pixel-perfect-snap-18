@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Video, VideoOff, Mic, MicOff, Radio, StopCircle, Users, Image } from "lucide-react";
+import { Video, VideoOff, Mic, MicOff, Radio, StopCircle, Users, Image, Circle } from "lucide-react";
 import { motion } from "framer-motion";
 import LiveChat from "@/components/LiveChat";
 import ViewerList from "@/components/ViewerList";
@@ -27,10 +27,14 @@ export default function Live() {
   const [currentAvatar, setCurrentAvatar] = useState<string | undefined>();
   const [streamImage, setStreamImage] = useState<string | null>(null);
   const [showImage, setShowImage] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const liveStreamId = useRef<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingStartTime = useRef<number>(0);
 
   useEffect(() => {
     checkAuth();
@@ -232,6 +236,109 @@ export default function Live() {
     }
   };
 
+  const startRecording = () => {
+    if (!streamRef.current) {
+      toast.error("No active stream to record");
+      return;
+    }
+
+    try {
+      const options = { mimeType: 'video/webm;codecs=vp9,opus' };
+      const mediaRecorder = new MediaRecorder(streamRef.current, options);
+      
+      const chunks: Blob[] = [];
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunks.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        setRecordedChunks(chunks);
+        const duration = Math.floor((Date.now() - recordingStartTime.current) / 1000);
+        await saveRecording(chunks, duration);
+      };
+
+      mediaRecorder.start(1000); // Collect data every second
+      mediaRecorderRef.current = mediaRecorder;
+      recordingStartTime.current = Date.now();
+      setIsRecording(true);
+      toast.success("Recording started");
+    } catch (error) {
+      console.error("Error starting recording:", error);
+      toast.error("Failed to start recording");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      toast.success("Recording stopped");
+    }
+  };
+
+  const saveRecording = async (chunks: Blob[], duration: number) => {
+    if (!liveStreamId.current || !currentUser) {
+      toast.error("Failed to save recording");
+      return;
+    }
+
+    try {
+      toast.loading("Uploading recording...");
+      
+      // Create video blob
+      const blob = new Blob(chunks, { type: 'video/webm' });
+      const fileName = `${liveStreamId.current}-${Date.now()}.webm`;
+      
+      // Upload to Supabase storage
+      const { error: uploadError, data: uploadData } = await supabase.storage
+        .from('videos')
+        .upload(fileName, blob, {
+          contentType: 'video/webm',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('videos')
+        .getPublicUrl(fileName);
+
+      // Update live stream with video URL
+      await supabase
+        .from('live_streams')
+        .update({ 
+          video_url: publicUrl,
+          recording_duration: duration
+        })
+        .eq('id', liveStreamId.current);
+
+      // Create video entry
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('user_id', currentUser.id)
+        .single();
+
+      await supabase
+        .from('videos')
+        .insert({
+          user_id: currentUser.id,
+          username: profileData?.username || 'Unknown',
+          video_url: publicUrl,
+          caption: `${title} (Live Recording)`,
+          is_active: true
+        });
+
+      toast.success("Recording saved successfully!");
+    } catch (error) {
+      console.error("Error saving recording:", error);
+      toast.error("Failed to save recording");
+    }
+  };
+
   if (!isAuthenticated) {
     return null;
   }
@@ -323,6 +430,17 @@ export default function Live() {
                   disabled={!isPreparing && !isLive}
                 >
                   <Image className="h-4 w-4" />
+                </Button>
+              )}
+              {isLive && (
+                <Button
+                  variant={isRecording ? "destructive" : "default"}
+                  size="sm"
+                  onClick={isRecording ? stopRecording : startRecording}
+                  className="ml-auto"
+                >
+                  <Circle className={`h-4 w-4 ${isRecording ? 'fill-current' : ''}`} />
+                  {isRecording ? 'Stop Recording' : 'Record'}
                 </Button>
               )}
             </div>
