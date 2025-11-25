@@ -104,7 +104,7 @@ export function SendGiftDialog({ open, onOpenChange, recipientId, recipientUsern
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mt-4">
             {gifts?.map((gift) => (
               <button
                 key={gift.id}
