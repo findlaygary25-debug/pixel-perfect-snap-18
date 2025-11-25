@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Send, ThumbsDown, Heart, MoreHorizontal } from "lucide-react";
+import { Send, ThumbsDown, ThumbsUp, Heart, MoreHorizontal, Menu, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 const commentSchema = z.object({
@@ -168,13 +168,18 @@ export default function CommentsDrawer({
   return (
     <Drawer open={isOpen} onOpenChange={onClose}>
     <DrawerContent
-      className="h-[calc(100vh-80px)] max-h-[calc(100vh-80px)] md:h-[80vh] md:max-h-[80vh] md:bottom-6 md:right-6 md:inset-x-auto md:w-full md:max-w-md md:rounded-2xl md:mt-0"
+      className="h-[calc(100vh-80px)] max-h-[calc(100vh-80px)] md:h-[90vh] md:max-h-[90vh] md:bottom-6 md:right-6 md:inset-x-auto md:w-full md:max-w-[280px] md:rounded-2xl md:mt-0"
     >
-        <DrawerHeader>
-          <DrawerTitle>Comments</DrawerTitle>
-          <DrawerDescription>
-            {commentCount} {commentCount === 1 ? "comment" : "comments"}
-          </DrawerDescription>
+        <DrawerHeader className="flex flex-row items-center justify-between">
+          <div>
+            <DrawerTitle>Comments</DrawerTitle>
+            <DrawerDescription>
+              {commentCount} {commentCount === 1 ? "comment" : "comments"}
+            </DrawerDescription>
+          </div>
+          <Button variant="ghost" size="icon" onClick={onClose} className="shrink-0">
+            <Menu className="h-5 w-5" />
+          </Button>
         </DrawerHeader>
 
         <div className="flex-1 flex flex-col px-4 pb-4">
@@ -240,30 +245,53 @@ export default function CommentsDrawer({
                           <span className="text-xs">
                             {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true }).replace('about ', '')}
                           </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-auto p-0 text-xs font-medium hover:bg-transparent"
-                          >
-                            Reply
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleLike(comment.id)}
-                            className="h-auto p-0 flex items-center gap-1 hover:bg-transparent"
-                          >
-                            <Heart 
-                              className={`h-4 w-4 ${
-                                likedComments.has(comment.id) 
-                                  ? "fill-red-500 text-red-500" 
-                                  : ""
-                              }`} 
-                            />
-                            {likeCount > 0 && (
-                              <span className="text-xs">{likeCount}</span>
-                            )}
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleLike(comment.id)}
+                              className="h-auto p-0 flex items-center gap-1 hover:bg-transparent"
+                            >
+                              <ThumbsUp 
+                                className={`h-4 w-4 ${
+                                  likedComments.has(comment.id) 
+                                    ? "fill-primary text-primary" 
+                                    : ""
+                                }`} 
+                              />
+                              {likeCount > 0 && (
+                                <span className="text-xs">{likeCount}</span>
+                              )}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDislike(comment.id)}
+                              className="h-auto p-0 flex items-center hover:bg-transparent"
+                            >
+                              <ThumbsDown 
+                                className={`h-4 w-4 ${
+                                  dislikedComments.has(comment.id) 
+                                    ? "fill-destructive text-destructive" 
+                                    : ""
+                                }`} 
+                              />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleLike(comment.id)}
+                              className="h-auto p-0 flex items-center hover:bg-transparent"
+                            >
+                              <Heart 
+                                className={`h-4 w-4 ${
+                                  likedComments.has(comment.id) 
+                                    ? "fill-red-500 text-red-500" 
+                                    : ""
+                                }`} 
+                              />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
