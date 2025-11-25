@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { Video, Bookmark, Settings, LogOut, Lock, Shield, Download, Trash2, Globe, UserX, Camera } from "lucide-react";
+import { Video, Bookmark, Settings, LogOut, Lock, Shield, Download, Trash2, Globe, UserX, Camera, Edit, Link } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
@@ -22,6 +22,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { BreadcrumbSchema } from "@/components/BreadcrumbSchema";
 import { PersonSchema } from "@/components/PersonSchema";
 
@@ -57,6 +65,8 @@ interface Video {
   views: number;
   likes: number;
   created_at: string;
+  original_source_url: string | null;
+  original_created_at: string | null;
 }
 
 interface BookmarkedVideo extends Video {
@@ -71,6 +81,8 @@ const Profile = () => {
   const [followingFollowerCounts, setFollowingFollowerCounts] = useState<Record<string, { followers: number; following: number }>>({});
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingVideo, setEditingVideo] = useState<Video | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -301,6 +313,51 @@ const Profile = () => {
     }
   };
 
+  const handleDeleteVideo = async (videoId: string) => {
+    if (!user) return;
+    
+    const { error } = await supabase
+      .from("videos")
+      .delete()
+      .eq("id", videoId)
+      .eq("user_id", user.id);
+    
+    if (error) {
+      toast({ title: "Error deleting video", variant: "destructive" });
+    } else {
+      setVideos(videos.filter(v => v.id !== videoId));
+      toast({ title: "Video deleted successfully" });
+    }
+  };
+
+  const handleEditVideo = (video: Video) => {
+    setEditingVideo(video);
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateVideo = async () => {
+    if (!editingVideo || !user) return;
+    
+    const { error } = await supabase
+      .from("videos")
+      .update({
+        caption: editingVideo.caption,
+        original_source_url: editingVideo.original_source_url,
+        original_created_at: editingVideo.original_created_at,
+      })
+      .eq("id", editingVideo.id)
+      .eq("user_id", user.id);
+    
+    if (error) {
+      toast({ title: "Error updating video", variant: "destructive" });
+    } else {
+      setVideos(videos.map(v => v.id === editingVideo.id ? editingVideo : v));
+      toast({ title: "Video updated successfully" });
+      setEditDialogOpen(false);
+      setEditingVideo(null);
+    }
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
@@ -376,9 +433,53 @@ const Profile = () => {
                     <video src={video.video_url} className="w-full rounded-md mb-2" controls />
                   )}
                   <p className="text-sm mb-2">{video.caption}</p>
-                  <div className="flex gap-4 text-xs text-muted-foreground">
+                  <div className="flex gap-4 text-xs text-muted-foreground mb-3">
                     <span>👁 {video.views}</span>
                     <span>❤️ {video.likes}</span>
+                  </div>
+                  {video.original_source_url && (
+                    <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                      <Link className="h-3 w-3" />
+                      Original source
+                    </p>
+                  )}
+                  {video.original_created_at && (
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Created: {new Date(video.original_created_at).toLocaleDateString()}
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleEditVideo(video)}
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm" className="flex-1">
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Video?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete your video.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteVideo(video.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </CardContent>
               </Card>
@@ -740,6 +841,62 @@ const Profile = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Video</DialogTitle>
+            <DialogDescription>
+              Update video details and source information
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="caption">Caption</Label>
+              <Textarea
+                id="caption"
+                value={editingVideo?.caption || ""}
+                onChange={(e) => setEditingVideo(editingVideo ? { ...editingVideo, caption: e.target.value } : null)}
+                placeholder="Enter video caption"
+                rows={3}
+              />
+            </div>
+            <div>
+              <Label htmlFor="source-url">Original Source URL</Label>
+              <Input
+                id="source-url"
+                type="url"
+                value={editingVideo?.original_source_url || ""}
+                onChange={(e) => setEditingVideo(editingVideo ? { ...editingVideo, original_source_url: e.target.value } : null)}
+                placeholder="https://example.com/original-video"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Reference to where this video originally came from
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="original-date">Original Creation Date</Label>
+              <Input
+                id="original-date"
+                type="datetime-local"
+                value={editingVideo?.original_created_at ? new Date(editingVideo.original_created_at).toISOString().slice(0, 16) : ""}
+                onChange={(e) => setEditingVideo(editingVideo ? { ...editingVideo, original_created_at: e.target.value ? new Date(e.target.value).toISOString() : null } : null)}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                When was this video originally created (if different from upload date)
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateVideo}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

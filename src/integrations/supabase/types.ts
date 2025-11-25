@@ -2430,6 +2430,8 @@ export type Database = {
           id: string
           is_active: boolean
           likes: number
+          original_created_at: string | null
+          original_source_url: string | null
           thumbnail_url: string | null
           updated_at: string
           user_id: string
@@ -2447,6 +2449,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           likes?: number
+          original_created_at?: string | null
+          original_source_url?: string | null
           thumbnail_url?: string | null
           updated_at?: string
           user_id: string
@@ -2464,6 +2468,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           likes?: number
+          original_created_at?: string | null
+          original_source_url?: string | null
           thumbnail_url?: string | null
           updated_at?: string
           user_id?: string
