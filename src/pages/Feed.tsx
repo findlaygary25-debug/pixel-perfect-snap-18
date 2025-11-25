@@ -1664,7 +1664,7 @@ export default function Feed() {
       />
 
       {/* Inner video frame - limited width on desktop */}
-      <div className="relative h-full w-full max-w-[451px] flex items-center justify-center">
+      <div className="relative h-full w-full max-w-[451px] md:max-w-[360px] flex items-center justify-center">
         {video.video_url.includes('youtube.com/embed') || video.video_url.includes('youtu.be') ? (
           <iframe
             ref={(el) => setVideoRef(video.id, el as any)}
@@ -1694,7 +1694,7 @@ export default function Feed() {
               });
               return `${baseUrl}?${params.toString()}`;
             })()}
-            className="h-screen md:h-auto md:max-h-[89vh] w-full md:w-auto md:max-w-full object-contain md:rounded-2xl"
+            className="h-screen w-full md:aspect-[9/16] md:h-auto md:max-h-[85vh] md:w-auto object-contain md:rounded-2xl"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
           />
@@ -1703,7 +1703,7 @@ export default function Feed() {
             ref={(el) => setVideoRef(video.id, el as HTMLVideoElement | null)}
             data-video-id={video.id}
             src={video.video_url}
-            className="h-screen md:h-auto md:max-h-[89vh] w-full md:w-auto md:max-w-full object-contain md:rounded-2xl bg-black"
+            className="h-screen w-full md:aspect-[9/16] md:h-auto md:max-h-[85vh] md:w-auto object-contain md:rounded-2xl bg-black"
             muted={mutedVideos.has(video.id)}
             playsInline
             loop
