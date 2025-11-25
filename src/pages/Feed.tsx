@@ -1870,7 +1870,7 @@ export default function Feed() {
                 handleFollow(video.user_id);
               }
             }}
-            className="relative h-16 w-16 overflow-hidden rounded-full border border-white/30 bg-black/40 backdrop-blur-sm flex items-center justify-center hover:scale-105 transition-transform"
+            className="relative h-12 w-12 overflow-hidden rounded-full border border-white/30 bg-black/40 backdrop-blur-sm flex items-center justify-center hover:scale-105 transition-transform"
           >
             {video.avatar_url ? (
               <img
@@ -2003,7 +2003,7 @@ export default function Feed() {
                 handleFollow(video.user_id);
               }
             }}
-            className="relative h-14 w-14 overflow-hidden rounded-full border border-white/30 bg-black/40 backdrop-blur-sm flex items-center justify-center"
+            className="relative h-11 w-11 overflow-hidden rounded-full border border-white/30 bg-black/40 backdrop-blur-sm flex items-center justify-center"
           >
             {video.avatar_url ? (
               <img
