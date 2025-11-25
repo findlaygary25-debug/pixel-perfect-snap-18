@@ -1878,7 +1878,7 @@ export default function Feed() {
             
             {/* Action buttons below caption - only for own videos */}
             {currentUser && video.user_id === currentUser && (
-              <div className="flex gap-2 mt-3 pointer-events-auto">
+              <div className="flex flex-wrap gap-1.5 mt-3 pointer-events-auto max-w-full">
                 <Button
                   size="sm"
                   variant="secondary"
@@ -1886,9 +1886,9 @@ export default function Feed() {
                     e.stopPropagation();
                     toast.info('Edit functionality coming soon');
                   }}
-                  className="h-8 px-3 bg-white/20 hover:bg-white/30 text-white border-white/30"
+                  className="h-8 px-2.5 bg-white/20 hover:bg-white/30 text-white border-white/30 text-xs"
                 >
-                  <Edit className="h-3.5 w-3.5 mr-1.5" />
+                  <Edit className="h-3.5 w-3.5 mr-1" />
                   Edit
                 </Button>
                 <Button
@@ -1898,9 +1898,9 @@ export default function Feed() {
                     e.stopPropagation();
                     handleShare(video.id);
                   }}
-                  className="h-8 px-3 bg-white/20 hover:bg-white/30 text-white border-white/30"
+                  className="h-8 px-2.5 bg-white/20 hover:bg-white/30 text-white border-white/30 text-xs"
                 >
-                  <Share2 className="h-3.5 w-3.5 mr-1.5" />
+                  <Share2 className="h-3.5 w-3.5 mr-1" />
                   Share
                 </Button>
                 <Button
@@ -1911,9 +1911,9 @@ export default function Feed() {
                     setSelectedPromoteVideo(video);
                     setPromoteDialogOpen(true);
                   }}
-                  className="h-8 px-3 bg-white/20 hover:bg-white/30 text-white border-white/30"
+                  className="h-8 px-2.5 bg-white/20 hover:bg-white/30 text-white border-white/30 text-xs"
                 >
-                  <TrendingUp className="h-3.5 w-3.5 mr-1.5" />
+                  <TrendingUp className="h-3.5 w-3.5 mr-1" />
                   Promote
                 </Button>
                 <Button
@@ -1924,9 +1924,9 @@ export default function Feed() {
                     setSelectedGiftVideo(video);
                     setGiftDialogOpen(true);
                   }}
-                  className="h-8 px-3 bg-white/20 hover:bg-white/30 text-white border-white/30"
+                  className="h-8 px-2.5 bg-white/20 hover:bg-white/30 text-white border-white/30 text-xs"
                 >
-                  <Gift className="h-3.5 w-3.5 mr-1.5" />
+                  <Gift className="h-3.5 w-3.5 mr-1" />
                   Gift
                 </Button>
                 <Button
@@ -1936,9 +1936,9 @@ export default function Feed() {
                     e.stopPropagation();
                     handleDeleteVideo(video.id);
                   }}
-                  className="h-8 px-3 bg-red-500/80 hover:bg-red-600/80 text-white border-red-400/30"
+                  className="h-8 px-2.5 bg-red-500/80 hover:bg-red-600/80 text-white border-red-400/30 text-xs"
                 >
-                  <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                  <Trash2 className="h-3.5 w-3.5 mr-1" />
                   Delete
                 </Button>
               </div>
