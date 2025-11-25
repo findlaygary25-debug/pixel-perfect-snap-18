@@ -1841,18 +1841,102 @@ export default function Feed() {
           </motion.div>
         )}
 
-        {/* Caption overlay */}
-        <div className="absolute bottom-11 left-1/2 -translate-x-1/2 w-full max-w-[280px] px-4 pointer-events-none z-10">
-          <div className="bg-black/40 backdrop-blur-sm rounded-lg px-4 py-3">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-white font-semibold text-sm">@{video.username}</p>
-              <div className="flex items-center gap-1 text-white/80 text-xs">
-                <Play className="h-3 w-3 fill-white/80" />
-                <span>{video.views.toLocaleString()} views</span>
-              </div>
-            </div>
+        {/* Top overlay controls (TikTok-style) */}
+        <div className="absolute top-4 right-4 flex gap-2 z-10 pointer-events-auto">
+          {/* Volume control */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              const vid = videoRefs.current.get(video.id);
+              if (!vid) return;
+              
+              if (mutedVideos.has(video.id)) {
+                vid.muted = false;
+                setMutedVideos((prev) => {
+                  const next = new Set(prev);
+                  next.delete(video.id);
+                  return next;
+                });
+              } else {
+                vid.muted = true;
+                setMutedVideos((prev) => new Set(prev).add(video.id));
+              }
+            }}
+            className="p-2.5 rounded-full bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 transition-colors"
+            aria-label="Volume control"
+          >
+            {mutedVideos.has(video.id) ? (
+              <VolumeX className="h-6 w-6" />
+            ) : (
+              <Volume2 className="h-6 w-6" />
+            )}
+          </button>
+
+          {/* More menu */}
+          {currentUser && video.user_id === currentUser && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-2.5 rounded-full bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 transition-colors">
+                  <MoreHorizontal className="h-6 w-6" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent 
+                align="end"
+                className="w-48 bg-background/95 backdrop-blur-sm border-border z-[60]"
+              >
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast.info('Edit functionality coming soon'); }}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setSelectedPromoteVideo(video); setPromoteDialogOpen(true); }}>
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Promote
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDeleteVideo(video.id); }} className="text-destructive focus:text-destructive">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+
+        {/* Bottom caption overlay (TikTok-style) */}
+        <div className="absolute bottom-0 left-0 right-0 pb-1 px-3 pointer-events-none z-10">
+          <div className="pointer-events-auto">
+            {/* Username - 17px font */}
+            <a 
+              href={`/profile/${video.user_id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="inline-block mb-2 hover:opacity-80 transition-opacity"
+            >
+              <p className="text-white font-medium text-[17px]" style={{ letterSpacing: 0 }}>
+                {video.username}
+              </p>
+            </a>
+
+            {/* Caption and hashtags - 14px font */}
             {video.caption && (
-              <p className="text-white/90 text-sm line-clamp-2">{video.caption}</p>
+              <div className="mb-3">
+                <p className="text-white text-[14px] leading-tight" style={{ letterSpacing: '0.09px' }}>
+                  {video.caption.split(' ').map((word, i) => {
+                    if (word.startsWith('#')) {
+                      return (
+                        <a
+                          key={i}
+                          href={`/search?q=${encodeURIComponent(word)}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-blue-400 hover:underline font-medium"
+                        >
+                          {word}{' '}
+                        </a>
+                      );
+                    }
+                    return <span key={i}>{word} </span>;
+                  })}
+                </p>
+              </div>
             )}
           </div>
         </div>
