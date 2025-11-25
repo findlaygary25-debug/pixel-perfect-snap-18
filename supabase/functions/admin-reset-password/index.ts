@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -44,11 +45,26 @@ serve(async (req) => {
       throw new Error("Unauthorized - Admin access required");
     }
 
-    const { userId, newPassword } = await req.json();
+    // Define password validation schema
+    const passwordResetSchema = z.object({
+      userId: z.string().uuid({ message: "Invalid user ID format" }),
+      newPassword: z.string()
+        .min(8, { message: "Password must be at least 8 characters long" })
+        .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
+        .regex(/[a-z]/, { message: "Password must contain at least one lowercase letter" })
+        .regex(/[0-9]/, { message: "Password must contain at least one number" })
+    });
 
-    if (!userId || !newPassword) {
-      throw new Error("Missing userId or newPassword");
+    const body = await req.json();
+    
+    // Validate input
+    const validationResult = passwordResetSchema.safeParse(body);
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors.map(e => e.message).join(", ");
+      throw new Error(`Validation failed: ${errors}`);
     }
+
+    const { userId, newPassword } = validationResult.data;
 
     // Use admin client to update user password
     const supabaseAdmin = createClient(
