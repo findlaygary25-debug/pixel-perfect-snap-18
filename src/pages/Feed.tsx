@@ -24,6 +24,8 @@ import { useHapticSettings } from "@/hooks/useHapticSettings";
 import { AddToCollectionDialog } from "@/components/AddToCollectionDialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { FeedSettingsDialog } from "@/components/FeedSettingsDialog";
+import { SendGiftDialog } from "@/components/SendGiftDialog";
+import { Gift } from "lucide-react";
 
 type VideoPost = {
   id: string;
@@ -66,6 +68,8 @@ export default function Feed() {
   const [selectedPromoteVideo, setSelectedPromoteVideo] = useState<VideoPost | null>(null);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedShareVideo, setSelectedShareVideo] = useState<VideoPost | null>(null);
+  const [giftDialogOpen, setGiftDialogOpen] = useState(false);
+  const [selectedGiftVideo, setSelectedGiftVideo] = useState<VideoPost | null>(null);
   const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
   const [doubleTapHearts, setDoubleTapHearts] = useState<Set<string>>(new Set());
   const lastTapRef = useRef<{ videoId: string; time: number } | null>(null);
@@ -1914,6 +1918,19 @@ export default function Feed() {
                 </Button>
                 <Button
                   size="sm"
+                  variant="secondary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedGiftVideo(video);
+                    setGiftDialogOpen(true);
+                  }}
+                  className="h-8 px-3 bg-white/20 hover:bg-white/30 text-white border-white/30"
+                >
+                  <Gift className="h-3.5 w-3.5 mr-1.5" />
+                  Gift
+                </Button>
+                <Button
+                  size="sm"
                   variant="destructive"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -2233,6 +2250,15 @@ export default function Feed() {
           videoId={selectedShareVideo.id}
           videoCaption={selectedShareVideo.caption || undefined}
           username={selectedShareVideo.username}
+        />
+      )}
+
+      {selectedGiftVideo && (
+        <SendGiftDialog
+          open={giftDialogOpen}
+          onOpenChange={setGiftDialogOpen}
+          recipientId={selectedGiftVideo.user_id}
+          recipientUsername={selectedGiftVideo.username}
         />
       )}
       
