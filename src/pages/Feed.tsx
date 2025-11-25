@@ -1811,7 +1811,7 @@ export default function Feed() {
                 setMutedVideos((prev) => new Set(prev).add(video.id));
               }
             }}
-            className="absolute top-4 left-4 bg-black/60 p-2 rounded-full backdrop-blur-sm hover:bg-black/80 transition-colors z-[50]"
+            className="absolute top-4 left-1/2 -translate-x-1/2 md:left-4 md:translate-x-0 bg-black/60 p-2 rounded-full backdrop-blur-sm hover:bg-black/80 transition-colors z-[50]"
           >
             {mutedVideos.has(video.id) ? (
               <VolumeX className="h-5 w-5 text-white" />
@@ -1863,8 +1863,8 @@ export default function Feed() {
         )}
 
         {/* Caption overlay */}
-        <div className="absolute bottom-20 left-4 right-20 pointer-events-none z-10">
-          <div className="bg-black/40 backdrop-blur-sm rounded-lg px-4 py-3 max-w-md">
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-full max-w-[400px] px-4 pointer-events-none z-10">
+          <div className="bg-black/40 backdrop-blur-sm rounded-lg px-4 py-3">
             <div className="flex items-center justify-between mb-1">
               <p className="text-white font-semibold text-sm">@{video.username}</p>
               <div className="flex items-center gap-1 text-white/80 text-xs">
