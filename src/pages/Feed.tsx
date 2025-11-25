@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp, Play, Pause, Volume2, VolumeX, Maximize, Minimize, Subtitles, Settings, X, PictureInPicture, ListVideo, Plus, Edit, Trash2, AlertCircle, Loader2, MoreHorizontal, Layers, LayoutPanelTop } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2, UserPlus, UserMinus, TrendingUp, Play, Pause, Volume2, VolumeX, Maximize, Minimize, Subtitles, Settings, X, PictureInPicture, ListVideo, Plus, Edit, Trash2, AlertCircle, Loader2, MoreHorizontal, Layers, LayoutPanelTop, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -1986,6 +1986,49 @@ export default function Feed() {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
+        </div>
+
+        {/* NAVIGATION ARROWS - To the right of action rail */}
+        <div className="hidden md:flex flex-col gap-2 absolute right-[-140px] top-1/2 -translate-y-1/2 z-20">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              const currentVideos = activeTab === "following" ? followingVideos : videos;
+              const currentIndex = currentVideos.findIndex(v => v.id === video.id);
+              if (currentIndex > 0) {
+                const prevVideo = currentVideos[currentIndex - 1];
+                const prevContainer = videoContainerRefs.current.get(prevVideo.id);
+                if (prevContainer) {
+                  prevContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  triggerHaptic('light', 'navigation');
+                }
+              }
+            }}
+            className="p-2 rounded-full bg-black/60 backdrop-blur-sm text-white hover:bg-black/80 hover:scale-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={videos.findIndex(v => v.id === video.id) === 0}
+          >
+            <ArrowUp className="h-6 w-6" />
+          </button>
+          
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              const currentVideos = activeTab === "following" ? followingVideos : videos;
+              const currentIndex = currentVideos.findIndex(v => v.id === video.id);
+              if (currentIndex < currentVideos.length - 1) {
+                const nextVideo = currentVideos[currentIndex + 1];
+                const nextContainer = videoContainerRefs.current.get(nextVideo.id);
+                if (nextContainer) {
+                  nextContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  triggerHaptic('light', 'navigation');
+                }
+              }
+            }}
+            className="p-2 rounded-full bg-black/60 backdrop-blur-sm text-white hover:bg-black/80 hover:scale-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={videos.findIndex(v => v.id === video.id) === videos.length - 1}
+          >
+            <ArrowDown className="h-6 w-6" />
+          </button>
         </div>
       </div>
 
