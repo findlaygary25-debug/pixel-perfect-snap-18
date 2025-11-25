@@ -49,6 +49,7 @@ import AdminRoles from "./pages/AdminRoles";
 import AdminBootstrap from "./pages/AdminBootstrap";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
+import AdminAuthLogs from "./pages/AdminAuthLogs";
 import AdminAffiliate from "./pages/AdminAffiliate";
 import AdminNotificationPreferences from "./pages/AdminNotificationPreferences";
 import NotificationDeliveryLogs from "./pages/NotificationDeliveryLogs";
@@ -121,7 +122,8 @@ const App = () => (
           <Route path="/challenge-history" element={<ChallengeHistory />} />
           <Route path="/rewards-store" element={<RewardsStore />} />
           <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/auth-logs" element={<AdminAuthLogs />} />
           <Route path="/admin/affiliate" element={<AdminAffiliate />} />
           <Route path="/admin/flash-sales" element={<AdminFlashSales />} />
           <Route path="/notification-preferences" element={<NotificationPreferences />} />
