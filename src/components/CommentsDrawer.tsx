@@ -12,7 +12,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, ThumbsDown, Heart } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Send, ThumbsDown, Heart, MoreHorizontal } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
 const commentSchema = z.object({
   comment_text: z
@@ -26,12 +29,14 @@ const commentSchema = z.object({
 type Comment = {
   id: string;
   username: string;
+  user_id: string;
   comment_text: string;
   created_at: string;
 };
 
 type CommentsDrawerProps = {
   videoId: string;
+  videoCreatorId?: string;
   isOpen: boolean;
   onClose: () => void;
   commentCount: number;
@@ -40,6 +45,7 @@ type CommentsDrawerProps = {
 
 export default function CommentsDrawer({
   videoId,
+  videoCreatorId,
   isOpen,
   onClose,
   commentCount,
@@ -78,7 +84,7 @@ export default function CommentsDrawer({
     try {
       const { data, error } = await supabase
         .from("comments")
-        .select("*")
+        .select("id, username, user_id, comment_text, created_at")
         .eq("video_id", videoId)
         .order("created_at", { ascending: false });
 
@@ -176,52 +182,91 @@ export default function CommentsDrawer({
                 No comments yet. Be the first to comment!
               </div>
             ) : (
-              <div className="space-y-4">
-                {comments.map((comment) => (
-                  <div key={comment.id} className="space-y-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm">
-                          @{comment.username}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(comment.created_at).toLocaleDateString()}
-                        </span>
+              <div className="space-y-6">
+                {comments.map((comment) => {
+                  const isCreator = videoCreatorId && comment.user_id === videoCreatorId;
+                  const likeCount = likedComments.has(comment.id) ? 1 : 0;
+                  
+                  return (
+                    <div key={comment.id} className="flex gap-3">
+                      {/* Avatar - 40px */}
+                      <div className="relative shrink-0">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.username}`} />
+                          <AvatarFallback className="text-xs">
+                            {comment.username.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        {isCreator && (
+                          <div className="absolute -bottom-0.5 -right-0.5 h-[10px] w-[10px] rounded-full border border-background bg-background flex items-center justify-center">
+                            <Heart className="h-2 w-2 fill-red-500 text-red-500" />
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleLike(comment.id)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Heart 
-                            className={`h-4 w-4 ${
-                              likedComments.has(comment.id) 
-                                ? "fill-red-500 text-red-500" 
-                                : "text-muted-foreground"
-                            }`} 
-                          />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDislike(comment.id)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <ThumbsDown 
-                            className={`h-4 w-4 ${
-                              dislikedComments.has(comment.id) 
-                                ? "fill-destructive text-destructive" 
-                                : "text-muted-foreground"
-                            }`} 
-                          />
-                        </Button>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        {/* Header */}
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="font-medium text-sm truncate">
+                              {comment.username}
+                            </span>
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 shrink-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem>Report</DropdownMenuItem>
+                              {currentUser?.id === comment.user_id && (
+                                <DropdownMenuItem className="text-destructive">
+                                  Delete
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+
+                        {/* Comment Text */}
+                        <p className="text-sm mb-2 break-words">{comment.comment_text}</p>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span className="text-xs">
+                            {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true }).replace('about ', '')}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-auto p-0 text-xs font-medium hover:bg-transparent"
+                          >
+                            Reply
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleLike(comment.id)}
+                            className="h-auto p-0 flex items-center gap-1 hover:bg-transparent"
+                          >
+                            <Heart 
+                              className={`h-4 w-4 ${
+                                likedComments.has(comment.id) 
+                                  ? "fill-red-500 text-red-500" 
+                                  : ""
+                              }`} 
+                            />
+                            {likeCount > 0 && (
+                              <span className="text-xs">{likeCount}</span>
+                            )}
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                    <p className="text-sm">{comment.comment_text}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </ScrollArea>
