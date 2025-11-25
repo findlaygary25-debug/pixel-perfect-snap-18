@@ -1886,9 +1886,9 @@ export default function Feed() {
                     e.stopPropagation();
                     toast.info('Edit functionality coming soon');
                   }}
-                  className="h-8 px-2.5 bg-white/20 hover:bg-white/30 text-white border-white/30 text-xs"
+                  className="h-7 px-2 bg-white/20 hover:bg-white/30 text-white border-white/30 text-xs"
                 >
-                  <Edit className="h-3.5 w-3.5 mr-1" />
+                  <Edit className="h-3 w-3 mr-0.5" />
                   Edit
                 </Button>
                 <Button
@@ -1898,9 +1898,9 @@ export default function Feed() {
                     e.stopPropagation();
                     handleShare(video.id);
                   }}
-                  className="h-8 px-2.5 bg-white/20 hover:bg-white/30 text-white border-white/30 text-xs"
+                  className="h-7 px-2 bg-white/20 hover:bg-white/30 text-white border-white/30 text-xs"
                 >
-                  <Share2 className="h-3.5 w-3.5 mr-1" />
+                  <Share2 className="h-3 w-3 mr-0.5" />
                   Share
                 </Button>
                 <Button
@@ -1911,9 +1911,9 @@ export default function Feed() {
                     setSelectedPromoteVideo(video);
                     setPromoteDialogOpen(true);
                   }}
-                  className="h-8 px-2.5 bg-white/20 hover:bg-white/30 text-white border-white/30 text-xs"
+                  className="h-7 px-2 bg-white/20 hover:bg-white/30 text-white border-white/30 text-xs"
                 >
-                  <TrendingUp className="h-3.5 w-3.5 mr-1" />
+                  <TrendingUp className="h-3 w-3 mr-0.5" />
                   Promote
                 </Button>
                 <Button
@@ -1924,9 +1924,9 @@ export default function Feed() {
                     setSelectedGiftVideo(video);
                     setGiftDialogOpen(true);
                   }}
-                  className="h-8 px-2.5 bg-white/20 hover:bg-white/30 text-white border-white/30 text-xs"
+                  className="h-7 px-2 bg-white/20 hover:bg-white/30 text-white border-white/30 text-xs"
                 >
-                  <Gift className="h-3.5 w-3.5 mr-1" />
+                  <Gift className="h-3 w-3 mr-0.5" />
                   Gift
                 </Button>
                 <Button
@@ -1936,9 +1936,9 @@ export default function Feed() {
                     e.stopPropagation();
                     handleDeleteVideo(video.id);
                   }}
-                  className="h-8 px-2.5 bg-red-500/80 hover:bg-red-600/80 text-white border-red-400/30 text-xs"
+                  className="h-7 px-2 bg-red-500/80 hover:bg-red-600/80 text-white border-red-400/30 text-xs"
                 >
-                  <Trash2 className="h-3.5 w-3.5 mr-1" />
+                  <Trash2 className="h-3 w-3 mr-0.5" />
                   Delete
                 </Button>
               </div>
