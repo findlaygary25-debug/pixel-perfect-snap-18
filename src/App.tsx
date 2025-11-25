@@ -7,11 +7,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Menu } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { TopActionBar } from "@/components/TopActionBar";
 import { BottomNav } from "@/components/BottomNav";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { FlashSaleAlert } from "@/components/FlashSaleAlert";
+import React from "react";
 import Index from "./pages/Index";
 import Feed from "./pages/Feed";
 import Activity from "./pages/Activity";
@@ -67,7 +67,10 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+  const [, forceUpdate] = React.useState({});
+  
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <LoadingScreen />
@@ -81,7 +84,7 @@ const App = () => (
             <div className="flex-1 flex flex-col w-full">
               <header className="h-12 flex items-center justify-between border-b bg-background px-4">
                 <div className="flex items-center gap-3">
-                  <SidebarTrigger className="h-9 w-9">
+                  <SidebarTrigger className="h-9 w-9 flex items-center justify-center">
                     <Menu className="h-5 w-5" />
                   </SidebarTrigger>
                   <a href="/" className="flex items-center">
@@ -149,7 +152,7 @@ const App = () => (
                   <Route path="/recommendations" element={<Recommendations />} />
                   <Route path="/lovable-store" element={<LovableStore />} />
                   <Route path="*" element={<NotFound />} />
-        </Routes>
+                 </Routes>
               </main>
               <BottomNav />
             </div>
@@ -158,6 +161,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
