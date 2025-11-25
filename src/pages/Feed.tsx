@@ -1842,7 +1842,7 @@ export default function Feed() {
         )}
 
         {/* Caption overlay */}
-        <div className="absolute bottom-18 left-1/2 -translate-x-1/2 w-full max-w-[280px] px-4 pointer-events-none z-10">
+        <div className="absolute bottom-11 left-1/2 -translate-x-1/2 w-full max-w-[280px] px-4 pointer-events-none z-10">
           <div className="bg-black/40 backdrop-blur-sm rounded-lg px-4 py-3">
             <div className="flex items-center justify-between mb-1">
               <p className="text-white font-semibold text-sm">@{video.username}</p>
