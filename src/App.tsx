@@ -51,6 +51,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
 import AdminAuthLogs from "./pages/AdminAuthLogs";
 import AdminAffiliate from "./pages/AdminAffiliate";
+import AdminUploadSettings from "./pages/AdminUploadSettings";
 import Voice2FireLegal from "./components/Voice2FireLegal";
 import AdminNotificationPreferences from "./pages/AdminNotificationPreferences";
 import NotificationDeliveryLogs from "./pages/NotificationDeliveryLogs";
@@ -127,6 +128,7 @@ const App = () => (
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/auth-logs" element={<AdminAuthLogs />} />
           <Route path="/admin/affiliate" element={<AdminAffiliate />} />
+          <Route path="/admin/upload-settings" element={<AdminUploadSettings />} />
           <Route path="/admin/flash-sales" element={<AdminFlashSales />} />
           <Route path="/notification-preferences" element={<NotificationPreferences />} />
           <Route path="/notification-analytics" element={<NotificationAnalytics />} />

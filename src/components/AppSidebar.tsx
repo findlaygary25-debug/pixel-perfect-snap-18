@@ -64,6 +64,7 @@ const adminItems = [
   { title: "User Management", url: "/admin/users", icon: Users },
   { title: "Auth Logs", url: "/admin/auth-logs", icon: Shield },
   { title: "Affiliate Management", url: "/admin/affiliate", icon: UserCog },
+  { title: "Upload Settings", url: "/admin/upload-settings", icon: Settings },
   { title: "Flash Sales Admin", url: "/admin/flash-sales", icon: Shield },
   { title: "Role Management", url: "/admin/roles", icon: UserCog },
   { title: "Admin Bootstrap", url: "/admin/bootstrap", icon: KeyRound },
