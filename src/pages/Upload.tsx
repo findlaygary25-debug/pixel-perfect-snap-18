@@ -138,9 +138,12 @@ export default function Upload() {
                 disabled={uploading}
               />
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Maximum file size: 100MB
-            </p>
+            <div className="text-xs text-muted-foreground mt-2 space-y-1">
+              <p className="font-medium">Upload Guidelines:</p>
+              <p>• Maximum file size: 100MB</p>
+              <p>• Recommended: 1080x1920 (9:16 vertical)</p>
+              <p>• Supported formats: MP4, MOV, AVI, WebM</p>
+            </div>
           </div>
 
           {preview && (
