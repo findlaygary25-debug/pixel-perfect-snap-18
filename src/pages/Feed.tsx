@@ -2294,6 +2294,11 @@ export default function Feed() {
 
       <CommentsDrawer
         videoId={selectedVideoId || ""}
+        videoCreatorId={(() => {
+          if (!selectedVideoId) return undefined;
+          const video = [...videos, ...followingVideos].find(v => v.id === selectedVideoId);
+          return video?.user_id;
+        })()}
         isOpen={!!selectedVideoId}
         onClose={() => {
           triggerHaptic('light', 'navigation');
