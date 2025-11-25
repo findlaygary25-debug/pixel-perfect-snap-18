@@ -51,6 +51,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
 import AdminAuthLogs from "./pages/AdminAuthLogs";
 import AdminAffiliate from "./pages/AdminAffiliate";
+import Voice2FireLegal from "./components/Voice2FireLegal";
 import AdminNotificationPreferences from "./pages/AdminNotificationPreferences";
 import NotificationDeliveryLogs from "./pages/NotificationDeliveryLogs";
 import DeliveryAlerts from "./pages/DeliveryAlerts";
@@ -109,6 +110,7 @@ const App = () => (
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/faq" element={<FAQ />} />
+                  <Route path="/legal" element={<Voice2FireLegal />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/shares" element={<Shares />} />
