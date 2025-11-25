@@ -1766,15 +1766,25 @@ export default function Feed() {
               if (!vid) return;
 
               if (playingVideos.has(video.id)) {
+                // Pause and mute
                 vid.pause();
+                vid.muted = true;
                 setPlayingVideos((prev) => {
                   const next = new Set(prev);
                   next.delete(video.id);
                   return next;
                 });
+                setMutedVideos((prev) => new Set(prev).add(video.id));
               } else {
+                // Play and unmute
                 vid.play();
+                vid.muted = false;
                 setPlayingVideos((prev) => new Set(prev).add(video.id));
+                setMutedVideos((prev) => {
+                  const next = new Set(prev);
+                  next.delete(video.id);
+                  return next;
+                });
               }
             }}
             className="absolute inset-0 z-[5] cursor-pointer"
@@ -1788,37 +1798,6 @@ export default function Feed() {
               </div>
             )}
           </div>
-        )}
-
-        {/* MUTE BUTTON - Top Left - only for regular videos, not YouTube */}
-        {!(video.video_url.includes('youtube.com/embed') || video.video_url.includes('youtu.be')) && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              const videoElement = videoRefs.current.get(video.id);
-              if (!videoElement) return;
-
-              if (mutedVideos.has(video.id)) {
-                videoElement.muted = false;
-                setMutedVideos((prev) => {
-                  const next = new Set(prev);
-                  next.delete(video.id);
-                  return next;
-                });
-              } else {
-                videoElement.muted = true;
-                setMutedVideos((prev) => new Set(prev).add(video.id));
-              }
-            }}
-            className="absolute top-4 left-1/2 -translate-x-1/2 md:left-4 md:translate-x-0 bg-black/60 p-2 rounded-full backdrop-blur-sm hover:bg-black/80 transition-colors z-[50]"
-          >
-            {mutedVideos.has(video.id) ? (
-              <VolumeX className="h-5 w-5 text-white" />
-            ) : (
-              <Volume2 className="h-5 w-5 text-white" />
-            )}
-          </button>
         )}
 
         {/* Double-tap heart animation */}
