@@ -14,6 +14,7 @@ const Login = () => {
   const [searchParams] = useSearchParams();
   const [referrerId, setReferrerId] = useState<string | null>(null);
   const [referrerName, setReferrerName] = useState<string | null>(null);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -81,6 +82,31 @@ const Login = () => {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast({ title: "Error", description: "Please enter your email address", variant: "destructive" });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      
+      toast({ 
+        title: "✅ Password reset email sent!", 
+        description: "Check your inbox for the reset link"
+      });
+      setShowForgotPassword(false);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="w-full max-w-md p-8 space-y-6 bg-card rounded-lg shadow-lg">
@@ -99,28 +125,65 @@ const Login = () => {
         )}
         
         <div className="space-y-4">
-          <Input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={loading}
-          />
-          <Input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={loading}
-          />
-          <div className="flex gap-2">
-            <Button onClick={handleLogin} disabled={loading} className="flex-1">
-              Login
-            </Button>
-            <Button onClick={handleSignup} disabled={loading} variant="outline" className="flex-1">
-              Sign Up
-            </Button>
-          </div>
+          {showForgotPassword ? (
+            <>
+              <p className="text-sm text-muted-foreground">
+                Enter your email address and we'll send you a password reset link.
+              </p>
+              <Input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+              />
+              <div className="flex gap-2">
+                <Button onClick={handleForgotPassword} disabled={loading} className="flex-1">
+                  Send Reset Link
+                </Button>
+                <Button 
+                  onClick={() => setShowForgotPassword(false)} 
+                  disabled={loading} 
+                  variant="outline" 
+                  className="flex-1"
+                >
+                  Back to Login
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <Input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+              />
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+              />
+              <div className="flex gap-2">
+                <Button onClick={handleLogin} disabled={loading} className="flex-1">
+                  Login
+                </Button>
+                <Button onClick={handleSignup} disabled={loading} variant="outline" className="flex-1">
+                  Sign Up
+                </Button>
+              </div>
+              <Button 
+                onClick={() => setShowForgotPassword(true)} 
+                variant="link" 
+                className="w-full text-sm"
+              >
+                Forgot Password?
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>

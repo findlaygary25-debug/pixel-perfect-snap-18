@@ -6,8 +6,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Search, Edit, Key } from "lucide-react";
 import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 
 interface UserProfile {
   user_id: string;
@@ -24,6 +28,12 @@ export default function AdminUsers() {
   const [filteredUsers, setFilteredUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [resetingPassword, setResetingPassword] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!adminLoading && isAdmin) {
@@ -58,6 +68,73 @@ export default function AdminUsers() {
       console.error("Error loading users:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEditUser = (user: UserProfile) => {
+    setEditingUser(user);
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateUser = async () => {
+    if (!editingUser) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          username: editingUser.username,
+          account_region: editingUser.account_region,
+          is_private: editingUser.is_private,
+        })
+        .eq('user_id', editingUser.user_id);
+
+      if (error) throw error;
+
+      toast({ title: "✅ User updated successfully" });
+      setEditDialogOpen(false);
+      loadUsers();
+    } catch (error: any) {
+      toast({ title: "Error updating user", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!editingUser || !newPassword) {
+      toast({ title: "Error", description: "Please enter a new password", variant: "destructive" });
+      return;
+    }
+
+    setResetingPassword(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("No session");
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-reset-password`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: editingUser.user_id,
+          newPassword: newPassword,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to reset password');
+      }
+
+      toast({ title: "✅ Password reset successfully" });
+      setPasswordDialogOpen(false);
+      setNewPassword("");
+    } catch (error: any) {
+      toast({ title: "Error resetting password", description: error.message, variant: "destructive" });
+    } finally {
+      setResetingPassword(false);
     }
   };
 
@@ -100,12 +177,13 @@ export default function AdminUsers() {
                 <TableHead>Joined</TableHead>
                 <TableHead>Region</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredUsers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
                     {searchQuery ? "No users found matching your search" : "No users found"}
                   </TableCell>
                 </TableRow>
@@ -144,6 +222,27 @@ export default function AdminUsers() {
                         <Badge variant="default">Public</Badge>
                       )}
                     </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEditUser(user)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setEditingUser(user);
+                            setPasswordDialogOpen(true);
+                          }}
+                        >
+                          <Key className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -151,6 +250,83 @@ export default function AdminUsers() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Edit User Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>Update user profile information</DialogDescription>
+          </DialogHeader>
+          {editingUser && (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  value={editingUser.username}
+                  onChange={(e) => setEditingUser({ ...editingUser, username: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="region">Account Region</Label>
+                <Input
+                  id="region"
+                  value={editingUser.account_region || ""}
+                  onChange={(e) => setEditingUser({ ...editingUser, account_region: e.target.value })}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="private"
+                  checked={editingUser.is_private || false}
+                  onChange={(e) => setEditingUser({ ...editingUser, is_private: e.target.checked })}
+                />
+                <Label htmlFor="private">Private Account</Label>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateUser}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset User Password</DialogTitle>
+            <DialogDescription>
+              Set a new password for {editingUser?.username}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="newPassword">New Password</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPasswordDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleResetPassword} disabled={resetingPassword}>
+              {resetingPassword ? "Resetting..." : "Reset Password"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
