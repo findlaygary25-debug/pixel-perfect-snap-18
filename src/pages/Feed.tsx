@@ -26,6 +26,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { FeedSettingsDialog } from "@/components/FeedSettingsDialog";
 import { SendGiftDialog } from "@/components/SendGiftDialog";
 import { Gift } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type VideoPost = {
   id: string;
@@ -1875,76 +1876,93 @@ export default function Feed() {
             {video.caption && (
               <p className="text-white/90 text-sm line-clamp-2">{video.caption}</p>
             )}
-            
-            {/* Action buttons below caption - only for own videos */}
-            {currentUser && video.user_id === currentUser && (
-              <div className="flex flex-wrap gap-1.5 mt-3 pointer-events-auto max-w-full">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toast.info('Edit functionality coming soon');
-                  }}
-                  className="h-7 px-2 bg-white/20 hover:bg-white/30 text-white border-white/30 text-xs"
-                >
-                  <Edit className="h-3 w-3 mr-0.5" />
-                  Edit
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleShare(video.id);
-                  }}
-                  className="h-7 px-2 bg-white/20 hover:bg-white/30 text-white border-white/30 text-xs"
-                >
-                  <Share2 className="h-3 w-3 mr-0.5" />
-                  Share
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedPromoteVideo(video);
-                    setPromoteDialogOpen(true);
-                  }}
-                  className="h-7 px-2 bg-white/20 hover:bg-white/30 text-white border-white/30 text-xs"
-                >
-                  <TrendingUp className="h-3 w-3 mr-0.5" />
-                  Promote
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedGiftVideo(video);
-                    setGiftDialogOpen(true);
-                  }}
-                  className="h-7 px-2 bg-white/20 hover:bg-white/30 text-white border-white/30 text-xs"
-                >
-                  <Gift className="h-3 w-3 mr-0.5" />
-                  Gift
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteVideo(video.id);
-                  }}
-                  className="h-6 px-1.5 bg-red-500/80 hover:bg-red-600/80 text-white border-red-400/30 text-[10px]"
-                >
-                  <Trash2 className="h-2.5 w-2.5 mr-0.5" />
-                  Delete
-                </Button>
-              </div>
-            )}
           </div>
         </div>
+
+        {/* Action buttons overlaid on video - only for own videos */}
+        {currentUser && video.user_id === currentUser && (
+          <TooltipProvider>
+            <div className="absolute top-4 right-4 flex flex-col gap-2 z-[45] pointer-events-auto">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toast.info('Edit functionality coming soon');
+                    }}
+                    className="h-9 w-9 rounded-full bg-black/60 hover:bg-black/80 text-white border-white/30 backdrop-blur-sm"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  <p>Edit</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedPromoteVideo(video);
+                      setPromoteDialogOpen(true);
+                    }}
+                    className="h-9 w-9 rounded-full bg-black/60 hover:bg-black/80 text-white border-white/30 backdrop-blur-sm"
+                  >
+                    <TrendingUp className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  <p>Promote</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedGiftVideo(video);
+                      setGiftDialogOpen(true);
+                    }}
+                    className="h-9 w-9 rounded-full bg-black/60 hover:bg-black/80 text-white border-white/30 backdrop-blur-sm"
+                  >
+                    <Gift className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  <p>Gift</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteVideo(video.id);
+                    }}
+                    className="h-9 w-9 rounded-full bg-red-500/80 hover:bg-red-600/80 text-white border-red-400/30 backdrop-blur-sm"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  <p>Delete</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
+        )}
 
         {/* ========================== */}
         {/*     DESKTOP RIGHT RAIL      */}
