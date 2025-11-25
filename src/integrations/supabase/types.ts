@@ -850,11 +850,13 @@ export type Database = {
           ended_at: string | null
           id: string
           is_live: boolean | null
+          recording_duration: number | null
           started_at: string | null
           title: string
           updated_at: string | null
           user_id: string
           username: string
+          video_url: string | null
           viewer_count: number | null
         }
         Insert: {
@@ -863,11 +865,13 @@ export type Database = {
           ended_at?: string | null
           id?: string
           is_live?: boolean | null
+          recording_duration?: number | null
           started_at?: string | null
           title: string
           updated_at?: string | null
           user_id: string
           username: string
+          video_url?: string | null
           viewer_count?: number | null
         }
         Update: {
@@ -876,11 +880,13 @@ export type Database = {
           ended_at?: string | null
           id?: string
           is_live?: boolean | null
+          recording_duration?: number | null
           started_at?: string | null
           title?: string
           updated_at?: string | null
           user_id?: string
           username?: string
+          video_url?: string | null
           viewer_count?: number | null
         }
         Relationships: []
