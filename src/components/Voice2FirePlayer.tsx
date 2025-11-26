@@ -98,7 +98,7 @@ export default function Voice2FirePlayer() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-b from-black via-slate-900 to-black text-slate-50 flex items-center justify-center px-4">
+    <div className="min-h-screen w-full bg-gradient-to-b from-black via-slate-950 to-black text-slate-50 flex items-center justify-center px-4">
       <div className="w-full max-w-md space-y-6">
         {/* HEADER */}
         <div className="flex items-center justify-between">
@@ -123,7 +123,7 @@ export default function Voice2FirePlayer() {
         </div>
 
         {/* 9:16 VIDEO SCREEN */}
-        <div className="relative w-full mx-auto rounded-3xl overflow-hidden shadow-2xl bg-slate-900 aspect-[9/16] flex flex-col">
+        <div className="relative w-full mx-auto rounded-3xl overflow-hidden shadow-2xl bg-black aspect-[9/16] flex flex-col">
           {/* Top label */}
           <div className="flex items-center justify-between px-4 pt-3 pb-2 bg-gradient-to-b from-black/60 to-transparent">
             <span className="text-[10px] uppercase tracking-[0.2em] text-slate-400">
