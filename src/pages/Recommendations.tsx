@@ -2,8 +2,10 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, Heart, Sparkles, TrendingUp } from "lucide-react";
+import { ExternalLink, Heart, Sparkles, TrendingUp, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PromoteRecommendationDialog from "@/components/PromoteRecommendationDialog";
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
@@ -400,6 +402,8 @@ const toolsByLetter: Record<string, Tool[]> = {
 
 export default function Recommendations() {
   const [activeLetter, setActiveLetter] = useState("L");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [promoteDialog, setPromoteDialog] = useState<{ open: boolean; toolName: string; toolCategory: string }>({
     open: false,
     toolName: "",
@@ -408,6 +412,26 @@ export default function Recommendations() {
 
   const hasContent = (letter: string) => {
     return toolsByLetter[letter] && toolsByLetter[letter].length > 0;
+  };
+
+  // Get unique categories
+  const categories = Array.from(
+    new Set(Object.values(toolsByLetter).flat().map((tool) => tool.category))
+  ).sort();
+
+  // Filter tools based on search and category
+  const getFilteredTools = (letter: string) => {
+    const tools = toolsByLetter[letter] || [];
+    return tools.filter((tool) => {
+      const matchesSearch = searchQuery === "" || 
+        tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tool.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tool.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      const matchesCategory = categoryFilter === "all" || tool.category === categoryFilter;
+      
+      return matchesSearch && matchesCategory;
+    });
   };
 
   return (
@@ -433,11 +457,13 @@ export default function Recommendations() {
           ))}
         </TabsList>
 
-        {ALPHABET.map((letter) => (
+        {ALPHABET.map((letter) => {
+          const filteredTools = getFilteredTools(letter);
+          return (
           <TabsContent key={letter} value={letter} className="mt-6">
-            {hasContent(letter) ? (
+            {filteredTools.length > 0 ? (
               <div className="grid gap-6 md:grid-cols-2">
-                {toolsByLetter[letter].map((tool, index) => (
+                {filteredTools.map((tool, index) => (
                   <Card key={index} className={tool.recommended ? "border-primary shadow-lg" : ""}>
                     <CardHeader>
                       <div className="flex items-start justify-between gap-4">
@@ -516,12 +542,22 @@ export default function Recommendations() {
               </div>
             ) : (
               <div className="text-center py-12 text-muted-foreground">
-                <p>No recommendations available for letter "{letter}" yet.</p>
-                <p className="text-sm mt-2">Check back soon for more tools and resources!</p>
+                <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p className="font-medium">
+                  {searchQuery || categoryFilter !== "all" 
+                    ? "No tools match your search criteria" 
+                    : `No recommendations available for letter "${letter}" yet`}
+                </p>
+                <p className="text-sm mt-2">
+                  {searchQuery || categoryFilter !== "all"
+                    ? "Try adjusting your filters or search terms"
+                    : "Check back soon for more tools and resources!"}
+                </p>
               </div>
             )}
           </TabsContent>
-        ))}
+        );
+        })}
       </Tabs>
 
       <div className="mt-12 p-6 bg-muted rounded-lg">
