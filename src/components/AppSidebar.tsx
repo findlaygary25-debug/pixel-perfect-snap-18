@@ -1,9 +1,8 @@
-import { Home, Video, Upload as UploadIcon, Store, Wallet, Users, Mail, Info, Palette, LogIn, User, Activity, BarChart3, Megaphone, HelpCircle, Share2, Youtube, CalendarClock, Radio, X, Settings, FolderHeart, Trophy, Gift, Shield, Bell, TrendingUp, FlaskConical, FileText, UserCog, KeyRound, LayoutDashboard, BellRing, ScrollText, AlertTriangle, ArrowUp, Mail as MailIcon, History, Bot, Layers, BookOpen, Scale, Headphones } from "lucide-react";
+import { Home, Video, Upload as UploadIcon, Store, Wallet, Users, Mail, Info, Palette, LogIn, User, Activity, BarChart3, Megaphone, HelpCircle, Share2, Youtube, CalendarClock, Radio, X, Settings, FolderHeart, Trophy, Gift, Shield, Bell, TrendingUp, FlaskConical, FileText, UserCog, KeyRound, LayoutDashboard, BellRing, ScrollText, AlertTriangle, ArrowUp, Mail as MailIcon, Menu, History, Bot, Layers, BookOpen, Scale, Headphones } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/voice2fire-logo-new.png";
-import menuIcon from "@/assets/menu-icon.png";
 import { useState, useEffect } from "react";
 import { AdvertiseDialog } from "@/components/AdvertiseDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -255,11 +254,7 @@ export function AppSidebar() {
             className="p-1.5 rounded-md hover:bg-sidebar-accent transition-colors flex-shrink-0"
             aria-label="Toggle menu"
           >
-            <img 
-              src={menuIcon} 
-              alt="Menu"
-              className="h-5 w-5"
-            />
+            <Menu className="h-5 w-5" />
           </button>
           <img 
             src={logo} 
