@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 type EqBand = "low" | "mid" | "high";
 
 export default function Voice2FirePlayer() {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const filtersRef = useRef<{
     low: BiquadFilterNode;
@@ -17,24 +17,24 @@ export default function Voice2FirePlayer() {
     low: 0,
     mid: 0,
     high: 0,
-  }); // dB gain
-  const [isPro, setIsPro] = useState(true); // toggle Pro features
+  });
+  const [isPro, setIsPro] = useState(true);
 
-  // --- INIT WEB AUDIO + EQ ---
+  // --- INIT WEB AUDIO + EQ FOR VIDEO ---
   useEffect(() => {
-    if (!audioRef.current) return;
+    if (!videoRef.current) return;
 
-    const audio = audioRef.current;
-
+    const video = videoRef.current;
     const AudioCtx =
       (window as any).AudioContext || (window as any).webkitAudioContext;
+
     if (!AudioCtx) {
       console.warn("Web Audio API not supported in this browser.");
       return;
     }
 
     const ctx = new AudioCtx();
-    const source = ctx.createMediaElementSource(audio);
+    const source = ctx.createMediaElementSource(video);
 
     const low = ctx.createBiquadFilter();
     low.type = "lowshelf";
@@ -49,6 +49,7 @@ export default function Voice2FirePlayer() {
     high.type = "highshelf";
     high.frequency.value = 3200;
 
+    // Connect: video -> low -> mid -> high -> speakers
     source.connect(low);
     low.connect(mid);
     mid.connect(high);
@@ -62,20 +63,20 @@ export default function Voice2FirePlayer() {
     };
   }, []);
 
-  // --- SYNC VOLUME TO AUDIO ELEMENT ---
+  // --- SYNC VOLUME TO VIDEO ELEMENT ---
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume / 100;
+    if (videoRef.current) {
+      videoRef.current.volume = volume / 100;
     }
   }, [volume]);
 
   const togglePlay = async () => {
-    if (!audioRef.current) return;
-    const audio = audioRef.current;
+    if (!videoRef.current) return;
+    const video = videoRef.current;
 
-    if (audio.paused) {
+    if (video.paused) {
       try {
-        await audio.play();
+        await video.play();
         setIsPlaying(true);
         if (audioCtxRef.current?.state === "suspended") {
           await audioCtxRef.current.resume();
@@ -84,7 +85,7 @@ export default function Voice2FirePlayer() {
         console.error("Play error:", err);
       }
     } else {
-      audio.pause();
+      video.pause();
       setIsPlaying(false);
     }
   };
@@ -106,11 +107,9 @@ export default function Voice2FirePlayer() {
               Voice<span className="text-orange-500">2</span>Fire
             </h1>
             <p className="text-xs text-slate-400">
-              9:16 bold screen • smooth • pro sound
+              9:16 video • bold • pro sound
             </p>
           </div>
-
-          {/* Pro badge / toggle */}
           <button
             onClick={() => setIsPro((p) => !p)}
             className={`text-xs font-semibold px-3 py-1 rounded-full border ${
@@ -123,38 +122,46 @@ export default function Voice2FirePlayer() {
           </button>
         </div>
 
-        {/* 9:16 SCREEN */}
+        {/* 9:16 VIDEO SCREEN */}
         <div className="relative w-full mx-auto rounded-3xl overflow-hidden shadow-2xl bg-slate-900 aspect-[9/16] flex flex-col">
           {/* Top label */}
-          <div className="flex items-center justify-between px-4 pt-3 pb-2">
+          <div className="flex items-center justify-between px-4 pt-3 pb-2 bg-gradient-to-b from-black/60 to-transparent">
             <span className="text-[10px] uppercase tracking-[0.2em] text-slate-400">
               NOW PLAYING
             </span>
-            <span className="text-[10px] text-slate-500">HTML5 • React</span>
+            <span className="text-[10px] text-slate-500">HTML5 • Video</span>
           </div>
 
-          {/* Artwork / center content */}
-          <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-            <div className="w-40 h-40 rounded-3xl bg-gradient-to-br from-orange-500 via-red-600 to-amber-400 flex items-center justify-center shadow-lg mb-4">
-              <span className="text-3xl font-extrabold drop-shadow">
-                🔥
-              </span>
-            </div>
-            <h2 className="text-lg font-bold tracking-wide mb-1">
-              Bold Voice • Pure Fire
-            </h2>
-            <p className="text-xs text-slate-400">
-              Speak once. Let the flame carry your sound across the nations.
-            </p>
+          {/* Video area */}
+          <div className="flex-1 relative">
+            <video
+              ref={videoRef}
+              src="/test-video-9-16.mp4"
+              className="w-full h-full object-cover"
+              playsInline
+              onEnded={() => setIsPlaying(false)}
+              controls={false}
+            />
+            {/* Play overlay when paused */}
+            {!isPlaying && (
+              <button
+                onClick={togglePlay}
+                className="absolute inset-0 flex items-center justify-center bg-black/30"
+              >
+                <span className="w-16 h-16 rounded-full bg-orange-500 flex items-center justify-center text-black text-2xl font-bold shadow-xl active:scale-95 transition">
+                  ▶
+                </span>
+              </button>
+            )}
           </div>
 
-          {/* PLAYER CONTROLS */}
-          <div className="border-t border-slate-800/80 bg-black/50 backdrop-blur-md px-4 py-3 space-y-3">
+          {/* CONTROLS */}
+          <div className="border-t border-slate-800/80 bg-black/60 backdrop-blur-md px-4 py-3 space-y-3">
             {/* Play / pause & volume */}
             <div className="flex items-center justify-between gap-3">
               <button
                 onClick={togglePlay}
-                className="w-12 h-12 rounded-full bg-orange-500 flex items-center justify-center text-black font-bold shadow-lg active:scale-95 transition-transform"
+                className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-black font-bold shadow-lg active:scale-95 transition"
               >
                 {isPlaying ? "⏸" : "▶"}
               </button>
@@ -211,22 +218,13 @@ export default function Voice2FirePlayer() {
               </div>
             )}
 
-            {/* Footer info */}
             <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1">
-              <span>HTML5 • MP3 / MP4 • Smooth</span>
+              <span>9:16 • MP4 • Smooth</span>
               <span className="font-semibold text-orange-400">
                 Voice2Fire Pro
               </span>
             </div>
           </div>
-
-          {/* Hidden but functional audio element */}
-          <audio
-            ref={audioRef}
-            src="/audio/voice2fire-sample.mp3"
-            preload="auto"
-            onEnded={() => setIsPlaying(false)}
-          />
         </div>
       </div>
     </div>
