@@ -6,12 +6,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { Menu } from "lucide-react";
 import { TopActionBar } from "@/components/TopActionBar";
 import { BottomNav } from "@/components/BottomNav";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { FlashSaleAlert } from "@/components/FlashSaleAlert";
 import React from "react";
+import menuIcon from "@/assets/menu-icon.png";
 import Index from "./pages/Index";
 import Feed from "./pages/Feed";
 import Activity from "./pages/Activity";
@@ -86,7 +86,11 @@ const App = () => {
               <header className="h-12 flex items-center justify-between border-b bg-background px-4">
                 <div className="flex items-center gap-3">
                   <SidebarTrigger className="h-9 w-9 flex items-center justify-center">
-                    <Menu className="h-5 w-5" />
+                    <img 
+                      src={menuIcon} 
+                      alt="Menu"
+                      className="h-5 w-5"
+                    />
                   </SidebarTrigger>
                   <a href="/" className="flex items-center">
                     <img 
