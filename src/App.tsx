@@ -84,18 +84,13 @@ const App = () => {
             <AppSidebar />
             <div className="flex-1 flex flex-col w-full">
               <header className="h-12 flex items-center justify-between border-b bg-background px-4">
-                <div className="flex items-center gap-3">
-                  <SidebarTrigger className="h-9 w-9 flex items-center justify-center">
-                    <Menu className="h-5 w-5" />
-                  </SidebarTrigger>
-                  <a href="/" className="flex items-center">
-                    <img 
-                      src="/favicon.png" 
-                      alt="Voice2Fire"
-                      className="h-10 w-auto object-contain hover-scale cursor-pointer"
-                    />
-                  </a>
-                </div>
+                <a href="/" className="flex items-center">
+                  <img 
+                    src="/favicon.png" 
+                    alt="Voice2Fire"
+                    className="h-10 w-auto object-contain hover-scale cursor-pointer"
+                  />
+                </a>
                 <TopActionBar />
               </header>
               <main className="flex-1 pb-16 md:pb-0">
