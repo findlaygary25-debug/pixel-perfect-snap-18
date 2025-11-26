@@ -981,102 +981,163 @@ export default function StorePage() {
                       Add Product
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>
-                        {editingProduct ? "Edit Product" : "Add New Product"}
-                      </DialogTitle>
+                  <DialogContent className="max-w-lg bg-gradient-to-b from-slate-950 to-black border-slate-800">
+                    <DialogHeader className="border-b border-slate-800 pb-3 bg-gradient-to-r from-orange-500/10 via-transparent to-orange-500/10">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <DialogTitle className="text-base font-bold text-slate-50 uppercase tracking-[0.2em]">
+                            {editingProduct ? "Edit Product" : "Product Input"}
+                          </DialogTitle>
+                          <p className="text-[11px] text-slate-400 mt-1">
+                            Compact, bold, and ready to sell.
+                          </p>
+                        </div>
+                        <span className="text-lg" style={{ filter: "drop-shadow(0 0 8px orange)" }}>
+                          🔥
+                        </span>
+                      </div>
                     </DialogHeader>
-                    <form onSubmit={handleProductSubmit} className="space-y-4">
-                      <div>
-                        <label className="text-sm font-medium">Title</label>
+                    <form onSubmit={handleProductSubmit} className="space-y-3 py-2">
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-slate-200 uppercase tracking-[0.18em]">
+                          Product name
+                        </label>
                         <Input
                           value={productForm.title}
                           onChange={(e) =>
                             setProductForm({ ...productForm, title: e.target.value })
                           }
                           required
+                          placeholder="e.g. Prophetic Voice Session"
+                          className="rounded-xl bg-black/60 border-slate-700 text-slate-50 placeholder:text-slate-500 focus:border-orange-400 focus:ring-1 focus:ring-orange-500"
                         />
                       </div>
-                      <div>
-                        <label className="text-sm font-medium">Description</label>
+
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-slate-200 uppercase tracking-[0.18em]">
+                          Description
+                        </label>
                         <Textarea
                           value={productForm.description}
                           onChange={(e) =>
                             setProductForm({ ...productForm, description: e.target.value })
                           }
-                          rows={3}
+                          rows={2}
+                          placeholder="Brief product description"
+                          className="rounded-xl bg-black/60 border-slate-700 text-slate-50 placeholder:text-slate-500 focus:border-orange-400 focus:ring-1 focus:ring-orange-500"
                         />
                       </div>
-                      <div>
-                        <label className="text-sm font-medium">Price</label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={productForm.price}
-                          onChange={(e) =>
-                            setProductForm({ ...productForm, price: e.target.value })
-                          }
-                          required
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="text-sm font-medium">Payment Method</label>
+
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-slate-200 uppercase tracking-[0.18em]">
+                          Payment Method
+                        </label>
                         <Select
                           value={productForm.payment_method}
                           onValueChange={(value: 'coins' | 'external_link') =>
                             setProductForm({ ...productForm, payment_method: value })
                           }
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="rounded-xl bg-black/60 border-slate-700 text-slate-50 focus:border-orange-400 focus:ring-1 focus:ring-orange-500">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-slate-950 border-slate-800">
                             <SelectItem value="coins">Voice2Fire Coins (In-House)</SelectItem>
                             <SelectItem value="external_link">External Link</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
 
-                      {productForm.payment_method === 'coins' && (
-                        <div>
-                          <label className="text-sm font-medium">Price in Coins</label>
-                          <Input
-                            type="number"
-                            step="1"
-                            min="0"
-                            value={productForm.price_in_coins}
-                            onChange={(e) =>
-                              setProductForm({ ...productForm, price_in_coins: e.target.value })
-                            }
-                            required
-                            placeholder="Enter coin price"
-                          />
+                      {productForm.payment_method === 'coins' ? (
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-xs font-semibold text-slate-200 uppercase tracking-[0.18em]">
+                              Retail price ($)
+                            </label>
+                            <div className="flex items-center rounded-xl bg-black/60 border border-slate-700 px-2">
+                              <span className="text-sm text-slate-400 mr-1">$</span>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={productForm.price}
+                                onChange={(e) => {
+                                  const price = e.target.value;
+                                  const coins = price ? Math.round(parseFloat(price) / COIN_RATE) : 0;
+                                  setProductForm({ 
+                                    ...productForm, 
+                                    price,
+                                    price_in_coins: coins.toString()
+                                  });
+                                }}
+                                required
+                                placeholder="0.00"
+                                className="border-0 bg-transparent py-2 text-sm text-slate-50 placeholder:text-slate-500 focus:outline-none focus:ring-0"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-xs font-semibold text-slate-200 uppercase tracking-[0.18em]">
+                              Voice2Fire Coins
+                            </label>
+                            <div className="flex items-center rounded-xl bg-gradient-to-br from-orange-500/15 via-black to-amber-500/10 border border-orange-500/40 px-3 py-2">
+                              <span className="font-extrabold text-amber-300 text-sm">
+                                {productForm.price_in_coins || "0"}
+                              </span>
+                              <span className="text-[10px] font-semibold tracking-[0.22em] uppercase ml-2 text-slate-400">
+                                V2F
+                              </span>
+                            </div>
+                          </div>
                         </div>
+                      ) : (
+                        <>
+                          <div className="space-y-1">
+                            <label className="text-xs font-semibold text-slate-200 uppercase tracking-[0.18em]">
+                              Retail price ($)
+                            </label>
+                            <div className="flex items-center rounded-xl bg-black/60 border border-slate-700 px-2">
+                              <span className="text-sm text-slate-400 mr-1">$</span>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={productForm.price}
+                                onChange={(e) =>
+                                  setProductForm({ ...productForm, price: e.target.value })
+                                }
+                                required
+                                placeholder="0.00"
+                                className="border-0 bg-transparent py-2 text-sm text-slate-50 placeholder:text-slate-500 focus:outline-none focus:ring-0"
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-xs font-semibold text-slate-200 uppercase tracking-[0.18em]">
+                              External Link
+                            </label>
+                            <Input
+                              type="url"
+                              value={productForm.external_link}
+                              onChange={(e) =>
+                                setProductForm({ ...productForm, external_link: e.target.value })
+                              }
+                              required
+                              placeholder="https://yourstore.com/product"
+                              className="rounded-xl bg-black/60 border-slate-700 text-slate-50 placeholder:text-slate-500 focus:border-orange-400 focus:ring-1 focus:ring-orange-500"
+                            />
+                            <p className="text-[10px] text-slate-400">
+                              Customers will be redirected to this link
+                            </p>
+                          </div>
+                        </>
                       )}
 
-                      {productForm.payment_method === 'external_link' && (
-                        <div>
-                          <label className="text-sm font-medium">External Link</label>
-                          <Input
-                            type="url"
-                            value={productForm.external_link}
-                            onChange={(e) =>
-                              setProductForm({ ...productForm, external_link: e.target.value })
-                            }
-                            required
-                            placeholder="https://yourstore.com/product"
-                          />
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Customers will be redirected to this link to complete the purchase
-                          </p>
-                        </div>
-                      )}
-
-                      <div>
-                        <label className="text-sm font-medium">Product Image</label>
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-slate-200 uppercase tracking-[0.18em]">
+                          Product Images (Max 6)
+                        </label>
                         <Input
                           type="file"
                           accept="image/*"
@@ -1100,19 +1161,24 @@ export default function StorePage() {
                               images: files.slice(0, 6),
                             });
                           }}
+                          className="rounded-xl bg-black/60 border-slate-700 text-slate-50 file:bg-orange-500/20 file:text-orange-300 file:border-0 file:rounded-lg file:mr-2 focus:border-orange-400 focus:ring-1 focus:ring-orange-500"
                         />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {productForm.images.length} / 6 images selected
-                          {editingProduct?.images?.length ? ` (${editingProduct.images.length} existing)` : ""}
-                        </p>
+                        {editingProduct && editingProduct.images.length > 0 && (
+                          <p className="text-[10px] text-slate-400">
+                            Current: {editingProduct.images.length}/6 images
+                          </p>
+                        )}
                       </div>
-                      <Button type="submit" className="w-full" disabled={uploading}>
-                        {uploading
-                          ? "Saving..."
-                          : editingProduct
-                          ? "Update Product"
-                          : "Add Product"}
-                      </Button>
+
+                      <div className="pt-2 border-t border-slate-800 flex justify-end">
+                        <Button
+                          type="submit"
+                          disabled={uploading}
+                          className="rounded-full bg-gradient-to-r from-orange-400 to-red-500 text-black text-sm font-bold shadow-[0_0_14px_rgba(255,140,0,0.8)] hover:shadow-[0_0_22px_rgba(255,160,0,1)] active:scale-95 transition"
+                        >
+                          {uploading ? "Saving..." : editingProduct ? "Update Product 🔥" : "Save Product 🔥"}
+                        </Button>
+                      </div>
                     </form>
                   </DialogContent>
                 </Dialog>
