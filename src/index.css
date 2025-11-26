@@ -6,6 +6,18 @@
 All colors MUST be HSL.
 */
 
+/* 🔥 Voice2Fire Flame Animations */
+@keyframes fireline {
+  0% { transform: translateX(-20%); }
+  100% { transform: translateX(120%); }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  60% { opacity: 0.75; transform: scale(1.04); }
+  80% { opacity: 1; }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
