@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Coins, Smartphone, User, Plus } from "lucide-react";
+import { Coins, Smartphone, User, Plus, FileText, Shield, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -91,7 +91,7 @@ export function TopActionBar() {
             )}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuItem onClick={() => navigate("/upload")}>
             <Plus className="mr-2 h-4 w-4" />
             Upload Video
@@ -99,6 +99,18 @@ export function TopActionBar() {
           <DropdownMenuItem onClick={() => navigate("/profile")}>
             <User className="mr-2 h-4 w-4" />
             View Profile
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => window.open("/voice2fire-legal-booklet.pdf", "_blank")}>
+            <Download className="mr-2 h-4 w-4" />
+            Download Legal PDF
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate("/legal")}>
+            <FileText className="mr-2 h-4 w-4" />
+            Terms & Conditions
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate("/legal")}>
+            <Shield className="mr-2 h-4 w-4" />
+            Privacy Policy
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
