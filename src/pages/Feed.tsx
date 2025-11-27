@@ -70,6 +70,9 @@ export default function Feed() {
   const [selectedShareVideo, setSelectedShareVideo] = useState<VideoPost | null>(null);
   const [giftDialogOpen, setGiftDialogOpen] = useState(false);
   const [selectedGiftVideo, setSelectedGiftVideo] = useState<VideoPost | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedEditVideo, setSelectedEditVideo] = useState<VideoPost | null>(null);
+  const [editCaption, setEditCaption] = useState("");
   const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
   const [doubleTapHearts, setDoubleTapHearts] = useState<Set<string>>(new Set());
   const lastTapRef = useRef<{ videoId: string; time: number } | null>(null);
@@ -1288,7 +1291,40 @@ export default function Feed() {
       toast.success("Chapter updated!");
     } catch (error) {
       console.error("Error updating chapter:", error);
-      toast.error("Failed to update chapter");
+    }
+  };
+
+  const handleEditVideo = async () => {
+    if (!selectedEditVideo || !currentUser) return;
+
+    try {
+      const { error } = await supabase
+        .from("videos")
+        .update({ caption: editCaption.trim() })
+        .eq("id", selectedEditVideo.id)
+        .eq("user_id", currentUser);
+
+      if (error) throw error;
+
+      // Update local state
+      setVideos(prev => prev.map(v => 
+        v.id === selectedEditVideo.id 
+          ? { ...v, caption: editCaption.trim() }
+          : v
+      ));
+      setFollowingVideos(prev => prev.map(v => 
+        v.id === selectedEditVideo.id 
+          ? { ...v, caption: editCaption.trim() }
+          : v
+      ));
+
+      toast.success("Video updated successfully!");
+      setEditDialogOpen(false);
+      setSelectedEditVideo(null);
+      setEditCaption("");
+    } catch (error) {
+      console.error("Error updating video:", error);
+      toast.error("Failed to update video");
     }
   };
 
@@ -1884,7 +1920,7 @@ export default function Feed() {
                 align="end"
                 className="w-48 bg-background/95 backdrop-blur-sm border-border z-[60]"
               >
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast.info('Edit functionality coming soon'); }}>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setSelectedEditVideo(video); setEditCaption(video.caption); setEditDialogOpen(true); }}>
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
                 </DropdownMenuItem>
@@ -2027,7 +2063,9 @@ export default function Feed() {
                 <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation();
-                    toast.info('Edit functionality coming soon');
+                    setSelectedEditVideo(video);
+                    setEditCaption(video.caption);
+                    setEditDialogOpen(true);
                   }}
                   className="cursor-pointer"
                 >
@@ -2201,7 +2239,9 @@ export default function Feed() {
                 <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation();
-                    toast.info('Edit functionality coming soon');
+                    setSelectedEditVideo(video);
+                    setEditCaption(video.caption);
+                    setEditDialogOpen(true);
                   }}
                   className="cursor-pointer"
                 >
@@ -2438,6 +2478,45 @@ export default function Feed() {
         videoId={selectedCollectionVideo || ""}
         currentUser={currentUser}
       />
+
+      {/* Edit Video Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Video</DialogTitle>
+            <DialogDescription>
+              Update your video caption
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="caption">Caption</Label>
+              <Input
+                id="caption"
+                value={editCaption}
+                onChange={(e) => setEditCaption(e.target.value)}
+                placeholder="Enter video caption..."
+                className="mt-2"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditDialogOpen(false);
+                setSelectedEditVideo(null);
+                setEditCaption("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleEditVideo}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       {/* Chapters Management Dialog */}
       <Dialog open={chaptersDialogOpen} onOpenChange={setChaptersDialogOpen}>
