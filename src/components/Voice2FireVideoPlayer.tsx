@@ -147,8 +147,8 @@ export default function Voice2FireVideoPlayer() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-b from-black via-slate-900 to-black text-slate-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-lg space-y-6">
+    <div className="min-h-screen w-full bg-gradient-to-b from-black via-slate-900 to-black text-slate-50 px-4 py-8">
+      <div className="w-full max-w-lg mx-auto space-y-6">
         {/* HEADER */}
         <div className="flex items-center justify-between">
           <div>
