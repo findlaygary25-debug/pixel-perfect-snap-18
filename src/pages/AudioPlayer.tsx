@@ -1,9 +1,5 @@
-import Voice2FirePlayer from "@/components/Voice2FirePlayer";
+import Voice2FireVideoPlayer from "@/components/Voice2FireVideoPlayer";
 
 export default function AudioPlayer() {
-  return (
-    <div className="min-h-screen bg-black">
-      <Voice2FirePlayer />
-    </div>
-  );
+  return <Voice2FireVideoPlayer />;
 }
