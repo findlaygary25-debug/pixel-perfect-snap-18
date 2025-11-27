@@ -10,11 +10,11 @@ const Index = () => {
       {/* 🔶 MENU TOP LEFT */}
       <button
         onClick={() => setOpen(!open)}
-        className="absolute top-3 left-3 p-2 space-y-1 hover:bg-gray-200 rounded-md transition flex flex-col items-center justify-center"
+        className="absolute top-4 left-4 flex flex-col gap-1.5 cursor-pointer z-50"
       >
-        <div className="w-7 h-[3px] bg-black"></div>
-        <div className="w-7 h-[3px] bg-black"></div>
-        <div className="w-7 h-[3px] bg-black"></div>
+        <div className="w-7 h-0.5 bg-black"></div>
+        <div className="w-7 h-0.5 bg-black"></div>
+        <div className="w-7 h-0.5 bg-black"></div>
       </button>
 
       {/* 🔶 CENTER CONTENT */}
