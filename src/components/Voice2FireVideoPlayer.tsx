@@ -186,7 +186,7 @@ export default function Voice2FireVideoPlayer() {
             <div className="w-full h-full rounded-2xl overflow-hidden bg-black/60 flex items-center justify-center">
               <video
                 ref={videoRef}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
                 src="/test-video-9-16.mp4"
                 playsInline
                 onEnded={() => setIsPlaying(false)}
