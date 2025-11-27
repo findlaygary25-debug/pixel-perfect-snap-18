@@ -75,25 +75,23 @@ const AppContent = () => {
   return (
     <SidebarProvider defaultOpen={false}>
       <div className="flex min-h-screen w-full">
-        {!isHomePage && <AppSidebar />}
+        <AppSidebar />
         <div className="flex-1 flex flex-col w-full">
-          {!isHomePage && (
-            <header className="h-12 flex items-center justify-between border-b bg-background px-4">
-              <div className="flex items-center gap-3">
-                <SidebarTrigger className="h-9 w-9 flex items-center justify-center">
-                  <Menu className="h-5 w-5" />
-                </SidebarTrigger>
-                <a href="/" className="flex items-center">
-                  <img 
-                    src="/favicon.png" 
-                    alt="Voice2Fire"
-                    className="h-10 w-auto object-contain hover-scale cursor-pointer"
-                  />
-                </a>
-              </div>
-              <TopActionBar />
-            </header>
-          )}
+          <header className="h-12 flex items-center justify-between border-b bg-background px-4">
+            <div className="flex items-center gap-3">
+              <SidebarTrigger className="h-9 w-9 flex items-center justify-center">
+                <Menu className="h-5 w-5" />
+              </SidebarTrigger>
+              <a href="/" className="flex items-center">
+                <img 
+                  src="/favicon.png" 
+                  alt="Voice2Fire"
+                  className="h-10 w-auto object-contain hover-scale cursor-pointer"
+                />
+              </a>
+            </div>
+            <TopActionBar />
+          </header>
           <main className="flex-1 pb-16 md:pb-0">
             <Routes>
               <Route path="/" element={<Index />} />
@@ -152,7 +150,7 @@ const AppContent = () => {
                   <Route path="*" element={<NotFound />} />
                  </Routes>
               </main>
-              {!isHomePage && <BottomNav />}
+              <BottomNav />
             </div>
           </div>
         </SidebarProvider>
