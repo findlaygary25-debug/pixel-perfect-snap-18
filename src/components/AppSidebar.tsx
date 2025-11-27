@@ -37,7 +37,6 @@ interface MenuItem {
 const contentItems: MenuItem[] = [
   { title: "Home", url: "/", icon: Home },
   { title: "Feed", url: "/feed", icon: Video },
-  { title: "Audio Player", url: "/audio-player", icon: Headphones },
   { title: "Watch History", url: "/watch-history", icon: History },
   { title: "Collections", url: "/collections", icon: FolderHeart },
 ];
