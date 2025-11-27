@@ -64,7 +64,6 @@ import GiftLeaderboard from "./pages/GiftLeaderboard";
 import WatchHistory from "./pages/WatchHistory";
 import Advertise from "./pages/Advertise";
 import NotFound from "./pages/NotFound";
-import AudioPlayer from "./pages/AudioPlayer";
 
 const queryClient = new QueryClient();
 
@@ -146,7 +145,6 @@ const AppContent = () => {
                   <Route path="/advertise" element={<Advertise />} />
                   <Route path="/recommendations" element={<Recommendations />} />
                   <Route path="/lovable-store" element={<LovableStore />} />
-                  <Route path="/audio-player" element={<AudioPlayer />} />
                   <Route path="*" element={<NotFound />} />
                  </Routes>
               </main>
