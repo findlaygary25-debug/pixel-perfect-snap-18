@@ -2,59 +2,54 @@ import { useState } from "react";
 import logo from "@/assets/voice2fire-logo-new.png";
 
 const Index = () => {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [open, setOpen] = useState(false);
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-gradient-to-b from-black via-slate-950 to-black text-white">
+    <div className="min-h-screen bg-white text-gray-900 relative">
 
-      {/* 🔥 TOP RIGHT MENU BUTTON */}
+      {/* 🔶 MENU TOP LEFT */}
       <button
-        onClick={() => setMenuOpen(!menuOpen)}
-        className="absolute top-5 right-5 space-y-1.5 p-3 rounded-lg border border-orange-500/60 bg-black/80 shadow-[0_0_12px_rgba(255,120,0,0.8)] hover:shadow-[0_0_22px_rgba(255,160,0,1)] active:scale-95 transition"
+        onClick={() => setOpen(!open)}
+        className="absolute top-5 left-5 p-3 space-y-1.5 hover:bg-gray-200 rounded-md transition"
       >
-        {/* 3 line selector */}
-        <div className="w-6 h-0.5 bg-orange-400"></div>
-        <div className="w-6 h-0.5 bg-orange-400"></div>
-        <div className="w-6 h-0.5 bg-orange-400"></div>
+        <div className="w-7 h-[3px] bg-black"></div>
+        <div className="w-7 h-[3px] bg-black"></div>
+        <div className="w-7 h-[3px] bg-black"></div>
       </button>
 
-      {/* 🔥 CENTERED BRAND BLOCK */}
-      <div className="text-center px-5">
-        <img 
+      {/* 🔶 CENTER CONTENT */}
+      <div className="flex flex-col items-center justify-center h-screen text-center px-4">
+        
+        <img
           src={logo}
           alt="Voice2Fire"
-          className="w-64 h-auto mx-auto mb-6 drop-shadow-[0_0_25px_rgba(255,120,0,0.7)] animate-[pulse_3s_infinite]"
+          className="w-56 mb-6 drop-shadow-md"
         />
 
-        <h1 className="text-4xl font-extrabold uppercase tracking-wide bg-gradient-to-r from-orange-300 to-red-500 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(255,100,0,0.8)]">
-          Voice<span className="text-orange-500">2</span>Fire
-        </h1>
-
-        <p className="text-xl text-slate-300 mt-3 font-semibold leading-relaxed drop-shadow">
-          Amplifying righteous voices.  
-          <br /> Watch — Pray — Give Thanks — Create.
+        <p className="text-xl font-semibold text-gray-700 max-w-md leading-relaxed">
+          Amplifying righteous voices — watch, pray, give thanks, and create.
         </p>
       </div>
 
-      {/* 🔥 SLIDE-OUT MENU */}
-      {menuOpen && (
-        <div className="absolute top-0 right-0 h-full w-64 bg-black/90 border-l border-orange-500/40 shadow-[0_0_30px_rgba(255,120,0,0.7)] animate-[slideIn_0.3s_ease]">
-          <div className="p-6 space-y-4 text-right">
+      {/* 🔶 SLIDE MENU LEFT SIDE */}
+      {open && (
+        <div className="absolute top-0 left-0 w-64 h-full bg-white border-r border-gray-300 shadow-xl animate-slideIn">
+          <div className="p-8 space-y-5">
 
-            <h2 className="text-orange-400 text-sm font-bold tracking-[0.3em] uppercase mb-3">
+            <h3 className="text-sm tracking-widest text-gray-500 uppercase">
               Menu
-            </h2>
+            </h3>
 
-            <button className="block text-lg font-bold text-white hover:text-orange-400">
+            <button className="block text-lg font-medium text-gray-800 hover:text-orange-600 hover:font-bold transition">
               Home
             </button>
-            <button className="block text-lg font-bold text-white hover:text-orange-400">
+            <button className="block text-lg font-medium text-gray-800 hover:text-orange-600 hover:font-bold transition">
               Discover
             </button>
-            <button className="block text-lg font-bold text-white hover:text-orange-400">
+            <button className="block text-lg font-medium text-gray-800 hover:text-orange-600 hover:font-bold transition">
               Create
             </button>
-            <button className="block text-lg font-bold text-white hover:text-orange-400">
+            <button className="block text-lg font-medium text-gray-800 hover:text-orange-600 hover:font-bold transition">
               Login / Profile
             </button>
 
