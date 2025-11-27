@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Mic, Square } from "lucide-react";
 
 type EqBand = "low" | "mid" | "high";
 
@@ -19,6 +20,10 @@ export default function Voice2FireVideoPlayer() {
     high: 0,
   });
   const [isPro, setIsPro] = useState(true);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   // --- INIT WEB AUDIO + EQ, CONNECTED TO VIDEO ---
   useEffect(() => {
@@ -99,9 +104,51 @@ export default function Voice2FireVideoPlayer() {
     }
   };
 
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      
+      const chunks: Blob[] = [];
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
+      
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `voice2fire-recording-${Date.now()}.webm`;
+        a.click();
+        setRecordedChunks([]);
+      };
+      
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Recording error:", err);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+      setIsRecording(false);
+    }
+  };
+
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-black via-slate-900 to-black text-slate-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-md space-y-6">
+      <div className="w-full max-w-lg space-y-6">
         {/* HEADER */}
         <div className="flex items-center justify-between">
           <div>
@@ -124,8 +171,8 @@ export default function Voice2FireVideoPlayer() {
           </button>
         </div>
 
-        {/* 9:16 VIDEO SCREEN */}
-        <div className="relative w-full mx-auto rounded-3xl overflow-hidden shadow-2xl bg-slate-900 aspect-[9/16] flex flex-col">
+        {/* 9:16 VIDEO SCREEN - Bigger viewing area */}
+        <div className="relative w-full mx-auto rounded-3xl overflow-hidden shadow-2xl bg-slate-900 aspect-[9/16] flex flex-col" style={{ maxHeight: '75vh' }}>
           {/* Top label */}
           <div className="flex items-center justify-between px-4 pt-3 pb-2">
             <span className="text-[10px] uppercase tracking-[0.2em] text-slate-400">
@@ -149,13 +196,24 @@ export default function Voice2FireVideoPlayer() {
 
           {/* CONTROLS */}
           <div className="border-t border-slate-800/80 bg-black/60 backdrop-blur-md px-4 py-3 space-y-3">
-            {/* Play / pause & volume */}
+            {/* Play / pause, record & volume */}
             <div className="flex items-center justify-between gap-3">
               <button
                 onClick={togglePlay}
                 className="w-12 h-12 rounded-full bg-orange-500 flex items-center justify-center text-black font-bold shadow-lg active:scale-95 transition-transform"
               >
                 {isPlaying ? "⏸" : "▶"}
+              </button>
+
+              <button
+                onClick={isRecording ? stopRecording : startRecording}
+                className={`w-12 h-12 rounded-full flex items-center justify-center font-bold shadow-lg active:scale-95 transition-all ${
+                  isRecording 
+                    ? "bg-red-500 animate-pulse" 
+                    : "bg-slate-700 hover:bg-slate-600"
+                }`}
+              >
+                {isRecording ? <Square className="h-5 w-5 text-white" /> : <Mic className="h-5 w-5 text-white" />}
               </button>
 
               <div className="flex-1">
