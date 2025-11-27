@@ -2358,8 +2358,8 @@ export default function Feed() {
         triggerHaptic('light', 'navigation');
         setActiveTab(value);
       }}>
-        {/* Tab switcher and settings - floating at top-left */}
-        <div className="fixed top-4 left-4 z-40 flex items-center gap-2">
+        {/* Tab switcher and settings - floating on left side below header */}
+        <div className="fixed top-20 left-4 z-40 flex items-center gap-2">
           <TabsList className="bg-background/80 backdrop-blur-sm">
             <TabsTrigger value="forYou">For You</TabsTrigger>
             <TabsTrigger value="following">Following</TabsTrigger>
